@@ -2075,6 +2075,13 @@ BOOL CErrorReportSender::SendReport()
     Utility::RecycleFile(m_sZipName, true);
     Utility::RecycleFile(m_sZipName+_T(".md5"), true);
 
+	// Remove the ZIP and MD5 files from the attachment list
+	m_EmailMsg.RemoveAttachment(0);
+	m_EmailMsg.RemoveAttachment(0);
+
+	// Remove the recipient so that there will be no copies
+	m_EmailMsg.RemoveRecipient(0);
+
 	// Check status
     if(status==0)
     {
@@ -2323,6 +2330,7 @@ BOOL CErrorReportSender::SendOverSMTP()
 
     // Send mail assynchronously
     int res = m_SmtpClient.SendEmailAssync(&m_EmailMsg, &m_Assync); 
+
     return (res==0);
 }
 
