@@ -2067,20 +2067,25 @@ BOOL CErrorReportSender::SendReport()
         if(0==m_Assync.WaitForCompletion())
         {
             status = 0;
-            break;
+            
+			// If the report was sent through SMTP
+			if (id == CR_SMTP)
+			{
+				// Remove the ZIP and MD5 files from the attachment list
+				m_EmailMsg.RemoveAttachment(0);
+				m_EmailMsg.RemoveAttachment(0);
+
+				// Remove the recipient so that there will be no copies
+				m_EmailMsg.RemoveRecipient(0);
+			}
+			
+			break;
         }
     }
 
     // Remove compressed ZIP file and MD5 file
     Utility::RecycleFile(m_sZipName, true);
     Utility::RecycleFile(m_sZipName+_T(".md5"), true);
-
-	// Remove the ZIP and MD5 files from the attachment list
-	m_EmailMsg.RemoveAttachment(0);
-	m_EmailMsg.RemoveAttachment(0);
-
-	// Remove the recipient so that there will be no copies
-	m_EmailMsg.RemoveRecipient(0);
 
 	// Check status
     if(status==0)
