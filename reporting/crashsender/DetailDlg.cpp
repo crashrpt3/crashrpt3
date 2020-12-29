@@ -17,65 +17,65 @@ be found in the Authors.txt file in the root of the source tree.
 
 LRESULT CDetailDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
-	// The dialog will be resizable, init resize map now.
+    // The dialog will be resizable, init resize map now.
     DlgResize_Init();
 
-	CErrorReportSender* pSender = CErrorReportSender::GetInstance();
+    CErrorReportSender* pSender = CErrorReportSender::GetInstance();
 
     // Mirror this window if RTL language is in use
-	CString sRTL = pSender->GetLangStr(_T("Settings"), _T("RTLReading"));
+    CString sRTL = pSender->GetLangStr(_T("Settings"), _T("RTLReading"));
     if(sRTL.CompareNoCase(_T("1"))==0)
     {
         Utility::SetLayoutRTL(m_hWnd);
     }
 
-	// Set dialog caption text.
+    // Set dialog caption text.
     SetWindowText(pSender->GetLangStr(_T("DetailDlg"), _T("DlgCaption")));
 
-	// Set up file preview control.
+    // Set up file preview control.
     m_previewMode = PREVIEW_AUTO;
     m_filePreview.SubclassWindow(GetDlgItem(IDC_PREVIEW));
     m_filePreview.SetBytesPerLine(10);
-	m_filePreview.SetEmptyMessage(pSender->GetLangStr(_T("DetailDlg"), _T("NoDataToDisplay")));
+    m_filePreview.SetEmptyMessage(pSender->GetLangStr(_T("DetailDlg"), _T("NoDataToDisplay")));
 
     // Init "Privacy Policy" link.
     m_linkPrivacyPolicy.SubclassWindow(GetDlgItem(IDC_PRIVACYPOLICY));
-	m_linkPrivacyPolicy.SetHyperLink(pSender->GetCrashInfo()->m_sPrivacyPolicyURL);
-	m_linkPrivacyPolicy.SetLabel(pSender->GetLangStr(_T("DetailDlg"), _T("PrivacyPolicy")));
+    m_linkPrivacyPolicy.SetHyperLink(pSender->GetCrashInfo()->m_sPrivacyPolicyURL);
+    m_linkPrivacyPolicy.SetLabel(pSender->GetLangStr(_T("DetailDlg"), _T("PrivacyPolicy")));
 
-	if(!pSender->GetCrashInfo()->m_sPrivacyPolicyURL.IsEmpty())
+    if(!pSender->GetCrashInfo()->m_sPrivacyPolicyURL.IsEmpty())
         m_linkPrivacyPolicy.ShowWindow(SW_SHOW);
     else
         m_linkPrivacyPolicy.ShowWindow(SW_HIDE);
 
-	// Set up header text
-    CStatic statHeader = GetDlgItem(IDC_HEADERTEXT);
-	statHeader.SetWindowText(pSender->GetLangStr(_T("DetailDlg"), _T("DoubleClickAnItem")));
+    // Set up header text
+    CStatic statHeader(GetDlgItem(IDC_HEADERTEXT));
+    statHeader.SetWindowText(pSender->GetLangStr(_T("DetailDlg"), _T("DoubleClickAnItem")));
 
-	// Set up the list control
+    // Set up the list control
     m_list = GetDlgItem(IDC_FILE_LIST);
     m_list.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT);
-	m_list.InsertColumn(0, pSender->GetLangStr(_T("DetailDlg"), _T("FieldName")), LVCFMT_LEFT, 150);
-	m_list.InsertColumn(1, pSender->GetLangStr(_T("DetailDlg"), _T("FieldDescription")), LVCFMT_LEFT, 180);
-	m_list.InsertColumn(3, pSender->GetLangStr(_T("DetailDlg"), _T("FieldSize")), LVCFMT_RIGHT, 60);
+    m_list.InsertColumn(0, pSender->GetLangStr(_T("DetailDlg"), _T("FieldName")), LVCFMT_LEFT, 150);
+    m_list.InsertColumn(1, pSender->GetLangStr(_T("DetailDlg"), _T("FieldDescription")), LVCFMT_LEFT, 180);
+    m_list.InsertColumn(3, pSender->GetLangStr(_T("DetailDlg"), _T("FieldSize")), LVCFMT_RIGHT, 60);
 
-	// Init icons for the list
+    // Init icons for the list
     m_iconList.Create(16, 16, ILC_COLOR32|ILC_MASK, 3, 1);
     m_list.SetImageList(m_iconList, LVSIL_SMALL);
 
-	FillFileItemList();
+    FillFileItemList();
 
     // Init "Preview" static control
     m_statPreview = GetDlgItem(IDC_PREVIEWTEXT);
-	m_statPreview.SetWindowText(pSender->GetLangStr(_T("DetailDlg"), _T("Preview")));
+    m_statPreview.SetWindowText(pSender->GetLangStr(_T("DetailDlg"), _T("Preview")));
 
     // Init "OK" button
     m_btnClose = GetDlgItem(IDOK);
-	m_btnClose.SetWindowText(pSender->GetLangStr(_T("DetailDlg"), _T("Close")));
+    m_btnClose.SetWindowText(pSender->GetLangStr(_T("DetailDlg"), _T("Close")));
 
     // Init "Export..." button
     m_btnExport = GetDlgItem(IDC_EXPORT);
-	m_btnExport.SetWindowText(pSender->GetLangStr(_T("DetailDlg"), _T("Export")));
+    m_btnExport.SetWindowText(pSender->GetLangStr(_T("DetailDlg"), _T("Export")));
 
     // center the dialog on the screen
     CenterWindow();
@@ -85,59 +85,59 @@ LRESULT CDetailDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lPar
 
 LRESULT CDetailDlg::OnDestroy(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
-	m_filePreview.SetFile(NULL);
-	return NULL;
+    m_filePreview.SetFile(NULL);
+    return NULL;
 }
 
 void CDetailDlg::FillFileItemList()
 {
-	// Kaneva - Added
-	auto pReport = GetReport();
-	if (!pReport) return;
+    // Kaneva - Added
+    auto pReport = GetReport();
+    if (!pReport) return;
 
-	// Walk through files included into error report
-	// Insert items to the list
+    // Walk through files included into error report
+    // Insert items to the list
 
-	m_iconList.RemoveAll();
-	m_list.DeleteAllItems();
+    m_iconList.RemoveAll();
+    m_list.DeleteAllItems();
 
-	int nCount = pReport->GetFileItemCount();
+    int nCount = pReport->GetFileItemCount();
     int i;
     for (i = 0; i<nCount; i++)
     {
-		ERIFileItem* pfi = pReport->GetFileItemByIndex(i);
-		CString sDestFile = pfi->m_sDestFile;
+        ERIFileItem* pfi = pReport->GetFileItemByIndex(i);
+        CString sDestFile = pfi->m_sDestFile;
         CString sSrcFile = pfi->m_sSrcFile;
         CString sFileDesc = pfi->m_sDesc;
-		HICON hIcon = NULL;
-		CString sTypeName;
-		LONGLONG lFileSize = 0;
-		CString sSize;
+        HICON hIcon = NULL;
+        CString sTypeName;
+        LONGLONG lFileSize = 0;
+        CString sSize;
 
-		// Get file info
-		if(!pfi->GetFileInfo(hIcon, sTypeName, lFileSize))
-			continue; // Skip not existing/unreadable files
+        // Get file info
+        if(!pfi->GetFileInfo(hIcon, sTypeName, lFileSize))
+            continue; // Skip not existing/unreadable files
 
         int iImage = -1;
         if(hIcon!=NULL)
         {
-			// If icon loaded, add its copy to imagelist
+            // If icon loaded, add its copy to imagelist
             iImage = m_iconList.AddIcon(hIcon);
-			// and destroy the original icon.
+            // and destroy the original icon.
             DestroyIcon(hIcon);
         }
 
-		// Insert an item to the list control
+        // Insert an item to the list control
         int nItem = m_list.InsertItem(i, sDestFile, iImage);
-		m_list.SetItemData(nItem, i);
+        m_list.SetItemData(nItem, i);
 
         m_list.SetItemText(nItem, 1, sFileDesc);
 
-		sSize = Utility::FileSizeToStr(lFileSize);
-		m_list.SetItemText(nItem, 2, sSize);
+        sSize = Utility::FileSizeToStr(lFileSize);
+        m_list.SetItemText(nItem, 2, sSize);
     }
 
-	// Select the first list item
+    // Select the first list item
     m_list.SetItemState(0, LVIS_SELECTED, LVIS_SELECTED);
 
 }
@@ -158,33 +158,33 @@ LRESULT CDetailDlg::OnItemChanged(int /*idCtrl*/, LPNMHDR pnmh, BOOL& /*bHandled
 
 LRESULT CDetailDlg::OnItemDblClicked(int /*idCtrl*/, LPNMHDR pnmh, BOOL& /*bHandled*/)
 {
-	// Kaneva - Added
-	auto pReport = GetReport();
-	if (!pReport) return FALSE;
+    // Kaneva - Added
+    auto pReport = GetReport();
+    if (!pReport) return FALSE;
 
-	// This method is called when user double-clicks an item in the list control.
-	// We need to open the file with an appropriate program.
+    // This method is called when user double-clicks an item in the list control.
+    // We need to open the file with an appropriate program.
 
     LPNMLISTVIEW lpItem           = (LPNMLISTVIEW)pnmh;
     int iItem                     = lpItem->iItem;
     DWORD_PTR dwRet               = 0;
 
-	// Check if double-clicked on empty space.
+    // Check if double-clicked on empty space.
     if (iItem < 0)
-	{
-		// Do nothing
+    {
+        // Do nothing
         return 0;
-	}
+    }
 
-	// Look for n-th item
-	ERIFileItem* pFileItem = pReport->GetFileItemByIndex(iItem);
-	if(!pFileItem)
-		return 0;
+    // Look for n-th item
+    ERIFileItem* pFileItem = pReport->GetFileItemByIndex(iItem);
+    if(!pFileItem)
+        return 0;
 
-	// Get file name
+    // Get file name
     CString sFileName = pFileItem->m_sSrcFile;
 
-	// Open the file with shell-provided functionality
+    // Open the file with shell-provided functionality
     dwRet = (DWORD_PTR)::ShellExecute(0, _T("open"), sFileName,
         0, 0, SW_SHOWNORMAL);
     ATLASSERT(dwRet > 32);
@@ -194,19 +194,19 @@ LRESULT CDetailDlg::OnItemDblClicked(int /*idCtrl*/, LPNMHDR pnmh, BOOL& /*bHand
 
 void CDetailDlg::SelectItem(int iItem)
 {
-	// Kaneva - Added
-	auto pReport = GetReport();
-	if (!pReport) return;
+    // Kaneva - Added
+    auto pReport = GetReport();
+    if (!pReport) return;
 
-	// This method is called when user selects an item.
-	// We need to open the item for preview.
+    // This method is called when user selects an item.
+    // We need to open the item for preview.
 
     // Look for n-th item
-	ERIFileItem* pFileItem = pReport->GetFileItemByIndex(iItem);
-	if(!pFileItem)
-		return;
+    ERIFileItem* pFileItem = pReport->GetFileItemByIndex(iItem);
+    if(!pFileItem)
+        return;
 
-	// Update preview control
+    // Update preview control
     m_previewMode = PREVIEW_AUTO;
     m_textEncoding = ENC_AUTO;
     m_filePreview.SetFile(pFileItem->m_sSrcFile, m_previewMode);
@@ -214,29 +214,29 @@ void CDetailDlg::SelectItem(int iItem)
 
 LRESULT CDetailDlg::OnOK(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	// Close button clicked - close the dialog.
+    // Close button clicked - close the dialog.
     EndDialog(0);
     return 0;
 }
 
 LRESULT CDetailDlg::OnExport(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	// Kaneva - Added
-	auto pReport = GetReport();
-	if (!pReport) return FALSE;
+    // Kaneva - Added
+    auto pReport = GetReport();
+    if (!pReport) return FALSE;
 
-	CErrorReportSender* pSender = CErrorReportSender::GetInstance();
-	if (!pSender)
-		return FALSE;
+    CErrorReportSender* pSender = CErrorReportSender::GetInstance();
+    if (!pSender)
+        return FALSE;
 
-	// This method is called when user clicks the "Export" button.
-	// We should export crash report contents as a ZIP archive to
-	// user-specified folder.
+    // This method is called when user clicks the "Export" button.
+    // We should export crash report contents as a ZIP archive to
+    // user-specified folder.
 
-	// Format file name for the output ZIP archive.
+    // Format file name for the output ZIP archive.
     CString sFileName = pReport->GetCrashGUID() + _T(".zip");
 
-	// Display "Save File" dialog.
+    // Display "Save File" dialog.
     CFileDialog dlg(FALSE, _T("*.zip"), sFileName,
         OFN_PATHMUSTEXIST|OFN_OVERWRITEPROMPT,
         _T("ZIP Files (*.zip)\0*.zip\0All Files (*.*)\0*.*\0\0"), m_hWnd);
@@ -244,10 +244,10 @@ LRESULT CDetailDlg::OnExport(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*
     INT_PTR result = dlg.DoModal();
     if(result==IDOK)
     {
-		// Determine what destination user chosen
+        // Determine what destination user chosen
         CString sExportFileName = dlg.m_szFileName;
 
-		// Export crash report assynchronously
+        // Export crash report assynchronously
         pSender->ExportReport(sExportFileName);
     }
 
@@ -256,10 +256,10 @@ LRESULT CDetailDlg::OnExport(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*
 
 LRESULT CDetailDlg::OnPreviewRClick(int /*idCtrl*/, LPNMHDR /*pnmh*/, BOOL& /*bHandled*/)
 {
-	// This method is called when user right-clicks the preview area.
-	// We need to display popup menu.
+    // This method is called when user right-clicks the preview area.
+    // We need to display popup menu.
 
-	CErrorReportSender* pSender = CErrorReportSender::GetInstance();
+    CErrorReportSender* pSender = CErrorReportSender::GetInstance();
 
     CPoint pt;
     GetCursorPos(&pt);
@@ -267,19 +267,19 @@ LRESULT CDetailDlg::OnPreviewRClick(int /*idCtrl*/, LPNMHDR /*pnmh*/, BOOL& /*bH
     CMenu menu;
     menu.LoadMenu(IDR_POPUPMENU);
 
-    CMenu submenu = menu.GetSubMenu(1);
+    CMenu submenu(menu.GetSubMenu(1));
     MENUITEMINFO mii;
     memset(&mii, 0, sizeof(MENUITEMINFO));
     mii.cbSize = sizeof(MENUITEMINFO);
     mii.fMask = MIIM_STRING;
 
     strconv_t strconv;
-	CString sAuto = pSender->GetLangStr(_T("DetailDlg"), _T("PreviewAuto"));
-	CString sText = pSender->GetLangStr(_T("DetailDlg"), _T("PreviewText"));
-	CString sHex = pSender->GetLangStr(_T("DetailDlg"), _T("PreviewHex"));
-	CString sImage = pSender->GetLangStr(_T("DetailDlg"), _T("PreviewImage"));
-	CString sVideo = pSender->GetLangStr(_T("DetailDlg"), _T("PreviewVideo"));
-	CString sEncoding = pSender->GetLangStr(_T("DetailDlg"), _T("Encoding"));
+    CString sAuto = pSender->GetLangStr(_T("DetailDlg"), _T("PreviewAuto"));
+    CString sText = pSender->GetLangStr(_T("DetailDlg"), _T("PreviewText"));
+    CString sHex = pSender->GetLangStr(_T("DetailDlg"), _T("PreviewHex"));
+    CString sImage = pSender->GetLangStr(_T("DetailDlg"), _T("PreviewImage"));
+    CString sVideo = pSender->GetLangStr(_T("DetailDlg"), _T("PreviewVideo"));
+    CString sEncoding = pSender->GetLangStr(_T("DetailDlg"), _T("Encoding"));
 
     mii.dwTypeData = sAuto.GetBuffer(0);
     submenu.SetMenuItemInfo(ID_PREVIEW_AUTO, FALSE, &mii);
@@ -303,7 +303,7 @@ LRESULT CDetailDlg::OnPreviewRClick(int /*idCtrl*/, LPNMHDR /*pnmh*/, BOOL& /*bH
         uItem = ID_PREVIEW_TEXT;
     else if(m_previewMode==PREVIEW_IMAGE)
         uItem = ID_PREVIEW_IMAGE;
-	else if(m_previewMode==PREVIEW_VIDEO)
+    else if(m_previewMode==PREVIEW_VIDEO)
         uItem = ID_PREVIEW_VIDEO;
 
     submenu.CheckMenuRadioItem(ID_PREVIEW_AUTO, ID_PREVIEW_VIDEO, uItem, MF_BYCOMMAND);
@@ -342,8 +342,8 @@ LRESULT CDetailDlg::OnPreviewRClick(int /*idCtrl*/, LPNMHDR /*pnmh*/, BOOL& /*bH
 
 LRESULT CDetailDlg::OnPreviewModeChanged(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	// User changes file preview mode.
-	// Update the preview control state.
+    // User changes file preview mode.
+    // Update the preview control state.
 
     PreviewMode mode = PREVIEW_AUTO;
     if(wID==ID_PREVIEW_TEXT)
@@ -352,7 +352,7 @@ LRESULT CDetailDlg::OnPreviewModeChanged(WORD /*wNotifyCode*/, WORD wID, HWND /*
         mode = PREVIEW_HEX;
     else if(wID==ID_PREVIEW_IMAGE)
         mode = PREVIEW_IMAGE;
-	else if(wID==ID_PREVIEW_VIDEO)
+    else if(wID==ID_PREVIEW_VIDEO)
         mode = PREVIEW_VIDEO;
     m_previewMode = mode;
     m_textEncoding = ENC_AUTO;
@@ -362,8 +362,8 @@ LRESULT CDetailDlg::OnPreviewModeChanged(WORD /*wNotifyCode*/, WORD wID, HWND /*
 
 LRESULT CDetailDlg::OnTextEncodingChanged(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	// User changes file preview encoding (for text files).
-	// Update the preview control state.
+    // User changes file preview encoding (for text files).
+    // Update the preview control state.
 
     TextEncoding enc = ENC_AUTO;
     if(wID==ID_ENCODING_AUTO)
@@ -383,27 +383,27 @@ LRESULT CDetailDlg::OnTextEncodingChanged(WORD /*wNotifyCode*/, WORD wID, HWND /
 
 LRESULT CDetailDlg::OnListRClick(int /*idCtrl*/, LPNMHDR /*pnmh*/, BOOL& /*bHandled*/)
 {
-	// Kaneva - Added
-	auto pReport = GetReport();
-	if (!pReport) return FALSE;
+    // Kaneva - Added
+    auto pReport = GetReport();
+    if (!pReport) return FALSE;
 
-	auto pSender = CErrorReportSender::GetInstance();
-	if (!pSender)
-		return FALSE;
+    auto pSender = CErrorReportSender::GetInstance();
+    if (!pSender)
+        return FALSE;
 
-	auto pCI = pSender->GetCrashInfo();
-	if (!pCI)
-		return FALSE;
+    auto pCI = pSender->GetCrashInfo();
+    if (!pCI)
+        return FALSE;
 
-	CPoint pt;
+    CPoint pt;
     GetCursorPos(&pt);
     CMenu menu = LoadMenu(_Module.GetResourceInstance(), MAKEINTRESOURCE(IDR_POPUPMENU));
-    CMenu submenu = menu.GetSubMenu(6);
+    CMenu submenu(menu.GetSubMenu(6));
 
     strconv_t strconv;
-	CString sOpen = pSender->GetLangStr(_T("DetailDlg"), _T("Open"));
-	CString sDeleteSelected = pSender->GetLangStr(_T("DetailDlg"), _T("DeleteSelected"));
-	CString sAttachMoreFiles = pSender->GetLangStr(_T("DetailDlg"), _T("AttachMoreFiles"));
+    CString sOpen = pSender->GetLangStr(_T("DetailDlg"), _T("Open"));
+    CString sDeleteSelected = pSender->GetLangStr(_T("DetailDlg"), _T("DeleteSelected"));
+    CString sAttachMoreFiles = pSender->GetLangStr(_T("DetailDlg"), _T("AttachMoreFiles"));
 
 
     MENUITEMINFO mii;
@@ -414,227 +414,227 @@ LRESULT CDetailDlg::OnListRClick(int /*idCtrl*/, LPNMHDR /*pnmh*/, BOOL& /*bHand
     mii.dwTypeData = sOpen.GetBuffer(0);
     submenu.SetMenuItemInfo(ID_MENU7_OPEN, FALSE, &mii);
 
-	mii.dwTypeData = sDeleteSelected.GetBuffer(0);
+    mii.dwTypeData = sDeleteSelected.GetBuffer(0);
     submenu.SetMenuItemInfo(ID_MENU7_DELETESELECTEDFILE, FALSE, &mii);
 
-	mii.dwTypeData = sAttachMoreFiles.GetBuffer(0);
+    mii.dwTypeData = sAttachMoreFiles.GetBuffer(0);
     submenu.SetMenuItemInfo(ID_MENU7_ATTACHMOREFILES, FALSE, &mii);
 
-	// Get count of selected list items
-	int nItems = 0;
-	int nSelected = 0;
-	BOOL bAllowDelete = TRUE;
-	int i;
+    // Get count of selected list items
+    int nItems = 0;
+    int nSelected = 0;
+    BOOL bAllowDelete = TRUE;
+    int i;
     for(i=0; i<m_list.GetItemCount(); i++)
     {
-		nItems++;
+        nItems++;
 
-		// If list item checked
-		if(m_list.GetItemState(i, LVIS_SELECTED)!=0)
-			nSelected++;
-		else
-			continue;
+        // If list item checked
+        if(m_list.GetItemState(i, LVIS_SELECTED)!=0)
+            nSelected++;
+        else
+            continue;
 
-		// Find file item in error report
-		int nItem = (int)m_list.GetItemData(i);
-		ERIFileItem* pfi = pReport->GetFileItemByIndex(nItem);
-		if(!pfi->m_bAllowDelete)
-			bAllowDelete = FALSE;
-	}
+        // Find file item in error report
+        int nItem = (int)m_list.GetItemData(i);
+        ERIFileItem* pfi = pReport->GetFileItemByIndex(nItem);
+        if(!pfi->m_bAllowDelete)
+            bAllowDelete = FALSE;
+    }
 
-	submenu.EnableMenuItem(ID_MENU7_OPEN, (nSelected==1)?MF_ENABLED:MF_DISABLED);
-	submenu.EnableMenuItem(ID_MENU7_DELETESELECTEDFILE, (nSelected>0 && bAllowDelete)?MF_ENABLED:MF_DISABLED);
+    submenu.EnableMenuItem(ID_MENU7_OPEN, (nSelected==1)?MF_ENABLED:MF_DISABLED);
+    submenu.EnableMenuItem(ID_MENU7_DELETESELECTEDFILE, (nSelected>0 && bAllowDelete)?MF_ENABLED:MF_DISABLED);
 
-	if(!pCI->m_bAllowAttachMoreFiles)
-	{
-		submenu.DeleteMenu(ID_MENU7_ATTACHMOREFILES, MF_BYCOMMAND);
-	}
+    if(!pCI->m_bAllowAttachMoreFiles)
+    {
+        submenu.DeleteMenu(ID_MENU7_ATTACHMOREFILES, MF_BYCOMMAND);
+    }
 
-	submenu.TrackPopupMenu(0, pt.x, pt.y, m_hWnd);
+    submenu.TrackPopupMenu(0, pt.x, pt.y, m_hWnd);
     return 0;
 }
 
 LRESULT CDetailDlg::OnPopupOpen(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	// Kaneva - Added
-	auto pReport = GetReport();
-	if (!pReport) return FALSE;
+    // Kaneva - Added
+    auto pReport = GetReport();
+    if (!pReport) return FALSE;
 
-	// Get count of selected list items
-	int nItem = -1;
-	int nSelected = 0;
-	int i;
+    // Get count of selected list items
+    int nItem = -1;
+    int nSelected = 0;
+    int i;
     for(i=0; i<m_list.GetItemCount(); i++)
     {
-		// If list item selected
-		if(m_list.GetItemState(i, LVIS_SELECTED)!=0)
-		{
-			nItem=i;
-			nSelected++;
-		}
-	}
+        // If list item selected
+        if(m_list.GetItemState(i, LVIS_SELECTED)!=0)
+        {
+            nItem=i;
+            nSelected++;
+        }
+    }
 
-	if(nSelected!=1)
-		return 0; // Should be exactly one item selected
+    if(nSelected!=1)
+        return 0; // Should be exactly one item selected
 
-	// Look for n-th item
-	ERIFileItem* pFileItem = pReport->GetFileItemByIndex(nItem);
-	if(pFileItem==NULL)
-		return 0;
+    // Look for n-th item
+    ERIFileItem* pFileItem = pReport->GetFileItemByIndex(nItem);
+    if(pFileItem==NULL)
+        return 0;
 
-	// Get file name
+    // Get file name
     CString sFileName = pFileItem->m_sSrcFile;
 
-	// Open the file with shell-provided functionality
+    // Open the file with shell-provided functionality
     DWORD_PTR dwRet = (DWORD_PTR)::ShellExecute(0, _T("open"), sFileName,
         0, 0, SW_SHOWNORMAL);
     ATLASSERT(dwRet > 32);
-	dwRet;
+    dwRet;
 
-	return 0;
+    return 0;
 }
 
 LRESULT CDetailDlg::OnPopupDeleteSelected(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	// Kaneva - Added
-	CErrorReportInfo* pReport = GetReport();
-	if (!pReport) return FALSE;
+    // Kaneva - Added
+    CErrorReportInfo* pReport = GetReport();
+    if (!pReport) return FALSE;
 
-	auto pSender = CErrorReportSender::GetInstance();
-	if (!pSender)
-		return FALSE;
+    auto pSender = CErrorReportSender::GetInstance();
+    if (!pSender)
+        return FALSE;
 
-	auto pCI = pSender->GetCrashInfo();
-	if (!pCI)
-		return FALSE;
+    auto pCI = pSender->GetCrashInfo();
+    if (!pCI)
+        return FALSE;
 
-	// Walk through selected list items
-	std::vector<CString> asFilesToRemove;
-	int i;
+    // Walk through selected list items
+    std::vector<CString> asFilesToRemove;
+    int i;
     for(i=0; i<m_list.GetItemCount(); i++)
     {
-		// If list item is not selected
-		if(m_list.GetItemState(i, LVIS_SELECTED)==0)
-			continue;
+        // If list item is not selected
+        if(m_list.GetItemState(i, LVIS_SELECTED)==0)
+            continue;
 
-		// Determine appropriate file item
-		int nItem = (int)m_list.GetItemData(i);
-		ERIFileItem* pfi = pReport->GetFileItemByIndex(nItem);
-		if(pfi)
-		{
-			// Kaneva - Bug Fix - Use Source File Full Path
-			// Add this file to remove list
-			asFilesToRemove.push_back(pfi->m_sSrcFile);
-		}
-	}
+        // Determine appropriate file item
+        int nItem = (int)m_list.GetItemData(i);
+        ERIFileItem* pfi = pReport->GetFileItemByIndex(nItem);
+        if(pfi)
+        {
+            // Kaneva - Bug Fix - Use Source File Full Path
+            // Add this file to remove list
+            asFilesToRemove.push_back(pfi->m_sSrcFile);
+        }
+    }
 
-	// Reset preview control to avoid locking the file being previewed.
-	m_filePreview.SetFile(NULL);
+    // Reset preview control to avoid locking the file being previewed.
+    m_filePreview.SetFile(NULL);
 
-	// Delete selected files from error report
-	pCI->RemoveFilesFromCrashReport(GetCurReportIndex(), asFilesToRemove);
+    // Delete selected files from error report
+    pCI->RemoveFilesFromCrashReport(GetCurReportIndex(), asFilesToRemove);
 
-	// Update file items list
-	FillFileItemList();
+    // Update file items list
+    FillFileItemList();
 
-	// Force parent to recalculate report size
-	HWND hWndParent = GetParent();
-	if(::IsWindow(hWndParent))
-		::SendMessage(hWndParent, WM_REPORTSIZECHANGED, GetCurReportIndex(), 0);
+    // Force parent to recalculate report size
+    HWND hWndParent = GetParent();
+    if(::IsWindow(hWndParent))
+        ::SendMessage(hWndParent, WM_REPORTSIZECHANGED, GetCurReportIndex(), 0);
 
-	return 0;
+    return 0;
 }
 
 LRESULT CDetailDlg::OnPopupAddMoreFiles(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	// Display "Open File" dialog.
-	TCHAR szFileTitle[4096] = _T("\0");  // contains file title after return
-	TCHAR szFileName[4096] = _T("\0");   // contains full path name after return
-	OPENFILENAME ofn;
-	memset(&ofn, 0, sizeof(OPENFILENAME)); // initialize structure to 0/NULL
-	ofn.lStructSize = sizeof(OPENFILENAME);
-	ofn.lpstrFile = szFileName;
-	ofn.nMaxFile = 4096;
-	ofn.lpstrDefExt = _T("*.*");
-	ofn.lpstrFileTitle = (LPTSTR)szFileTitle;
-	ofn.nMaxFileTitle = 4096;
-	ofn.Flags = OFN_PATHMUSTEXIST|OFN_ALLOWMULTISELECT | OFN_EXPLORER | OFN_ENABLESIZING;
-	ofn.lpstrFilter = _T("All Files (*.*)\0*.*\0\0");
-	ofn.hInstance = NULL;
-	ofn.hwndOwner = m_hWnd;
+    // Display "Open File" dialog.
+    TCHAR szFileTitle[4096] = _T("\0");  // contains file title after return
+    TCHAR szFileName[4096] = _T("\0");   // contains full path name after return
+    OPENFILENAME ofn;
+    memset(&ofn, 0, sizeof(OPENFILENAME)); // initialize structure to 0/NULL
+    ofn.lStructSize = sizeof(OPENFILENAME);
+    ofn.lpstrFile = szFileName;
+    ofn.nMaxFile = 4096;
+    ofn.lpstrDefExt = _T("*.*");
+    ofn.lpstrFileTitle = (LPTSTR)szFileTitle;
+    ofn.nMaxFileTitle = 4096;
+    ofn.Flags = OFN_PATHMUSTEXIST|OFN_ALLOWMULTISELECT | OFN_EXPLORER | OFN_ENABLESIZING;
+    ofn.lpstrFilter = _T("All Files (*.*)\0*.*\0\0");
+    ofn.hInstance = NULL;
+    ofn.hwndOwner = m_hWnd;
 
     INT_PTR result = GetOpenFileName(&ofn);
     if(result==IDOK)
     {
-		// Parse the list of files
-		TCHAR* str = szFileName;
-		std::vector<CString> asItems;
-		CString sItem;
-		int i;
-		for(i=0; ; i++)
-		{
-			if(str[i]==0)
-			{
-				// End of item
-				if(sItem.IsEmpty())
-					break; // End of multi-string
-				asItems.push_back(sItem);
-				sItem.Empty();
-				continue;
-			}
-			sItem += str[i];
-		}
+        // Parse the list of files
+        TCHAR* str = szFileName;
+        std::vector<CString> asItems;
+        CString sItem;
+        int i;
+        for(i=0; ; i++)
+        {
+            if(str[i]==0)
+            {
+                // End of item
+                if(sItem.IsEmpty())
+                    break; // End of multi-string
+                asItems.push_back(sItem);
+                sItem.Empty();
+                continue;
+            }
+            sItem += str[i];
+        }
 
-		std::vector<ERIFileItem> aFiles;
-		if(asItems.size()==1)
-		{
-			// Single file to add
-			CString sFileName = asItems[0];
+        std::vector<ERIFileItem> aFiles;
+        if(asItems.size()==1)
+        {
+            // Single file to add
+            CString sFileName = asItems[0];
 
-			ERIFileItem fi;
-			fi.m_bAllowDelete = true;
-			fi.m_bMakeCopy = true;
-			fi.m_sDestFile = Utility::GetFileName(sFileName);
-			fi.m_sSrcFile = sFileName;
-			aFiles.push_back(fi);
-		}
-		else if(asItems.size()>1)
-		{
-			// Several files to add
-			unsigned j;
-			for(j=1; j<asItems.size(); j++)
-			{
-				CString sFileName = asItems[0]+_T("\\")+asItems[j];
+            ERIFileItem fi;
+            fi.m_bAllowDelete = true;
+            fi.m_bMakeCopy = true;
+            fi.m_sDestFile = Utility::GetFileName(sFileName);
+            fi.m_sSrcFile = sFileName;
+            aFiles.push_back(fi);
+        }
+        else if(asItems.size()>1)
+        {
+            // Several files to add
+            unsigned j;
+            for(j=1; j<asItems.size(); j++)
+            {
+                CString sFileName = asItems[0]+_T("\\")+asItems[j];
 
-				ERIFileItem fi;
-				fi.m_bAllowDelete = true;
-				fi.m_bMakeCopy = true;
-				fi.m_sDestFile = Utility::GetFileName(sFileName);
-				fi.m_sSrcFile = sFileName;
-				aFiles.push_back(fi);
-			}
-		}
+                ERIFileItem fi;
+                fi.m_bAllowDelete = true;
+                fi.m_bMakeCopy = true;
+                fi.m_sDestFile = Utility::GetFileName(sFileName);
+                fi.m_sSrcFile = sFileName;
+                aFiles.push_back(fi);
+            }
+        }
 
-		// Add files to crash report
-		auto pSender = CErrorReportSender::GetInstance();
-		if (!pSender)
-			return FALSE;
+        // Add files to crash report
+        auto pSender = CErrorReportSender::GetInstance();
+        if (!pSender)
+            return FALSE;
 
-		auto pCI = pSender->GetCrashInfo();
-		if (!pCI)
-			return FALSE;
+        auto pCI = pSender->GetCrashInfo();
+        if (!pCI)
+            return FALSE;
 
-		pCI->AddFilesToCrashReport(GetCurReportIndex(), aFiles);
+        pCI->AddFilesToCrashReport(GetCurReportIndex(), aFiles);
 
-		// Update file items list
-		FillFileItemList();
+        // Update file items list
+        FillFileItemList();
 
-		// Force parent to recalculate report size
-		HWND hWndParent = GetParent();
-		if(::IsWindow(hWndParent))
-			::SendMessage(hWndParent, WM_REPORTSIZECHANGED, GetCurReportIndex(), 0);
-	}
+        // Force parent to recalculate report size
+        HWND hWndParent = GetParent();
+        if(::IsWindow(hWndParent))
+            ::SendMessage(hWndParent, WM_REPORTSIZECHANGED, GetCurReportIndex(), 0);
+    }
 
-	return 0;
+    return 0;
 }
 

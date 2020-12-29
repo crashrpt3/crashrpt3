@@ -49,7 +49,7 @@ void CMailMsg::AddRecipient(CString sAddress)
 {
     strconv_t strconv;
     LPCSTR lpszAddress = strconv.t2a(sAddress.GetBuffer(0));
-	m_to.push_back(lpszAddress);
+    m_to.push_back(lpszAddress);
 }
 
 void CMailMsg::SetSubject(CString sSubject)
@@ -202,21 +202,21 @@ BOOL CMailMsg::Send()
     pRecipients[0].ulReserved = 0;
     pRecipients[0].ulRecipClass = MAPI_ORIG;
     pRecipients[0].lpszAddress = (LPSTR)m_from.c_str();
-    pRecipients[0].lpszName = "";
+    pRecipients[0].lpszName = NULL;
     pRecipients[0].ulEIDSize = 0;
     pRecipients[0].lpEntryID = NULL;
 
-	// set to
-	size_t i;
-	for(i=0; i<m_to.size(); i++)
-	{
-		pRecipients[i+1].ulReserved = 0;
-		pRecipients[i+1].ulRecipClass = MAPI_TO;
-		pRecipients[i+1].lpszAddress = (LPSTR)m_to[i].c_str();
-		pRecipients[i+1].lpszName = (LPSTR)m_to[i].c_str();
-		pRecipients[i+1].ulEIDSize = 0;
-		pRecipients[i+1].lpEntryID = NULL;
-	}
+    // set to
+    size_t i;
+    for(i=0; i<m_to.size(); i++)
+    {
+        pRecipients[i+1].ulReserved = 0;
+        pRecipients[i+1].ulRecipClass = MAPI_TO;
+        pRecipients[i+1].lpszAddress = (LPSTR)m_to[i].c_str();
+        pRecipients[i+1].lpszName = (LPSTR)m_to[i].c_str();
+        pRecipients[i+1].ulEIDSize = 0;
+        pRecipients[i+1].lpEntryID = NULL;
+    }
 
     // add attachments
     nIndex=0;
@@ -239,7 +239,7 @@ BOOL CMailMsg::Send()
     message.lpszConversationID                = NULL;
     message.flFlags                           = 0;
     message.lpOriginator                      = pRecipients;
-	message.nRecipCount                       = (ULONG)m_to.size();
+    message.nRecipCount                       = (ULONG)m_to.size();
     message.lpRecips                          = &pRecipients[1];
     message.nFileCount                        = nAttachments;
     message.lpFiles                           = nAttachments ? pAttachments : NULL;

@@ -16,8 +16,15 @@ option(CRASHRPT_LINK_CRT_AS_DLL "If set (default), CrashRpt modules link C run-t
 option(CRASHRPT_BUILD_DEMOS "If set (default), CrashRpt builds the demo projects." ON)
 option(CRASHRPT_BUILD_TESTS "If set (default), CrashRpt builds the test projects." ON)
 option(CRASHRPT_INSTALL_PDB "If set (default), CrashRpt also installs PDB files." ON)
+if(MSVC AND ${MSVC_VERSION} GREATER 1920)
+  option(CRASHRPT_BUILD_CPP17 "If set (default), CrashRpt builds using /std:c++17 mode." ON)
+endif()
 
 add_compile_options( /W4 /wd4456 /wd4458 /MP /Oy- /EHsc )
+if(MSVC AND CRASHRPT_BUILD_CPP17)
+  message("Using /std:c++17 mode and /permissive-")
+  add_compile_options( /std:c++17 /permissive- )
+endif()
 
 if(MSVC_VERSION LESS 1910 )
   set( DBGHELP_USE_INSTALLED_SDK True )

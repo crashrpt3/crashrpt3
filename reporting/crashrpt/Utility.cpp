@@ -173,9 +173,9 @@ int Utility::GetOSFriendlyName(CString& sOSName)
         TCHAR buf[1024];
         ULONG buf_size = 0;
 
-        TCHAR* PRODUCT_NAME = _T("ProductName");
-        TCHAR* CURRENT_BUILD_NUMBER = _T("CurrentBuildNumber");
-        TCHAR* CSD_VERSION = _T("CSDVersion");
+        const TCHAR* PRODUCT_NAME = _T("ProductName");
+        const TCHAR* CURRENT_BUILD_NUMBER = _T("CurrentBuildNumber");
+        const TCHAR* CSD_VERSION = _T("CSDVersion");
 
 #pragma warning(disable:4996)
 
@@ -215,7 +215,7 @@ BOOL Utility::IsOS64Bit()
     return TRUE;
 #else
     // Check for 32-bit applications
-	BOOL b64Bit = FALSE;
+    BOOL b64Bit = FALSE;
 
     typedef BOOL (WINAPI *PFNISWOW64PROCESS)(HANDLE, PBOOL);
 
@@ -546,33 +546,33 @@ CString Utility::FileSizeToStr(ULONG64 uFileSize)
 
 CString Utility::AddEllipsis(LPCTSTR szString, int nMaxLength)
 {
-	if(szString==NULL)
-		return CString("");
+    if(szString==NULL)
+        return CString("");
 
-	CString sResult = szString;
-	if(sResult.GetLength()>nMaxLength)
-	{
-		if(nMaxLength>=3)
-			sResult = sResult.Mid(0, nMaxLength-3)+_T("...");
-	}
+    CString sResult = szString;
+    if(sResult.GetLength()>nMaxLength)
+    {
+        if(nMaxLength>=3)
+            sResult = sResult.Mid(0, nMaxLength-3)+_T("...");
+    }
 
-	return sResult;
+    return sResult;
 }
 
 std::vector<CString> Utility::ExplodeStr(LPCTSTR szString, LPCTSTR szSeparators)
 {
-	std::vector<CString> aTokens;
+    std::vector<CString> aTokens;
 
-	CString copy = szString;
-	TCHAR  *context = 0;
-	TCHAR  *token = _tcstok_s(const_cast<LPTSTR>((LPCTSTR)copy), szSeparators, &context);
-	while (token != 0)
-	{
-		aTokens.push_back(token);
-		token=_tcstok_s(NULL, szSeparators, &context);
-	};
+    CString copy = szString;
+    TCHAR  *context = 0;
+    TCHAR  *token = _tcstok_s(const_cast<LPTSTR>((LPCTSTR)copy), szSeparators, &context);
+    while (token != 0)
+    {
+        aTokens.push_back(token);
+        token=_tcstok_s(NULL, szSeparators, &context);
+    };
 
-	return aTokens;
+    return aTokens;
 }
 
 long Utility::GetFileSize(const TCHAR *fileName)
@@ -592,15 +592,15 @@ long Utility::GetFileSize(const TCHAR *fileName)
 
 BOOL Utility::IsFileSearchPattern(CString sFileName)
 {
-	// Remove the "\\?\" prefix in case of a long path name
-	if(sFileName.Left(4).Compare(_T("\\\\?\\"))==0)
-		sFileName = sFileName.Mid(4);
+    // Remove the "\\?\" prefix in case of a long path name
+    if(sFileName.Left(4).Compare(_T("\\\\?\\"))==0)
+        sFileName = sFileName.Mid(4);
 
-	// Check if the file name is a search template.
-	BOOL bSearchPattern = FALSE;
-	int nPos = sFileName.FindOneOf(_T("*?"));
-	if(nPos>=0)
-		bSearchPattern = true;
-	return bSearchPattern;
+    // Check if the file name is a search template.
+    BOOL bSearchPattern = FALSE;
+    int nPos = sFileName.FindOneOf(_T("*?"));
+    if(nPos>=0)
+        bSearchPattern = true;
+    return bSearchPattern;
 }
 
