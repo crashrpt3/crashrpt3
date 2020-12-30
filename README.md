@@ -1,4 +1,4 @@
 # crashrpt2
 Crashrpt fixes and new features collected from various places
 
-[![Build status](https://ci.appveyor.com/api/projects/status/6cv0xscpx377n5v5/branch/master?svg=true)](https://ci.appveyor.com/project/QbProg/crashrpt2/branch/master)
+[![Build status](https://ci.appveyor.com/api/projects/status/y5066r8g68f6ogun/branch/develop?svg=true)](https://ci.appveyor.com/project/chsoft-ag/crashrpt2/branch/develop)
