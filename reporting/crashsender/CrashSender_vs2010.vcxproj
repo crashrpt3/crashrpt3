@@ -219,7 +219,7 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>libtheora.lib;libogg.lib;jpeg.lib;tinyxml.lib;zlib.lib;libpng.lib;minizip.lib;WS2_32.lib;Dnsapi.lib;wininet.lib;Rpcrt4.lib;psapi.lib;Gdi32.lib;shell32.lib;Comdlg32.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)thirdparty\lib%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)thirdparty\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)\CrashSender.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
