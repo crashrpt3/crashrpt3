@@ -17,3 +17,14 @@ A crash reporting system for Windows applications
 
 ----
 
+### Additional Information
+
+1. This repository is fork from https://sourceforge.net/p/crashrpt/code/ci/master/tree/ 
+
+   ```bash
+   git clone https://git.code.sf.net/p/crashrpt/code crashrpt-code
+   ```
+
+2. Merged all pull requests from https://sourceforge.net/p/crashrpt/code/merge-requests/
+3. Merged from https://github.com/CrashRpt/crashrpt2
+4. Merged all pull request from https://github.com/CrashRpt/crashrpt2/pulls
