@@ -1,6 +1,10 @@
-A crash reporting system for Windows applications
+A crash reporting system for Windows applications.
 
 ----
+
+> Since the author has not updated and maintained it for too long, this repository is used to collect newer patches and features.
+
+
 
 ### Features
 
@@ -17,6 +21,8 @@ A crash reporting system for Windows applications
 
 ----
 
+
+
 ### Additional Information
 
 1. This repository is fork from https://sourceforge.net/p/crashrpt/code/ci/master/tree/ 
@@ -28,3 +34,4 @@ A crash reporting system for Windows applications
 2. Merged all pull requests from https://sourceforge.net/p/crashrpt/code/merge-requests/
 3. Merged from https://github.com/CrashRpt/crashrpt2
 4. Merged all pull request from https://github.com/CrashRpt/crashrpt2/pulls
+
