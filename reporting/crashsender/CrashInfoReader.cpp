@@ -1,4 +1,4 @@
-/************************************************************************************* 
+/*************************************************************************************
 This file is a part of CrashRpt library.
 Copyright (c) 2003-2013 The CrashRpt project authors. All Rights Reserved.
 
@@ -28,10 +28,10 @@ BOOL ERIFileItem::GetFileInfo(HICON& hIcon, CString& sTypeName, LONGLONG& lSize)
 	lSize = 0;
 	SHFILEINFO sfi;
 	HANDLE hFile = INVALID_HANDLE_VALUE;
-	    
+
 	// Open file for reading
-    hFile = CreateFile(m_sSrcFile, 
-            GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL); 
+    hFile = CreateFile(m_sSrcFile,
+            GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, NULL, NULL);
     if(hFile==INVALID_HANDLE_VALUE)
 		return FALSE; // Error - file may not exist
 
@@ -39,8 +39,8 @@ BOOL ERIFileItem::GetFileInfo(HICON& hIcon, CString& sTypeName, LONGLONG& lSize)
 	LARGE_INTEGER lFileSize;
     BOOL bGetSize = GetFileSizeEx(hFile, &lFileSize);
     if(bGetSize)
-    {            
-		lSize = lFileSize.QuadPart; 
+    {
+		lSize = lFileSize.QuadPart;
     }
 
 	// Get file icon and type name
@@ -54,7 +54,7 @@ BOOL ERIFileItem::GetFileInfo(HICON& hIcon, CString& sTypeName, LONGLONG& lSize)
 	CloseHandle(hFile);
 
 	// OK
-	return TRUE;	
+	return TRUE;
 }
 
 //---------------------------------------------------------------------
@@ -65,7 +65,7 @@ CErrorReportInfo::CErrorReportInfo()
 {
 	// Initialize variables.
     m_bSelected = TRUE;
-    m_DeliveryStatus = PENDING;    
+    m_DeliveryStatus = PENDING;
     m_dwGuiResources = 0;
     m_dwProcessHandleCount = 0;
     m_uTotalSize = 0;
@@ -76,7 +76,7 @@ CErrorReportInfo::CErrorReportInfo()
 // Destructor.
 CErrorReportInfo::~CErrorReportInfo()
 {
-	
+
 }
 
 CString CErrorReportInfo::GetErrorReportDirName()
@@ -227,23 +227,28 @@ CString CErrorReportInfo::GetMemUsage()
 
 ERIFileItem* CErrorReportInfo::GetFileItemByIndex(int nItem)
 {
-	if(nItem<0 || nItem>=(int)m_FileItems.size())
+	if(nItem<0 || nItem>=GetFileItemCount())
 		return NULL; // No such item
 
 	// Look for n-th item
-	std::map<CString, ERIFileItem>::iterator p = m_FileItems.begin();
-	for (int i = 0; i < nItem; i++, p++);
-	return &p->second;
+	int cnt = 0;
+	for (auto& fi : m_FileItems) {
+		if (cnt == nItem)
+			return &(fi.second);
+		++cnt;
+	}
+	return NULL;
 }
 
-ERIFileItem* CErrorReportInfo::GetFileItemByName(LPCTSTR szDestFileName)
+ERIFileItem* CErrorReportInfo::GetFileItemByName(LPCTSTR szName)
 {
-	return &m_FileItems[szDestFileName];
+	return &m_FileItems[szName];
 }
 
 void CErrorReportInfo::AddFileItem(ERIFileItem* pfi)
 {
-	m_FileItems[pfi->m_sDestFile] = *pfi;
+	// Kaneva - Bug Fix - Use Source File Full Path
+	m_FileItems[pfi->m_sSrcFile] = *pfi;
 }
 
 BOOL CErrorReportInfo::DeleteFileItemByIndex(int nItem)
@@ -280,7 +285,7 @@ BOOL CErrorReportInfo::GetPropByIndex(int nItem, CString& sName, CString& sVal)
 	sVal = p->second;
 	return TRUE;
 }
-	
+
 // Adds/replaces a property in crash report.
 void CErrorReportInfo::AddProp(LPCTSTR szName, LPCTSTR szVal)
 {
@@ -296,7 +301,7 @@ int CErrorReportInfo::GetRegKeyCount()
 BOOL CErrorReportInfo::GetRegKeyByIndex(int nItem, CString& sKeyName, ERIRegKey& rki)
 {
 	sKeyName.Empty();
-	
+
 	if(nItem<0 || nItem>=(int)m_RegKeys.size())
 		return FALSE; // No such item
 
@@ -307,7 +312,7 @@ BOOL CErrorReportInfo::GetRegKeyByIndex(int nItem, CString& sKeyName, ERIRegKey&
 	rki = p->second;
 	return TRUE;
 }
-	
+
 void CErrorReportInfo::AddRegKey(LPCTSTR szKeyName, ERIRegKey& rki)
 {
 	m_RegKeys[szKeyName] = rki;
@@ -316,8 +321,8 @@ void CErrorReportInfo::AddRegKey(LPCTSTR szKeyName, ERIRegKey& rki)
 // This method calculates the total size of files included into error report
 LONG64 CErrorReportInfo::CalcUncompressedReportSize()
 {
-    LONG64 lTotalSize = 0;    
-    HANDLE hFile = INVALID_HANDLE_VALUE;  
+    LONG64 lTotalSize = 0;
+    HANDLE hFile = INVALID_HANDLE_VALUE;
     CString sMsg;
     BOOL bGetSize = FALSE;
     LARGE_INTEGER lFileSize;
@@ -325,16 +330,16 @@ LONG64 CErrorReportInfo::CalcUncompressedReportSize()
 	// Enumerate files contained in the error report
 	int i;
 	for(i=0; i<GetFileItemCount(); i++)
-    {    
+    {
 		ERIFileItem* pfi = GetFileItemByIndex(i);
-				
+
 		// Get name of the file
         CString sFileName = pfi->m_sSrcFile.GetBuffer(0);
 		// Open file for reading
-        hFile = CreateFile(sFileName, 
-            GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL); 
+        hFile = CreateFile(sFileName,
+            GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, NULL, NULL);
         if(hFile==INVALID_HANDLE_VALUE)
-        {            
+        {
             continue;
         }
 
@@ -368,7 +373,7 @@ CCrashInfoReader::CCrashInfoReader()
 	// Init internal variables.
 	m_nCrashRptVersion = 0;
 	m_nSmtpPort = 25;
-	m_nSmtpProxyPort = 25;	
+	m_nSmtpProxyPort = 25;
 	m_bSilentMode = FALSE;
 	m_bSendErrorReport = TRUE;
 	m_bSendMandatory = FALSE;
@@ -408,7 +413,7 @@ CCrashInfoReader::CCrashInfoReader()
 }
 
 int CCrashInfoReader::Init(LPCTSTR szFileMappingName)
-{ 
+{
 	// This method unpacks crash information from a shared memory (file-mapping)
 	// and inits the internal variables.
 
@@ -436,29 +441,29 @@ int CCrashInfoReader::Init(LPCTSTR szFileMappingName)
 		m_sErrorMsg = _T("Error unpacking crash description.");
         return 2;
     }
-	
+
 	// Create LOCAL_APP_DATA\UnsentCrashReports folder (if doesn't exist yet).
     BOOL bCreateFolder = Utility::CreateFolder(m_sUnsentCrashReportsFolder);
     if(!bCreateFolder)
         return 3;
 
 	// Save path to INI file storing settings
-    m_sINIFile = m_sUnsentCrashReportsFolder + _T("\\~CrashRpt.ini");          
+    m_sINIFile = m_sUnsentCrashReportsFolder + _T("\\~CrashRpt.ini");
 
     if(!m_bSendRecentReports) // We should send report immediately
-    { 
+    {
         CollectMiscCrashInfo(eri);
 
         eri.m_sErrorReportDirName = m_sUnsentCrashReportsFolder + _T("\\") + eri.m_sCrashGUID;
-        Utility::CreateFolder(eri.m_sErrorReportDirName);		
+        Utility::CreateFolder(eri.m_sErrorReportDirName);
 
         m_Reports.push_back(eri);
-    }  
+    }
     else // We should look for pending error reports
     {
         // Unblock the parent process
         CString sEventName;
-        sEventName.Format(_T("Local\\CrashRptEvent_%s"), eri.m_sCrashGUID);
+        sEventName.Format(_T("Local\\CrashRptEvent_%s"), (LPCTSTR)eri.m_sCrashGUID);
         HANDLE hEvent = CreateEvent(NULL, FALSE, FALSE, sEventName);
         if(hEvent!=NULL)
             SetEvent(hEvent);
@@ -471,14 +476,14 @@ int CCrashInfoReader::Init(LPCTSTR szFileMappingName)
         {
             if(find.IsDirectory() && !find.IsDots()) // Process directories only
             {
-                CString sErrorReportDirName = m_sUnsentCrashReportsFolder + _T("\\") + 
+                CString sErrorReportDirName = m_sUnsentCrashReportsFolder + _T("\\") +
                     find.GetFileName();
                 CString sFileName = sErrorReportDirName + _T("\\crashrpt.xml");
                 CErrorReportInfo eri2;
                 eri2.m_sErrorReportDirName = sErrorReportDirName;
 				// Read crash description XML from the directory
                 if(0==ParseCrashDescription(sFileName, TRUE, eri2))
-                {          
+                {
 					// Calculate crash report size
                     eri2.m_uTotalSize = GetUncompressedReportSize(eri2);
 					// Add report to the list
@@ -507,34 +512,32 @@ int CCrashInfoReader::UnpackCrashDescription(CErrorReportInfo& eri)
     // Unpack process ID, thread ID and exception pointers address.
     m_dwProcessId = m_pCrashDesc->m_dwProcessId;
     m_dwThreadId = m_pCrashDesc->m_dwThreadId;
-    m_pExInfo = m_pCrashDesc->m_pExceptionPtrs;  
+    m_pExInfo = m_pCrashDesc->m_pExceptionPtrs;
     m_bSendRecentReports = m_pCrashDesc->m_bSendRecentReports;
     m_nExceptionType = m_pCrashDesc->m_nExceptionType;
-    if(m_nExceptionType==CR_SEH_EXCEPTION)
-    {
-        m_dwExceptionCode = m_pCrashDesc->m_dwExceptionCode;    
-    }
-    else if(m_nExceptionType==CR_CPP_SIGFPE)
+    m_dwExceptionCode = m_pCrashDesc->m_dwExceptionCode;
+    
+    if(m_nExceptionType==CR_CPP_SIGFPE)
     {
         m_uFPESubcode = m_pCrashDesc->m_uFPESubcode;
     }
     else if(m_nExceptionType==CR_CPP_INVALID_PARAMETER)
     {
-        UnpackString(m_pCrashDesc->m_dwInvParamExprOffs, m_sInvParamExpr);  
-        UnpackString(m_pCrashDesc->m_dwInvParamFunctionOffs, m_sInvParamFunction);  
-        UnpackString(m_pCrashDesc->m_dwInvParamFileOffs, m_sInvParamFile);      
+        UnpackString(m_pCrashDesc->m_dwInvParamExprOffs, m_sInvParamExpr);
+        UnpackString(m_pCrashDesc->m_dwInvParamFunctionOffs, m_sInvParamFunction);
+        UnpackString(m_pCrashDesc->m_dwInvParamFileOffs, m_sInvParamFile);
         m_uInvParamLine = m_pCrashDesc->m_uInvParamLine;
     }
 
     // Unpack other info
     UnpackString(m_pCrashDesc->m_dwAppNameOffs, eri.m_sAppName);
     m_sAppName = eri.m_sAppName;
-    UnpackString(m_pCrashDesc->m_dwAppVersionOffs, eri.m_sAppVersion);  
-    UnpackString(m_pCrashDesc->m_dwCrashGUIDOffs, eri.m_sCrashGUID);  
-    UnpackString(m_pCrashDesc->m_dwImageNameOffs, eri.m_sImageName);  
+    UnpackString(m_pCrashDesc->m_dwAppVersionOffs, eri.m_sAppVersion);
+    UnpackString(m_pCrashDesc->m_dwCrashGUIDOffs, eri.m_sCrashGUID);
+    UnpackString(m_pCrashDesc->m_dwImageNameOffs, eri.m_sImageName);
     // Unpack install flags
-    DWORD dwInstallFlags = m_pCrashDesc->m_dwInstallFlags;       
-    m_bSilentMode = (dwInstallFlags&CR_INST_NO_GUI)!=0;    
+    DWORD dwInstallFlags = m_pCrashDesc->m_dwInstallFlags;
+    m_bSilentMode = (dwInstallFlags&CR_INST_NO_GUI)!=0;
     m_bSendErrorReport = (dwInstallFlags&CR_INST_DONT_SEND_REPORT)==0;
 	m_bSendMandatory = (dwInstallFlags&CR_INST_SEND_MANDATORY)!=0;
 	m_bShowAdditionalInfoFields = (dwInstallFlags&CR_INST_SHOW_ADDITIONAL_INFO_FIELDS)!=0;
@@ -543,30 +546,30 @@ int CCrashInfoReader::UnpackCrashDescription(CErrorReportInfo& eri)
     m_bAppRestart = (dwInstallFlags&CR_INST_APP_RESTART)!=0;
     m_bGenerateMinidump = (dwInstallFlags&CR_INST_NO_MINIDUMP)==0;
     m_bQueueEnabled = (dwInstallFlags&CR_INST_SEND_QUEUED_REPORTS)!=0;
-    m_MinidumpType = m_pCrashDesc->m_MinidumpType;    
+    m_MinidumpType = m_pCrashDesc->m_MinidumpType;
     UnpackString(m_pCrashDesc->m_dwRestartCmdLineOffs, m_sRestartCmdLine);
 	m_nRestartTimeout = m_pCrashDesc->m_nRestartTimeout;
     m_nMaxReportsPerDay = m_pCrashDesc->m_nMaxReportsPerDay;
     UnpackString(m_pCrashDesc->m_dwUrlOffs, m_sUrl);
-    UnpackString(m_pCrashDesc->m_dwEmailToOffs, m_sEmailTo);  
+    UnpackString(m_pCrashDesc->m_dwEmailToOffs, m_sEmailTo);
     m_nSmtpPort = m_pCrashDesc->m_nSmtpPort;
     UnpackString(m_pCrashDesc->m_dwSmtpProxyServerOffs, m_sSmtpProxyServer);
     m_nSmtpProxyPort = m_pCrashDesc->m_nSmtpProxyPort;
     UnpackString(m_pCrashDesc->m_dwEmailSubjectOffs, m_sEmailSubject);
-    UnpackString(m_pCrashDesc->m_dwEmailTextOffs, m_sEmailText);  
+    UnpackString(m_pCrashDesc->m_dwEmailTextOffs, m_sEmailText);
     memcpy(m_uPriorities, m_pCrashDesc->m_uPriorities, sizeof(UINT)*3);
     UnpackString(m_pCrashDesc->m_dwPrivacyPolicyURLOffs, m_sPrivacyPolicyURL);
-    UnpackString(m_pCrashDesc->m_dwLangFileNameOffs, m_sLangFileName);  
+    UnpackString(m_pCrashDesc->m_dwLangFileNameOffs, m_sLangFileName);
     UnpackString(m_pCrashDesc->m_dwPathToDebugHelpDllOffs, m_sDbgHelpPath);
     UnpackString(m_pCrashDesc->m_dwUnsentCrashReportsFolderOffs, m_sUnsentCrashReportsFolder);
     m_bAddScreenshot = m_pCrashDesc->m_bAddScreenshot;
-    m_dwScreenshotFlags = m_pCrashDesc->m_dwScreenshotFlags; 
+    m_dwScreenshotFlags = m_pCrashDesc->m_dwScreenshotFlags;
     m_nJpegQuality = m_pCrashDesc->m_nJpegQuality;
-    UnpackString(m_pCrashDesc->m_dwCustomSenderIconOffs, m_sCustomSenderIcon);  
-	UnpackString(m_pCrashDesc->m_dwSmtpLoginOffs, m_sSmtpLogin);  
-	UnpackString(m_pCrashDesc->m_dwSmtpPasswordOffs, m_sSmtpPassword);  
+    UnpackString(m_pCrashDesc->m_dwCustomSenderIconOffs, m_sCustomSenderIcon);
+	UnpackString(m_pCrashDesc->m_dwSmtpLoginOffs, m_sSmtpLogin);
+	UnpackString(m_pCrashDesc->m_dwSmtpPasswordOffs, m_sSmtpPassword);
 	m_bAddVideo = m_pCrashDesc->m_bAddVideo;
-    m_dwVideoFlags = m_pCrashDesc->m_dwVideoFlags; 
+    m_dwVideoFlags = m_pCrashDesc->m_dwVideoFlags;
 	m_nVideoDuration = m_pCrashDesc->m_nVideoDuration;
 	m_nVideoFrameInterval = m_pCrashDesc->m_nVideoFrameInterval;
     m_DesiredFrameSize = m_pCrashDesc->m_DesiredFrameSize;
@@ -591,7 +594,8 @@ int CCrashInfoReader::UnpackCrashDescription(CErrorReportInfo& eri)
             fi.m_bMakeCopy = pFileItem->m_bMakeCopy;
 			fi.m_bAllowDelete = pFileItem->m_bAllowDelete;
 
-            eri.m_FileItems[fi.m_sDestFile] = fi;
+			// Kaneva - Bug Fix - Use Source File Full Path
+            eri.m_FileItems[fi.m_sSrcFile] = fi;
 
             m_SharedMem.DestroyView((LPBYTE)pFileItem);
         }
@@ -603,7 +607,7 @@ int CCrashInfoReader::UnpackCrashDescription(CErrorReportInfo& eri)
             CString sName;
             CString sValue;
             UnpackString(pProp->m_dwNameOffs, sName);
-            UnpackString(pProp->m_dwValueOffs, sValue);      
+            UnpackString(pProp->m_dwValueOffs, sValue);
 
             eri.m_Props[sName] = sValue;
 
@@ -618,7 +622,7 @@ int CCrashInfoReader::UnpackCrashDescription(CErrorReportInfo& eri)
             ERIRegKey rki;
 			rki.m_bAllowDelete = pKey->m_bAllowDelete!=0;
             UnpackString(pKey->m_dwRegKeyNameOffs, sKeyName);
-			UnpackString(pKey->m_dwDstFileNameOffs, rki.m_sDstFileName);      
+			UnpackString(pKey->m_dwDstFileNameOffs, rki.m_sDstFileName);
 
             eri.m_RegKeys[sKeyName] = rki;
 
@@ -638,7 +642,7 @@ int CCrashInfoReader::UnpackCrashDescription(CErrorReportInfo& eri)
 
         m_SharedMem.DestroyView(pView);
     }
-	    
+
     // Success
     return 0;
 }
@@ -664,16 +668,16 @@ int CCrashInfoReader::UnpackString(DWORD dwOffset, CString& str)
 }
 
 CErrorReportInfo* CCrashInfoReader::GetReport(int nIndex)
-{ 
+{
 	if(nIndex>=0 && nIndex<(int)m_Reports.size())
-		return &m_Reports[nIndex]; 
+		return &m_Reports[nIndex];
 
 	return NULL;
 }
 
 int CCrashInfoReader::GetReportCount()
-{ 
-    return (int)m_Reports.size(); 
+{
+    return (int)m_Reports.size();
 }
 
 void CCrashInfoReader::DeleteReport(int nIndex)
@@ -696,29 +700,29 @@ void CCrashInfoReader::DeleteAllReports()
 		Utility::RecycleFile(m_Reports[i].m_sErrorReportDirName, TRUE);
 
 		m_Reports[i].m_DeliveryStatus = DELETED;
-	}	
+	}
 }
 
 void CCrashInfoReader::CollectMiscCrashInfo(CErrorReportInfo& eri)
-{   
+{
     // Get crash time
     Utility::GetSystemTimeUTC(eri.m_sSystemTimeUTC);
 
     // Open parent process handle
     HANDLE hProcess = OpenProcess(
-        PROCESS_QUERY_INFORMATION|PROCESS_VM_READ, 
-        FALSE, 
+        PROCESS_QUERY_INFORMATION|PROCESS_VM_READ,
+        FALSE,
         m_dwProcessId);
-		
+
     if(hProcess!=NULL)
-    {	
+    {
 		SIZE_T uBytesRead = 0;
 		BYTE buff[1024];
 		memset(&buff, 0, 1024);
-		
+
 		// Read exception information from process memory
 		if(m_pExInfo!=NULL)
-		{			
+		{
 			if(ReadProcessMemory(hProcess, m_pExInfo, &buff, sizeof(EXCEPTION_POINTERS), &uBytesRead) &&
 				uBytesRead==sizeof(EXCEPTION_POINTERS))
 			{
@@ -734,13 +738,13 @@ void CCrashInfoReader::CollectMiscCrashInfo(CErrorReportInfo& eri)
 
 						eri.m_dwExceptionAddress = (DWORD64)pExcRec->ExceptionAddress;
 					}
-				}				
+				}
 			}
 		}
 		else
 			eri.m_dwExceptionAddress = 0;
 
-        // Get number of GUI resources in use  
+        // Get number of GUI resources in use
         eri.m_dwGuiResources = GetGuiResources(hProcess, GR_GDIOBJECTS);
 
         // Determine if GetProcessHandleCount function available
@@ -748,10 +752,10 @@ void CCrashInfoReader::CollectMiscCrashInfo(CErrorReportInfo& eri)
         HMODULE hKernel32 = LoadLibrary(_T("kernel32.dll"));
         if(hKernel32!=NULL)
         {
-            LPGETPROCESSHANDLECOUNT pfnGetProcessHandleCount = 
+            LPGETPROCESSHANDLECOUNT pfnGetProcessHandleCount =
                 (LPGETPROCESSHANDLECOUNT)GetProcAddress(hKernel32, "GetProcessHandleCount");
             if(pfnGetProcessHandleCount!=NULL)
-            {    
+            {
                 // Get count of opened handles
                 DWORD dwHandleCount = 0;
                 BOOL bGetHandleCount = pfnGetProcessHandleCount(hProcess, &dwHandleCount);
@@ -767,16 +771,16 @@ void CCrashInfoReader::CollectMiscCrashInfo(CErrorReportInfo& eri)
 
         // Get memory usage info
         PROCESS_MEMORY_COUNTERS meminfo;
-        BOOL bGetMemInfo = GetProcessMemoryInfo(hProcess, &meminfo, 
+        BOOL bGetMemInfo = GetProcessMemoryInfo(hProcess, &meminfo,
             sizeof(PROCESS_MEMORY_COUNTERS));
         if(bGetMemInfo)
-        {    
+        {
             CString sMemUsage;
 #ifdef _WIN64
             sMemUsage.Format(_T("%I64u"), meminfo.WorkingSetSize/1024);
 #else
             sMemUsage.Format(_T("%lu"), meminfo.WorkingSetSize/1024);
-#endif 
+#endif
             eri.m_sMemUsage = sMemUsage;
         }
 
@@ -799,7 +803,7 @@ void CCrashInfoReader::CollectMiscCrashInfo(CErrorReportInfo& eri)
         if(dDiffTime<m_nRestartTimeout)
         {
             m_bAppRestart = FALSE; // Disable restart.
-        } 
+        }
     }
 
     // Get operating system friendly name from registry.
@@ -809,7 +813,7 @@ void CCrashInfoReader::CollectMiscCrashInfo(CErrorReportInfo& eri)
     eri.m_bOSIs64Bit = Utility::IsOS64Bit();
 
     // Get geographic location.
-    Utility::GetGeoLocation(eri.m_sGeoLocation);  
+    Utility::GetGeoLocation(eri.m_sGeoLocation);
 }
 
 int CCrashInfoReader::ParseFileList(TiXmlHandle& hRoot, CErrorReportInfo& eri)
@@ -818,7 +822,7 @@ int CCrashInfoReader::ParseFileList(TiXmlHandle& hRoot, CErrorReportInfo& eri)
 
     TiXmlHandle fl = hRoot.FirstChild("FileList");
     if(fl.ToElement()==0)
-    {    
+    {
         return 1;
     }
 
@@ -832,7 +836,7 @@ int CCrashInfoReader::ParseFileList(TiXmlHandle& hRoot, CErrorReportInfo& eri)
 
         if(pszDestFile!=NULL)
         {
-            CString sDestFile = strconv.utf82t(pszDestFile);      
+            CString sDestFile = strconv.utf82t(pszDestFile);
             ERIFileItem item;
             item.m_sDestFile = sDestFile;
             if(pszSrcFile)
@@ -850,7 +854,8 @@ int CCrashInfoReader::ParseFileList(TiXmlHandle& hRoot, CErrorReportInfo& eri)
             else
                 item.m_bMakeCopy = FALSE;
 
-            eri.m_FileItems[sDestFile] = item;
+			// Kaneva - Bug Fix - Use Source File Full Path
+            eri.m_FileItems[item.m_sSrcFile] = item;
         }
 
         fi = fi.ToElement()->NextSibling("FileItem");
@@ -865,7 +870,7 @@ int CCrashInfoReader::ParseRegKeyList(TiXmlHandle& hRoot, CErrorReportInfo& eri)
 
     TiXmlHandle fl = hRoot.FirstChild("RegKeyList");
     if(fl.ToElement()==0)
-    {    
+    {
         return 1;
     }
 
@@ -878,7 +883,7 @@ int CCrashInfoReader::ParseRegKeyList(TiXmlHandle& hRoot, CErrorReportInfo& eri)
         if(pszDestFile!=NULL && pszRegKey!=NULL)
         {
 			ERIRegKey rki;
-			rki.m_sDstFileName = strconv.utf82t(pszDestFile);      
+			rki.m_sDstFileName = strconv.utf82t(pszDestFile);
             CString sRegKey = strconv.utf82t(pszRegKey);
 
             eri.m_RegKeys[sRegKey] = rki;
@@ -893,7 +898,7 @@ int CCrashInfoReader::ParseRegKeyList(TiXmlHandle& hRoot, CErrorReportInfo& eri)
 int CCrashInfoReader::ParseCrashDescription(CString sFileName, BOOL bParseFileItems, CErrorReportInfo& eri)
 {
     strconv_t strconv;
-    FILE* f = NULL; 
+    FILE* f = NULL;
 
 #if _MSC_VER<1400
     f = _tfopen(sFileName, _T("rb"));
@@ -993,7 +998,7 @@ int CCrashInfoReader::ParseCrashDescription(CString sFileName, BOOL bParseFileIt
 
         TiXmlHandle fl = hRoot.FirstChild("FileList");
         if(fl.ToElement()==0)
-        {    
+        {
             fclose(f);
             return 1;
         }
@@ -1001,13 +1006,13 @@ int CCrashInfoReader::ParseCrashDescription(CString sFileName, BOOL bParseFileIt
         TiXmlHandle fi = fl.FirstChild("FileItem");
         while(fi.ToElement()!=0)
         {
-            const char* pszDestFile = fi.ToElement()->Attribute("name");      
-            const char* pszDesc = fi.ToElement()->Attribute("description");      
-			const char* pszOptional = fi.ToElement()->Attribute("optional");      
+            const char* pszDestFile = fi.ToElement()->Attribute("name");
+            const char* pszDesc = fi.ToElement()->Attribute("description");
+			const char* pszOptional = fi.ToElement()->Attribute("optional");
 
             if(pszDestFile!=NULL)
             {
-                CString sDestFile = strconv.utf82t(pszDestFile);      
+                CString sDestFile = strconv.utf82t(pszDestFile);
                 ERIFileItem item;
                 item.m_sDestFile = sDestFile;
                 item.m_sSrcFile = sReportDir + sDestFile;
@@ -1023,12 +1028,13 @@ int CCrashInfoReader::ParseCrashDescription(CString sFileName, BOOL bParseFileIt
                 if(dwAttrs!=INVALID_FILE_ATTRIBUTES &&
                     (dwAttrs&FILE_ATTRIBUTE_DIRECTORY)==0)
                 {
-                    eri.m_FileItems[sDestFile] = item;
+					// Kaneva - Bug Fix - Use Source File Full Path
+                    eri.m_FileItems[item.m_sSrcFile] = item;
                 }
             }
 
             fi = fi.ToElement()->NextSibling("FileItem");
-        }    
+        }
     }
 
     fclose(f);
@@ -1044,13 +1050,13 @@ BOOL CCrashInfoReader::UpdateUserInfo(CString sEmail, CString sDesc)
 	// If an email address was entered, verify that
     // it [1] contains a @ and [2] the last . comes
     // after the @.
-    
+
     if (sEmail.GetLength()!=0 &&
         (sEmail.Find(_T('@')) < 0 ||
-        sEmail.ReverseFind(_T('.')) < 
+        sEmail.ReverseFind(_T('.')) <
         sEmail.Find(_T('@'))))
     {
-        // Invalid email            
+        // Invalid email
 		bResult = FALSE;
     }
 	else
@@ -1060,11 +1066,11 @@ BOOL CCrashInfoReader::UpdateUserInfo(CString sEmail, CString sDesc)
 	}
 
 	// Update problem description
-	GetReport(0)->m_sDescription = sDesc;	
+	GetReport(0)->m_sDescription = sDesc;
 
     // Write user email and problem description to XML
     AddUserInfoToCrashDescriptionXML(
-        GetReport(0)->m_sEmailFrom, 
+        GetReport(0)->m_sEmailFrom,
         GetReport(0)->m_sDescription);
 
 	// Save E-mail entered by user to INI file for later reuse.
@@ -1074,14 +1080,14 @@ BOOL CCrashInfoReader::UpdateUserInfo(CString sEmail, CString sDesc)
 }
 
 BOOL CCrashInfoReader::AddUserInfoToCrashDescriptionXML(CString sEmail, CString sDesc)
-{ 
+{
     strconv_t strconv;
 
     TiXmlDocument doc;
 
     CString sFileName = m_Reports[0].m_sErrorReportDirName + _T("\\crashrpt.xml");
 
-    FILE* f = NULL; 
+    FILE* f = NULL;
 #if _MSC_VER<1400
     f = _tfopen(sFileName, _T("rb"));
 #else
@@ -1094,27 +1100,27 @@ BOOL CCrashInfoReader::AddUserInfoToCrashDescriptionXML(CString sEmail, CString 
     bool bLoad = doc.LoadFile(f);
     fclose(f);
     if(!bLoad)
-    {    
+    {
         return FALSE;
     }
 
     TiXmlNode* root = doc.FirstChild("CrashRpt");
     if(!root)
-    {    
+    {
         return FALSE;
     }
 
     // Write user e-mail
 
     TiXmlHandle hEmail = NULL;
-	
+
 	hEmail = root->FirstChild("UserEmail");
 	if(hEmail.ToElement()==NULL)
 	{
 		hEmail = new TiXmlElement("UserEmail");
-		root->LinkEndChild(hEmail.ToElement());		
+		root->LinkEndChild(hEmail.ToElement());
 	}
-		
+
 	TiXmlText* email_text = NULL;
 	if(hEmail.FirstChild().ToText()!=NULL)
 	{
@@ -1124,13 +1130,13 @@ BOOL CCrashInfoReader::AddUserInfoToCrashDescriptionXML(CString sEmail, CString 
 	else
 	{
 		email_text = new TiXmlText(strconv.t2utf8(sEmail));
-		hEmail.ToElement()->LinkEndChild(email_text);              
+		hEmail.ToElement()->LinkEndChild(email_text);
 	}
-	
+
     // Write problem description
 
     TiXmlHandle hDesc = NULL;
-	
+
 	hDesc = root->FirstChild("ProblemDescription");
 	if(hDesc.ToElement()==NULL)
 	{
@@ -1147,7 +1153,7 @@ BOOL CCrashInfoReader::AddUserInfoToCrashDescriptionXML(CString sEmail, CString 
 	else
 	{
 		desc_text = new TiXmlText(strconv.t2utf8(sDesc));
-		hDesc.ToElement()->LinkEndChild(desc_text);              
+		hDesc.ToElement()->LinkEndChild(desc_text);
 	}
 
 #if _MSC_VER<1400
@@ -1159,7 +1165,7 @@ BOOL CCrashInfoReader::AddUserInfoToCrashDescriptionXML(CString sEmail, CString 
     if(f==NULL)
         return FALSE;
 
-    bool bSave = doc.SaveFile(f); 
+    bool bSave = doc.SaveFile(f);
     fclose(f);
     if(!bSave)
         return FALSE;
@@ -1167,14 +1173,14 @@ BOOL CCrashInfoReader::AddUserInfoToCrashDescriptionXML(CString sEmail, CString 
 }
 
 BOOL CCrashInfoReader::AddFilesToCrashReport(int nReport, std::vector<ERIFileItem> FilesToAdd)
-{   
+{
     strconv_t strconv;
 
     TiXmlDocument doc;
 
     CString sFileName = m_Reports[nReport].m_sErrorReportDirName + _T("\\crashrpt.xml");
 
-    FILE* f = NULL; 
+    FILE* f = NULL;
 #if _MSC_VER<1400
     f = _tfopen(sFileName, _T("rb"));
 #else
@@ -1182,20 +1188,20 @@ BOOL CCrashInfoReader::AddFilesToCrashReport(int nReport, std::vector<ERIFileIte
 #endif
 
     if(f==NULL)
-    {    
+    {
         return FALSE;
     }
 
-    bool bLoad = doc.LoadFile(f);  
+    bool bLoad = doc.LoadFile(f);
     fclose(f);
     if(!bLoad)
-    { 
+    {
         return FALSE;
     }
 
     TiXmlNode* root = doc.FirstChild("CrashRpt");
     if(!root)
-    { 
+    {
         return FALSE;
     }
 
@@ -1208,8 +1214,10 @@ BOOL CCrashInfoReader::AddFilesToCrashReport(int nReport, std::vector<ERIFileIte
 
     unsigned i;
     for(i=0; i<FilesToAdd.size(); i++)
-    { 
-        if(m_Reports[0].m_FileItems.find(FilesToAdd[i].m_sDestFile)!=m_Reports[0].m_FileItems.end())
+    {
+		// Kaneva - Bug Fix - Use Source File Full Path
+        auto it = m_Reports[0].m_FileItems.find(FilesToAdd[i].m_sSrcFile);
+		if(it != m_Reports[0].m_FileItems.end())
             continue; // Such file item already exists, skip
 
         TiXmlHandle hFileItem = new TiXmlElement("FileItem");
@@ -1217,15 +1225,18 @@ BOOL CCrashInfoReader::AddFilesToCrashReport(int nReport, std::vector<ERIFileIte
         hFileItem.ToElement()->SetAttribute("description", strconv.t2utf8(FilesToAdd[i].m_sDesc));
 		if(FilesToAdd[i].m_bAllowDelete)
 			hFileItem.ToElement()->SetAttribute("optional", "1");
-        hFileItems.ToElement()->LinkEndChild(hFileItem.ToNode());              
+        hFileItems.ToElement()->LinkEndChild(hFileItem.ToNode());
 
-        m_Reports[nReport].m_FileItems[FilesToAdd[i].m_sDestFile] = FilesToAdd[i];
+		// Kaneva - Bug Fix - Use Source File Full Path
+        m_Reports[nReport].m_FileItems[FilesToAdd[i].m_sSrcFile] = FilesToAdd[i];
 
 		if(FilesToAdd[i].m_bMakeCopy)
 		{
 			CString sDestPath = m_Reports[nReport].m_sErrorReportDirName + _T("\\") + FilesToAdd[i].m_sDestFile;
 			CopyFile(FilesToAdd[i].m_sSrcFile, sDestPath, TRUE);
-			m_Reports[nReport].m_FileItems[FilesToAdd[i].m_sDestFile].m_sSrcFile = sDestPath;
+
+			// Kaneva - Bug Fix - Use Source File Full Path
+   			m_Reports[nReport].m_FileItems[FilesToAdd[i].m_sSrcFile].m_sSrcFile = sDestPath;
 		}
     }
 
@@ -1238,7 +1249,7 @@ BOOL CCrashInfoReader::AddFilesToCrashReport(int nReport, std::vector<ERIFileIte
     if(f==NULL)
         return FALSE;
 
-    bool bSave = doc.SaveFile(f); 
+    bool bSave = doc.SaveFile(f);
     if(!bSave)
         return FALSE;
     fclose(f);
@@ -1246,14 +1257,14 @@ BOOL CCrashInfoReader::AddFilesToCrashReport(int nReport, std::vector<ERIFileIte
 }
 
 BOOL CCrashInfoReader::RemoveFilesFromCrashReport(int nReport, std::vector<CString> FilesToRemove)
-{   
+{
     strconv_t strconv;
 
     TiXmlDocument doc;
 
     CString sFileName = m_Reports[nReport].m_sErrorReportDirName + _T("\\crashrpt.xml");
 
-    FILE* f = NULL; 
+    FILE* f = NULL;
 #if _MSC_VER<1400
     f = _tfopen(sFileName, _T("rb"));
 #else
@@ -1261,20 +1272,20 @@ BOOL CCrashInfoReader::RemoveFilesFromCrashReport(int nReport, std::vector<CStri
 #endif
 
     if(f==NULL)
-    {    
+    {
         return FALSE;
     }
 
-    bool bLoad = doc.LoadFile(f);  
+    bool bLoad = doc.LoadFile(f);
     fclose(f);
     if(!bLoad)
-    { 
+    {
         return FALSE;
     }
 
     TiXmlNode* root = doc.FirstChild("CrashRpt");
     if(!root)
-    { 
+    {
         return FALSE;
     }
 
@@ -1287,12 +1298,11 @@ BOOL CCrashInfoReader::RemoveFilesFromCrashReport(int nReport, std::vector<CStri
 
     unsigned i;
     for(i=0; i<FilesToRemove.size(); i++)
-    { 
-		std::map<CString, ERIFileItem>::iterator it = 
-			m_Reports[nReport].m_FileItems.find(FilesToRemove[i]);
+    {
+		auto it = m_Reports[nReport].m_FileItems.find(FilesToRemove[i]);
 		if(it==m_Reports[nReport].m_FileItems.end())
             continue; // Such file item name does not exist, skip
-		
+
 		strconv_t strconv;
 		TiXmlHandle hElem = hFileItems.ToElement()->FirstChild("FileItem");
 		while(hElem.ToElement()!=NULL)
@@ -1300,15 +1310,15 @@ BOOL CCrashInfoReader::RemoveFilesFromCrashReport(int nReport, std::vector<CStri
 			const char* szName = hElem.ToElement()->Attribute("name");
 			if(szName!=NULL && strcmp(strconv.t2a(FilesToRemove[i]), szName)==0)
 			{
-				hFileItems.ToElement()->RemoveChild(hElem.ToElement());              
+				hFileItems.ToElement()->RemoveChild(hElem.ToElement());
 				break;
 			}
 			hElem = hElem.ToElement()->NextSibling();
 		}
-		
+
 		// Remove the file from error report directory
 		Utility::RecycleFile(m_Reports[nReport].m_sErrorReportDirName + _T("\\") + it->second.m_sDestFile, TRUE);
-		
+
 		m_Reports[nReport].m_FileItems.erase(it);
     }
 
@@ -1321,7 +1331,7 @@ BOOL CCrashInfoReader::RemoveFilesFromCrashReport(int nReport, std::vector<CStri
     if(f==NULL)
         return FALSE;
 
-    bool bSave = doc.SaveFile(f); 
+    bool bSave = doc.SaveFile(f);
     if(!bSave)
         return FALSE;
     fclose(f);
@@ -1329,7 +1339,7 @@ BOOL CCrashInfoReader::RemoveFilesFromCrashReport(int nReport, std::vector<CStri
 }
 
 BOOL CCrashInfoReader::GetLastRemindDate(SYSTEMTIME& LastDate)
-{  
+{
     CString sDate = Utility::GetINIString(m_sINIFile, _T("General"), _T("LastRemindDate"));
     if(sDate.IsEmpty())
         return FALSE;
@@ -1344,14 +1354,14 @@ BOOL CCrashInfoReader::SetLastRemindDateToday()
     CString sTime;
     Utility::GetSystemTimeUTC(sTime);
 
-    // Write it to INI  
+    // Write it to INI
     Utility::SetINIString(m_sINIFile, _T("General"), _T("LastRemindDate"), sTime);
 
     return TRUE;
 }
 
 REMIND_POLICY CCrashInfoReader::GetRemindPolicy()
-{  
+{
     CString sPolicy = Utility::GetINIString(m_sINIFile, _T("General"), _T("RemindPolicy"));
 
     if(sPolicy.Compare(_T("RemindLater"))==0)
@@ -1384,7 +1394,7 @@ BOOL CCrashInfoReader::IsRemindNowOK()
     // Get last remind date
     SYSTEMTIME LastRemind;
     if(!GetLastRemindDate(LastRemind))
-    {   
+    {
 		// We never reminded user - its time to remind now!
         return TRUE;
     }
@@ -1413,20 +1423,20 @@ LONG64 CCrashInfoReader::GetUncompressedReportSize(CErrorReportInfo& eri)
 	// Calculate summary size of all files included into crash report
 
     LONG64 lTotalSize = 0;
-    std::map<CString, ERIFileItem>::iterator it;
-    HANDLE hFile = INVALID_HANDLE_VALUE;  
+    HANDLE hFile = INVALID_HANDLE_VALUE;
     CString sMsg;
     BOOL bGetSize = FALSE;
     LARGE_INTEGER lFileSize;
 
 	// Walk through all files in the crash report
-    for(it=eri.m_FileItems.begin(); it!=eri.m_FileItems.end(); it++)
-    {   
+    for(const auto& it : eri.m_FileItems)
+    {
 		// Get file name
-        CString sFileName = it->second.m_sSrcFile.GetBuffer(0);
+        CString sFileName = it.second.m_sSrcFile;
+
 		// Check file exists
-        hFile = CreateFile(sFileName, 
-            GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL); 
+        hFile = CreateFile(sFileName,
+            GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, NULL, NULL);
         if(hFile==INVALID_HANDLE_VALUE)
             continue; // File does not exist
 
@@ -1463,15 +1473,15 @@ HICON CCrashInfoReader::GetCustomIcon()
         int nIconIndex = 0;
 
 		// Get position of comma
-        int nComma = m_sCustomSenderIcon.ReverseFind(',');    
+        int nComma = m_sCustomSenderIcon.ReverseFind(',');
         if(nComma>=0)
         {
 			// Split resource file path and icon index
-            sResourceFile = m_sCustomSenderIcon.Left(nComma);      
+            sResourceFile = m_sCustomSenderIcon.Left(nComma);
             sIconIndex = m_sCustomSenderIcon.Mid(nComma+1);
             sIconIndex.TrimLeft();
             sIconIndex.TrimRight();
-            nIconIndex = _ttoi(sIconIndex);      
+            nIconIndex = _ttoi(sIconIndex);
         }
         else
         {
@@ -1479,17 +1489,17 @@ HICON CCrashInfoReader::GetCustomIcon()
             sResourceFile = m_sCustomSenderIcon;
         }
 
-        sResourceFile.TrimRight();        
+        sResourceFile.TrimRight();
 
         if(nIconIndex==-1)
-        {      
+        {
             return NULL;
         }
 
         // Check that custom icon can be loaded
         HICON hIcon = ExtractIcon(NULL, sResourceFile, nIconIndex);
         if(hIcon==NULL || hIcon==(HICON)1)
-        { 
+        {
 			// Failure
             return NULL;
         }
@@ -1522,7 +1532,7 @@ void CCrashInfoReader::SetPersistentUserEmail(LPCTSTR szEmail)
 
 static CString GetSystemDateUTC()
 {
-    // Get current date 
+    // Get current date
     CString sDate;
     Utility::GetSystemTimeUTC(sDate);
     sDate.GetBufferSetLength(10); // XXXX-XX-XX
@@ -1552,7 +1562,7 @@ void CCrashInfoReader::SetDailyReportCount(int nReports)
 {
     ATLASSERT(!m_sINIFile.IsEmpty());
 
-    // Get current date 
+    // Get current date
     CString sDate = GetSystemDateUTC();
 
     CString sReports;

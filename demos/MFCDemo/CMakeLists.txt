@@ -11,12 +11,12 @@ add_msvc_precompiled_header(stdafx.h ./stdafx.cpp srcs_using_precomp)
 
 # Use MFC
 ADD_DEFINITIONS(-D_AFXDLL)
-if (CRASHRPT_LINK_CRT_AS_DLL)     					
-	# Use MFC as a shared lib
-	SET(CMAKE_MFC_FLAG 2) 
+if (CRASHRPT_LINK_CRT_AS_DLL)               
+  # Use MFC as a shared lib
+  SET(CMAKE_MFC_FLAG 2) 
 else(CRASHRPT_LINK_CRT_AS_DLL)   
-	# Use MFC as a static lib
-	SET(CMAKE_MFC_FLAG 1) 
+  # Use MFC as a static lib
+  SET(CMAKE_MFC_FLAG 1) 
 endif(CRASHRPT_LINK_CRT_AS_DLL)   
 
 # Include resource file
@@ -28,7 +28,7 @@ add_definitions(-D_UNICODE )
 fix_default_compiler_settings_()
 
 # Add include dir
-include_directories(${CMAKE_SOURCE_DIR}/include)
+include_directories(${CRASHRPT_SRC}/include)
 
 # Add executable build target
 add_executable(MFCDemo WIN32 ${source_files} ${header_files})
@@ -40,22 +40,24 @@ target_link_libraries(MFCDemo CrashRpt)
 set_target_properties(MFCDemo PROPERTIES DEBUG_POSTFIX d )
 
 # Add post-build event
-if(CMAKE_CL_64)
+IF(CMAKE_CL_64)
+SET(AMD_SUFFIX "amd64")
+ENDIF()
+
 ADD_CUSTOM_COMMAND(
-    TARGET WTLDemo
+    TARGET MFCDemo
     POST_BUILD
-    COMMAND copy ARGS "\"${CMAKE_SOURCE_DIR}/thirdparty/dbghelp/bin\\dbghelp.dll\" \"${CMAKE_BINARY_DIR}/bin\\x64\""
-    COMMAND copy ARGS "\"${CMAKE_SOURCE_DIR}/demos/WTLDemo\\dummy.ini\" \"${CMAKE_BINARY_DIR}/bin\\x64\""
-    COMMAND copy ARGS "\"${CMAKE_SOURCE_DIR}/demos/WTLDemo\\dummy.log\" \"${CMAKE_BINARY_DIR}/bin\\x64\""
-    COMMAND copy ARGS "\"${CMAKE_SOURCE_DIR}/lang_files\\crashrpt_lang_EN.ini\" \"${CMAKE_BINARY_DIR}/bin\\x64\\crashrpt_lang.ini\""
+    COMMAND ${CMAKE_COMMAND} ARGS -E copy "\"${CRASHRPT_SRC}/lang_files\\crashrpt_lang_EN.ini\" \"${CMAKE_BINARY_DIR}/bin/crashrpt_lang.ini\""
 )
-else(CMAKE_CL_64)
-ADD_CUSTOM_COMMAND(
-    TARGET WTLDemo
-    POST_BUILD
-    COMMAND copy ARGS "\"${CMAKE_SOURCE_DIR}/thirdparty/dbghelp/bin\\dbghelp.dll\" \"${CMAKE_BINARY_DIR}/bin\""
-    COMMAND copy ARGS "\"${CMAKE_SOURCE_DIR}/demos/WTLDemo\\dummy.ini\" \"${CMAKE_BINARY_DIR}/bin\""
-    COMMAND copy ARGS "\"${CMAKE_SOURCE_DIR}/demos/WTLDemo\\dummy.log\" \"${CMAKE_BINARY_DIR}/bin\""
-    COMMAND copy ARGS "\"${CMAKE_SOURCE_DIR}/lang_files\\crashrpt_lang_EN.ini\" \"${CMAKE_BINARY_DIR}/bin\\crashrpt_lang.ini\""
-)
-endif(CMAKE_CL_64)
+
+if( NOT DBGHELP_USE_INSTALLED_SDK )
+  ADD_CUSTOM_COMMAND(
+      TARGET MFCDemo
+      POST_BUILD
+      COMMAND ${CMAKE_COMMAND} ARGS -E copy "\"${CRASHRPT_SRC}/thirdparty/dbghelp/bin/${AMD_SUFFIX}/dbghelp.dll\" \"${CMAKE_BINARY_DIR}/bin/\""
+  )
+endif()
+
+INSTALL(TARGETS MFCDemo LIBRARY DESTINATION ${CRASHRPT_INSTALLDIR_BIN}
+             ARCHIVE DESTINATION ${CRASHRPT_INSTALLDIR_LIB}
+             RUNTIME DESTINATION ${CRASHRPT_INSTALLDIR_BIN})

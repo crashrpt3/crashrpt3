@@ -10,7 +10,7 @@ add_definitions(-D_UNICODE )
 fix_default_compiler_settings_()
 
 # Add include dir
-include_directories(${CMAKE_SOURCE_DIR}/include)
+include_directories(${CRASHRPT_SRC}/include)
 
 # Add executable build target
 add_executable(crprober ${source_files} ${header_files})
@@ -19,3 +19,9 @@ add_executable(crprober ${source_files} ${header_files})
 target_link_libraries(crprober CrashRptProbe)
 
 set_target_properties(crprober PROPERTIES DEBUG_POSTFIX d )
+
+INSTALL(TARGETS crprober
+  LIBRARY DESTINATION ${CRASHRPT_INSTALLDIR_BIN}
+  ARCHIVE DESTINATION ${CRASHRPT_INSTALLDIR_LIB}
+  RUNTIME DESTINATION ${CRASHRPT_INSTALLDIR_BIN}
+)
