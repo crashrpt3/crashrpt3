@@ -1,4 +1,4 @@
-/************************************************************************************* 
+/*************************************************************************************
 This file is a part of CrashRpt library.
 Copyright (c) 2003-2013 The CrashRpt project authors. All Rights Reserved.
 
@@ -75,6 +75,6 @@ extern CAppModule _Module;
 #else
 #pragma comment(linker, "/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #endif
-#endif 
+#endif
 
 

@@ -549,7 +549,7 @@ crpGetPropertyW(
     {
         // Load the minidump
         int nOpen = pDmpReader->Open(it->second.m_sMiniDumpTempName, it->second.m_sSymSearchPath);
-		if(nOpen!=0)
+        if(nOpen!=0)
         {
             crpSetErrorMsg(_T("Could not open minidump file."));
             return -3;

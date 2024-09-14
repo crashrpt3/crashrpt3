@@ -25,17 +25,17 @@ BOOL CErrorReportDlg::PreTranslateMessage(MSG* pMsg)
 
 LRESULT CErrorReportDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
-	// Kaneva - Added
-	auto pReport = GetReport();
-	if (!pReport) return FALSE;
+    // Kaneva - Added
+    auto pReport = GetReport();
+    if (!pReport) return FALSE;
 
-	auto pSender = CErrorReportSender::GetInstance();
-	if (!pSender)
-		return FALSE;
+    auto pSender = CErrorReportSender::GetInstance();
+    if (!pSender)
+        return FALSE;
 
-	auto pCI = pSender->GetCrashInfo();
-	if (!pCI)
-		return FALSE;
+    auto pCI = pSender->GetCrashInfo();
+    if (!pCI)
+        return FALSE;
 
     // Mirror this window if RTL language is in use.
     CString sRTL = pSender->GetLangStr(_T("Settings"), _T("RTLReading"));
@@ -44,7 +44,7 @@ LRESULT CErrorReportDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /
         Utility::SetLayoutRTL(m_hWnd);
     }
 
-	// Set dialog caption.
+    // Set dialog caption.
     SetWindowText(pSender->GetLangStr(_T("MainDlg"), _T("DlgCaption")));
 
     // Center the dialog on the screen.
@@ -70,26 +70,26 @@ LRESULT CErrorReportDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /
     // If there is no icon in crashed EXE module, use default IDI_APPLICATION system icon.
     if(m_HeadingIcon == NULL)
     {
-        m_HeadingIcon = ::LoadIcon(NULL, MAKEINTRESOURCE(IDI_APPLICATION));
+        m_HeadingIcon = ::LoadIcon(NULL, IDI_APPLICATION);
     }
 
-	// Init controls.
+    // Init controls.
 
     m_statSubHeader = GetDlgItem(IDC_SUBHEADER);
 
     m_link.SubclassWindow(GetDlgItem(IDC_LINK));
     m_link.SetHyperLinkExtendedStyle(HLINK_COMMANDBUTTON);
-	m_link.SetLabel(pSender->GetLangStr(_T("MainDlg"), _T("WhatDoesReportContain")));
+    m_link.SetLabel(pSender->GetLangStr(_T("MainDlg"), _T("WhatDoesReportContain")));
 
     m_linkMoreInfo.SubclassWindow(GetDlgItem(IDC_MOREINFO));
     m_linkMoreInfo.SetHyperLinkExtendedStyle(HLINK_COMMANDBUTTON);
-	m_linkMoreInfo.SetLabel(pSender->GetLangStr(_T("MainDlg"), _T("ProvideAdditionalInfo")));
+    m_linkMoreInfo.SetLabel(pSender->GetLangStr(_T("MainDlg"), _T("ProvideAdditionalInfo")));
 
     m_statEmail = GetDlgItem(IDC_STATMAIL);
     m_statEmail.SetWindowText(pSender->GetLangStr(_T("MainDlg"), _T("YourEmail")));
 
     m_editEmail = GetDlgItem(IDC_EMAIL);
-	m_editEmail.SetWindowText(pCI->GetPersistentUserEmail());
+    m_editEmail.SetWindowText(pCI->GetPersistentUserEmail());
 
     m_statDesc = GetDlgItem(IDC_DESCRIBE);
     m_statDesc.SetWindowText(pSender->GetLangStr(_T("MainDlg"), _T("DescribeProblem")));
@@ -118,13 +118,13 @@ LRESULT CErrorReportDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /
     hConsentFont.CreateFontIndirect(&lf);
     m_statConsent.SetFont(hConsentFont);
 
-	// Set text of the static
+    // Set text of the static
     if(pCI->m_sPrivacyPolicyURL.IsEmpty())
         m_statConsent.SetWindowText(pSender->GetLangStr(_T("MainDlg"), _T("MyConsent2")));
     else
         m_statConsent.SetWindowText(pSender->GetLangStr(_T("MainDlg"), _T("MyConsent")));
 
-	// Init Privacy Policy link
+    // Init Privacy Policy link
     m_linkPrivacyPolicy.SubclassWindow(GetDlgItem(IDC_PRIVACYPOLICY));
     m_linkPrivacyPolicy.SetHyperLink(pCI->m_sPrivacyPolicyURL);
     m_linkPrivacyPolicy.SetLabel(pSender->GetLangStr(_T("MainDlg"), _T("PrivacyPolicy")));
@@ -136,25 +136,25 @@ LRESULT CErrorReportDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /
     m_statHorzLine = GetDlgItem(IDC_HORZLINE);
     m_describe = GetDlgItem(IDC_DESCRIBE);
 
-	// Init OK button
+    // Init OK button
     m_btnOk = GetDlgItem(IDOK);
     m_btnOk.SetWindowText(pSender->GetLangStr(_T("MainDlg"), _T("SendReport")));
 
-	// Init Cancel button
+    // Init Cancel button
     m_btnCancel = GetDlgItem(IDC_CANCEL);
     if(pCI->m_bQueueEnabled)
         m_btnCancel.SetWindowText(pSender->GetLangStr(_T("MainDlg"), _T("OtherActions")));
     else
         m_btnCancel.SetWindowText(pSender->GetLangStr(_T("MainDlg"), _T("CloseTheProgram")));
 
-	// If send procedure is mandatory...
-	if(pCI->m_bSendMandatory)
-	{
-		// Hide Cancel button
-		m_btnCancel.ShowWindow(SW_HIDE);
-		// Remove Close button
-		SetWindowLong(GWL_STYLE, GetWindowLong(GWL_STYLE) & ~WS_SYSMENU);
-	}
+    // If send procedure is mandatory...
+    if(pCI->m_bSendMandatory)
+    {
+        // Hide Cancel button
+        m_btnCancel.ShowWindow(SW_HIDE);
+        // Remove Close button
+        SetWindowLong(GWL_STYLE, GetWindowLong(GWL_STYLE) & ~WS_SYSMENU);
+    }
 
     // Init font for heading text
     memset(&lf, 0, sizeof(LOGFONT));
@@ -164,7 +164,7 @@ LRESULT CErrorReportDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /
     _TCSCPY_S(lf.lfFaceName, 32, _T("Tahoma"));
     m_HeadingFont.CreateFontIndirect(&lf);
 
-	// Init control positions
+    // Init control positions
     m_Layout.SetContainerWnd(m_hWnd);
     m_Layout.Insert(m_linkMoreInfo);
     m_Layout.Insert(m_statIndent);
@@ -180,11 +180,11 @@ LRESULT CErrorReportDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /
     m_Layout.Insert(m_btnOk);
     m_Layout.Insert(m_btnCancel, TRUE);
 
-	// By default, hide the email & description fields.
-	// But user may override the default.
-	ShowMoreInfo(pCI->m_bShowAdditionalInfoFields);
+    // By default, hide the email & description fields.
+    // But user may override the default.
+    ShowMoreInfo(pCI->m_bShowAdditionalInfoFields);
 
-	// Create progress dialog
+    // Create progress dialog
     m_dlgProgress.Create(m_hWnd);
     m_dlgProgress.Start(TRUE);
 
@@ -203,7 +203,7 @@ LRESULT CErrorReportDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /
 
 void CErrorReportDlg::ShowMoreInfo(BOOL bShow)
 {
-	// Hide/show email & description fields
+    // Hide/show email & description fields
 
     CRect rc1, rc2;
 
@@ -216,10 +216,10 @@ void CErrorReportDlg::ShowMoreInfo(BOOL bShow)
     m_Layout.Update();
 
     if(bShow)
-	{
-		m_linkMoreInfo.EnableWindow(0);
+    {
+        m_linkMoreInfo.EnableWindow(0);
         m_editEmail.SetFocus();
-	}
+    }
     else
         m_btnOk.SetFocus();
 
@@ -227,9 +227,9 @@ void CErrorReportDlg::ShowMoreInfo(BOOL bShow)
 
 LRESULT CErrorReportDlg::OnEraseBkgnd(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
-	// Here we want to draw a white header of the dialog
+    // Here we want to draw a white header of the dialog
 
-	CErrorReportSender* pSender = CErrorReportSender::GetInstance();
+    CErrorReportSender* pSender = CErrorReportSender::GetInstance();
 
     CDCHandle dc((HDC)wParam);
 
@@ -254,17 +254,17 @@ LRESULT CErrorReportDlg::OnEraseBkgnd(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lPa
     rcHeading.left = 60;
     rcHeading.right -= 10;
 
-	// Draw header text over background
+    // Draw header text over background
     CString sHeading;
     sHeading.Format(pSender->GetLangStr(_T("MainDlg"), _T("HeaderText")), (LPCTSTR)pSender->GetCrashInfo()->m_sAppName);
     dc.SelectFont(m_HeadingFont);
     dc.DrawTextEx(sHeading.GetBuffer(0), sHeading.GetLength(), &rcHeading,
         DT_LEFT|DT_VCENTER|DT_SINGLELINE|DT_END_ELLIPSIS);
 
-	// Check if we should draw the icon on the header area
+    // Check if we should draw the icon on the header area
     if(m_HeadingIcon)
     {
-		// Draw the icon left to the text
+        // Draw the icon left to the text
         ICONINFO ii;
         m_HeadingIcon.GetIconInfo(&ii);
         dc.DrawIcon(16, rcHeading.bottom/2 - ii.yHotspot, m_HeadingIcon);
@@ -275,7 +275,7 @@ LRESULT CErrorReportDlg::OnEraseBkgnd(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lPa
 
 LRESULT CErrorReportDlg::OnCtlColorStatic(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& /*bHandled*/)
 {
-	// This method is used to set background and text color for m_statIcon control
+    // This method is used to set background and text color for m_statIcon control
 
     if((HWND)lParam == m_describe) {
         HDC hdcStatic = (HDC)wParam;
@@ -302,22 +302,22 @@ LRESULT CErrorReportDlg::OnCtlColorStatic(UINT /*uMsg*/, WPARAM wParam, LPARAM l
 
 LRESULT CErrorReportDlg::OnCancel(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	// This method is called when user clicks "Close the program" or "Other actions..." button
-	// (the button is the same, its caption may differ)
+    // This method is called when user clicks "Close the program" or "Other actions..." button
+    // (the button is the same, its caption may differ)
 
-	CErrorReportSender* pSender = CErrorReportSender::GetInstance();
+    CErrorReportSender* pSender = CErrorReportSender::GetInstance();
 
     if(pSender->GetCrashInfo()->m_bQueueEnabled)
     {
-		// Show popup menu on "Other actions..." button click.
+        // Show popup menu on "Other actions..." button click.
         CPoint pt;
         GetCursorPos(&pt);
-        CMenu menu(LoadMenu(_Module.GetResourceInstance(), MAKEINTRESOURCE(IDR_POPUPMENU)));
+        CMenu menu = LoadMenu(_Module.GetResourceInstance(), MAKEINTRESOURCE(IDR_POPUPMENU));
         CMenu submenu(menu.GetSubMenu(4));
 
         strconv_t strconv;
         CString sSendLater = pSender->GetLangStr(_T("MainDlg"), _T("SendReportLater"));
-		CString sCloseTheProgram = pSender->GetLangStr(_T("MainDlg"), _T("CloseTheProgram"));
+        CString sCloseTheProgram = pSender->GetLangStr(_T("MainDlg"), _T("CloseTheProgram"));
 
         MENUITEMINFO mii;
         memset(&mii, 0, sizeof(MENUITEMINFO));
@@ -343,11 +343,11 @@ LRESULT CErrorReportDlg::OnCancel(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl
 
 LRESULT CErrorReportDlg::OnPopupSendReportLater(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	// User has clicked the popup menu's "Close the program and send report later".
+    // User has clicked the popup menu's "Close the program and send report later".
 
-	// Update our remind policy to "Remind me later".
-	CErrorReportSender* pSender = CErrorReportSender::GetInstance();
-	pSender->GetCrashInfo()->SetRemindPolicy(REMIND_LATER);
+    // Update our remind policy to "Remind me later".
+    CErrorReportSender* pSender = CErrorReportSender::GetInstance();
+    pSender->GetCrashInfo()->SetRemindPolicy(REMIND_LATER);
 
     CloseDialog(wID);
     return 0;
@@ -355,11 +355,11 @@ LRESULT CErrorReportDlg::OnPopupSendReportLater(WORD /*wNotifyCode*/, WORD wID, 
 
 LRESULT CErrorReportDlg::OnPopupCloseTheProgram(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	// User has clicked the popup menu's "Close the program".
+    // User has clicked the popup menu's "Close the program".
 
-	CErrorReportSender* pSender = CErrorReportSender::GetInstance();
-	// The following line will prevent from queueing the report
-	pSender->GetCrashInfo()->m_bQueueEnabled = FALSE;
+    CErrorReportSender* pSender = CErrorReportSender::GetInstance();
+    // The following line will prevent from queueing the report
+    pSender->GetCrashInfo()->m_bQueueEnabled = FALSE;
 
     CloseDialog(wID);
     return 0;
@@ -367,30 +367,30 @@ LRESULT CErrorReportDlg::OnPopupCloseTheProgram(WORD /*wNotifyCode*/, WORD wID, 
 
 LRESULT CErrorReportDlg::OnCompleteCollectCrashInfo(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
-	// This method is called when the worker thread has finished with collection
-	// of crash report data. Now we display the "Error Report" dialog
-	// and offer user to send error report.
-	CErrorReportSender* pSender = CErrorReportSender::GetInstance();
+    // This method is called when the worker thread has finished with collection
+    // of crash report data. Now we display the "Error Report" dialog
+    // and offer user to send error report.
+    CErrorReportSender* pSender = CErrorReportSender::GetInstance();
 
     if(pSender->GetCrashInfo()->m_bSendErrorReport) // If we should send error report now
     {
-		// Get the total size of the report.
-		LONG64 lTotalSize = pSender->GetCrashInfo()->GetReport(0)->GetTotalSize();
+        // Get the total size of the report.
+        LONG64 lTotalSize = pSender->GetCrashInfo()->GetReport(0)->GetTotalSize();
         CString sTotalSize = Utility::FileSizeToStr(lTotalSize);
 
-		// Format the text for dialog subheader.
+        // Format the text for dialog subheader.
         CString sSubHeader;
-		sSubHeader.Format(pSender->GetLangStr(_T("MainDlg"), _T("SubHeaderText")), (LPCTSTR) sTotalSize);
+        sSubHeader.Format(pSender->GetLangStr(_T("MainDlg"), _T("SubHeaderText")), (LPCTSTR) sTotalSize);
 
-		// Update the subheader text
+        // Update the subheader text
         m_statSubHeader.SetWindowText(sSubHeader);
 
-		// Show "Error Report" dialog
+        // Show "Error Report" dialog
         ShowWindow(SW_SHOW);
-		SetWindowPos(HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_SHOWWINDOW);
+        SetWindowPos(HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_SHOWWINDOW);
 
-		// Make it flash
-		FlashWindow(TRUE);
+        // Make it flash
+        FlashWindow(TRUE);
     }
     else // If we shouldn't send error report now.
     {
@@ -403,7 +403,7 @@ LRESULT CErrorReportDlg::OnCompleteCollectCrashInfo(UINT /*uMsg*/, WPARAM /*wPar
 
 LRESULT CErrorReportDlg::OnClose(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
-	// This method is called when user clicks the close (x) button.
+    // This method is called when user clicks the close (x) button.
     CloseDialog(0);
     return 0;
 }
@@ -413,19 +413,19 @@ void CErrorReportDlg::CloseDialog(int nVal)
     // Remove tray icon.
     CreateTrayIcon(FALSE, m_hWnd);
 
-	// Destroy window
+    // Destroy window
     DestroyWindow();
 
-	// Exit the message loop
+    // Exit the message loop
     ::PostQuitMessage(nVal);
 }
 
 LRESULT CErrorReportDlg::OnLinkClick(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	// This method is called when user clicks the
-	// "What does this report contain?" link.
+    // This method is called when user clicks the
+    // "What does this report contain?" link.
 
-	// Show "Error Report Details" dialog.
+    // Show "Error Report Details" dialog.
     CDetailDlg dlg;
     dlg.SetCurReportIndex(0);
     dlg.DoModal();
@@ -435,8 +435,8 @@ LRESULT CErrorReportDlg::OnLinkClick(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*
 
 LRESULT CErrorReportDlg::OnMoreInfoClick(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	// This method is called when user clicks the
-	// "Provide additional info (recommended)" link.
+    // This method is called when user clicks the
+    // "Provide additional info (recommended)" link.
 
     // Expand dialog
     m_linkMoreInfo.EnableWindow(0);
@@ -447,13 +447,13 @@ LRESULT CErrorReportDlg::OnMoreInfoClick(WORD /*wNotifyCode*/, WORD /*wID*/, HWN
 
 LRESULT CErrorReportDlg::OnRestartClick(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	// This method is called when user clicks the "Restart the application" checkbox.
+    // This method is called when user clicks the "Restart the application" checkbox.
 
-	// Determine checkbox state
-	BOOL bRestart = m_chkRestart.GetCheck()==BST_CHECKED?TRUE:FALSE;
+    // Determine checkbox state
+    BOOL bRestart = m_chkRestart.GetCheck()==BST_CHECKED?TRUE:FALSE;
 
-	// Update the restart flag
-	CErrorReportSender* pSender = CErrorReportSender::GetInstance();
+    // Update the restart flag
+    CErrorReportSender* pSender = CErrorReportSender::GetInstance();
     pSender->GetCrashInfo()->m_bAppRestart = bRestart;
 
     return 0;
@@ -461,88 +461,88 @@ LRESULT CErrorReportDlg::OnRestartClick(WORD /*wNotifyCode*/, WORD /*wID*/, HWND
 
 LRESULT CErrorReportDlg::OnEmailKillFocus(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	// This method is called when user removes focus from "Your E-mail" field.
+    // This method is called when user removes focus from "Your E-mail" field.
 
-	TCHAR szBuffer[1024] = _T("");
+    TCHAR szBuffer[1024] = _T("");
     CString sEmail;
-	CString sDesc;
-	// Get E-mail field's text
-	m_editEmail.GetWindowText(szBuffer, 1024);
-	sEmail = szBuffer;
-	// Get description field's text
-	m_editDesc.GetWindowText(szBuffer, 1024);
-	sDesc = szBuffer;
+    CString sDesc;
+    // Get E-mail field's text
+    m_editEmail.GetWindowText(szBuffer, 1024);
+    sEmail = szBuffer;
+    // Get description field's text
+    m_editDesc.GetWindowText(szBuffer, 1024);
+    sDesc = szBuffer;
 
-	// Update those fields in crash report data
+    // Update those fields in crash report data
     CErrorReportSender* pSender = CErrorReportSender::GetInstance();
-	pSender->GetCrashInfo()->UpdateUserInfo(sEmail, sDesc);
+    pSender->GetCrashInfo()->UpdateUserInfo(sEmail, sDesc);
 
     return 0;
 }
 
 LRESULT CErrorReportDlg::OnSendClick(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	// This method is called when user clicks the "Send Report" button
+    // This method is called when user clicks the "Send Report" button
 
-	TCHAR szBuffer[1024] = _T("");
+    TCHAR szBuffer[1024] = _T("");
     CString sEmail;
-	CString sDesc;
-	// Get E-mail field's text
-	m_editEmail.GetWindowText(szBuffer, 1024);
-	sEmail = szBuffer;
-	// Get description field's text
-	m_editDesc.GetWindowText(szBuffer, 1024);
-	sDesc = szBuffer;
+    CString sDesc;
+    // Get E-mail field's text
+    m_editEmail.GetWindowText(szBuffer, 1024);
+    sEmail = szBuffer;
+    // Get description field's text
+    m_editDesc.GetWindowText(szBuffer, 1024);
+    sDesc = szBuffer;
 
-	// Update those fields in crash report data and check the result
+    // Update those fields in crash report data and check the result
     CErrorReportSender* pSender = CErrorReportSender::GetInstance();
-	if(!pSender->GetCrashInfo()->UpdateUserInfo(sEmail, sDesc))
-	{
-		// Failure - display alert message and repeat again
+    if(!pSender->GetCrashInfo()->UpdateUserInfo(sEmail, sDesc))
+    {
+        // Failure - display alert message and repeat again
 
-		// Check window mirroring settings
+        // Check window mirroring settings
         DWORD dwFlags = 0;
-		CString sRTL = pSender->GetLangStr(_T("Settings"), _T("RTLReading"));
+        CString sRTL = pSender->GetLangStr(_T("Settings"), _T("RTLReading"));
         if(sRTL.CompareNoCase(_T("1"))==0)
             dwFlags = MB_RTLREADING;
 
         // Alert user
         MessageBox(
-			pSender->GetLangStr(_T("MainDlg"), _T("InvalidEmailText")),
+            pSender->GetLangStr(_T("MainDlg"), _T("InvalidEmailText")),
             pSender->GetLangStr(_T("MainDlg"), _T("InvalidEmailCaption")),
             MB_OK|dwFlags);
 
         // Set focus to Email field
         ::SetFocus(m_editEmail);
 
-		return 0;
-	}
+        return 0;
+    }
 
-	/* Now we are ready to send error report in background. */
+    /* Now we are ready to send error report in background. */
 
-	// Hide the dialog
+    // Hide the dialog
     ShowWindow(SW_HIDE);
 
-	// Display tray icon
+    // Display tray icon
     CreateTrayIcon(true, m_hWnd);
 
-	// Show progress dialog
-	m_dlgProgress.Start(FALSE);
+    // Show progress dialog
+    m_dlgProgress.Start(FALSE);
 
-	// Run worker thread that will compress and send error report.
-	pSender->Run();
+    // Run worker thread that will compress and send error report.
+    pSender->Run();
 
     return 0;
 }
 
 int CErrorReportDlg::CreateTrayIcon(bool bCreate, HWND hWndParent)
 {
-	// This method creates (bCreate==TRUE) or destroys (bCreate==FALSE)
-	// the tray icon.
+    // This method creates (bCreate==TRUE) or destroys (bCreate==FALSE)
+    // the tray icon.
 
-	CErrorReportSender* pSender = CErrorReportSender::GetInstance();
+    CErrorReportSender* pSender = CErrorReportSender::GetInstance();
 
-	// Prepare icon info
+    // Prepare icon info
     NOTIFYICONDATA nf;
     memset(&nf,0,sizeof(NOTIFYICONDATA));
     nf.cbSize = sizeof(NOTIFYICONDATA);
@@ -558,7 +558,7 @@ int CErrorReportDlg::CreateTrayIcon(bool bCreate, HWND hWndParent)
 #endif
 
         // Try to load custom icon
-		HICON hIcon = pSender->GetCrashInfo()->GetCustomIcon();
+        HICON hIcon = pSender->GetCrashInfo()->GetCustomIcon();
         if(hIcon==NULL)
             hIcon = ::LoadIcon(_Module.GetResourceInstance(), MAKEINTRESOURCE(IDR_MAINFRAME));
         nf.hIcon = hIcon;
@@ -576,14 +576,14 @@ int CErrorReportDlg::CreateTrayIcon(bool bCreate, HWND hWndParent)
 
 LRESULT CErrorReportDlg::OnTrayIcon(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam, BOOL& /*bHandled*/)
 {
-	// This method is called when user does something with (e.g. clicks) the tray icon.
+    // This method is called when user does something with (e.g. clicks) the tray icon.
 
     UINT uMouseMsg = (UINT)lParam;
 
     if(uMouseMsg==WM_LBUTTONDBLCLK)
     {
-		// User clicked the left mouse button over the icon,
-		// so we need to show the dialog if it is hidden and set focus on it
+        // User clicked the left mouse button over the icon,
+        // so we need to show the dialog if it is hidden and set focus on it
         m_dlgProgress.ShowWindow(SW_SHOW);
         m_dlgProgress.SetFocus();
     }
@@ -593,19 +593,19 @@ LRESULT CErrorReportDlg::OnTrayIcon(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lPa
 
 LRESULT CErrorReportDlg::OnReportSizeChanged(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
-	CErrorReportSender* pSender = CErrorReportSender::GetInstance();
+    CErrorReportSender* pSender = CErrorReportSender::GetInstance();
 
-	// Get the total size of the report.
-	LONG64 lTotalSize = pSender->GetCrashInfo()->GetReport(0)->GetTotalSize();
+    // Get the total size of the report.
+    LONG64 lTotalSize = pSender->GetCrashInfo()->GetReport(0)->GetTotalSize();
     CString sTotalSize = Utility::FileSizeToStr(lTotalSize);
 
-	// Format the text for dialog subheader.
+    // Format the text for dialog subheader.
     CString sSubHeader;
-	sSubHeader.Format(pSender->GetLangStr(_T("MainDlg"), _T("SubHeaderText")), (LPCTSTR) sTotalSize);
+    sSubHeader.Format(pSender->GetLangStr(_T("MainDlg"), _T("SubHeaderText")), (LPCTSTR) sTotalSize);
 
-	// Update the subheader text
+    // Update the subheader text
     m_statSubHeader.SetWindowText(sSubHeader);
 
-	return 0;
+    return 0;
 }
 

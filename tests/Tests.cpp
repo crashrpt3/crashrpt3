@@ -22,27 +22,27 @@ BOOL g_bRunAllTest = FALSE;
 
 DWORD WINAPI CrashThread(LPVOID /*lpParam*/)
 {
-	// Install exception handlers for this thread
-	CrThreadAutoInstallHelper cr_thread_install_helper(0);
+    // Install exception handlers for this thread
+    CrThreadAutoInstallHelper cr_thread_install_helper(0);
 
-	if(g_nExceptionType==-1)
-	{
-		CR_EXCEPTION_INFO ei;
-		memset(&ei, 0, sizeof(ei));
-		ei.cb = sizeof(ei);
-		ei.code = 0x1234;
+    if(g_nExceptionType==-1)
+    {
+        CR_EXCEPTION_INFO ei;
+        memset(&ei, 0, sizeof(ei));
+        ei.cb = sizeof(ei);
+        ei.code = 0x1234;
 
-		crGenerateErrorReport(&ei);
+        crGenerateErrorReport(&ei);
 
-		TerminateProcess(GetCurrentProcess(), 1);
-	}
-	else
-	{
-		// Crash
-		crEmulateCrash(g_nExceptionType);
-	}
+        TerminateProcess(GetCurrentProcess(), 1);
+    }
+    else
+    {
+        // Crash
+        crEmulateCrash(g_nExceptionType);
+    }
 
-	return 0;
+    return 0;
 }
 
 // Function forward declarations
@@ -52,13 +52,13 @@ int fork();
 
 int CALLBACK CrashCallback(CR_CRASH_CALLBACK_INFO * pInfo)
 {
-	static int counter = 0;
-	pInfo->bContinueExecution = FALSE;
-	
-	if (counter++ > 0)
-		return CR_CB_CANCEL;
-	else
-		return CR_CB_NOTIFY_NEXT_STAGE;
+    static int counter = 0;
+    pInfo->bContinueExecution = FALSE;
+
+    if (counter++ > 0)
+        return CR_CB_CANCEL;
+    else
+        return CR_CB_NOTIFY_NEXT_STAGE;
 }
 
 int _tmain(int argc, TCHAR** argv)
@@ -100,41 +100,41 @@ int _tmain(int argc, TCHAR** argv)
             TCHAR* szArg = argv[argnum];
             if(_tcscmp(szArg, _T("/unicode"))==0)
                 g_bRunningFromUNICODEFolder = TRUE;
-			else if(_tcscmp(szArg, _T("/exception"))==0)
-				g_bException = TRUE;
-			else if(_tcscmp(szArg, _T("/exception_in_worker_thread"))==0)
-				g_bExceptionInWorkerThread = TRUE;
-			else if(_tcscmp(szArg, _T("/seh"))==0)
-				g_nExceptionType = CR_SEH_EXCEPTION;
-			else if(_tcscmp(szArg, _T("/terminate"))==0)
-				g_nExceptionType = CR_CPP_TERMINATE_CALL;
-			else if(_tcscmp(szArg, _T("/unexpected"))==0)
-				g_nExceptionType = CR_CPP_UNEXPECTED_CALL;
-			else if(_tcscmp(szArg, _T("/purecall"))==0)
-				g_nExceptionType = CR_CPP_PURE_CALL;
-			else if(_tcscmp(szArg, _T("/new"))==0)
-				g_nExceptionType = CR_CPP_NEW_OPERATOR_ERROR;
-			else if(_tcscmp(szArg, _T("/security"))==0)
-				g_nExceptionType = CR_CPP_SECURITY_ERROR;
-			else if(_tcscmp(szArg, _T("/invparam"))==0)
-				g_nExceptionType = CR_CPP_INVALID_PARAMETER;
-			else if(_tcscmp(szArg, _T("/sigabrt"))==0)
-				g_nExceptionType = CR_CPP_SIGABRT;
-			else if(_tcscmp(szArg, _T("/sigfpe"))==0)
-				g_nExceptionType = CR_CPP_SIGFPE;
-			else if(_tcscmp(szArg, _T("/sigill"))==0)
-				g_nExceptionType = CR_CPP_SIGILL;
-			else if(_tcscmp(szArg, _T("/sigint"))==0)
-				g_nExceptionType = CR_CPP_SIGINT;
-			else if(_tcscmp(szArg, _T("/sigsegv"))==0)
-				g_nExceptionType = CR_CPP_SIGSEGV;
-			else if(_tcscmp(szArg, _T("/sigterm"))==0)
-				g_nExceptionType = CR_CPP_SIGTERM;
-			else if(_tcscmp(szArg, _T("/manual_report"))==0)
-			{
-				g_bException = TRUE;
-				g_nExceptionType = -1;
-			}
+            else if(_tcscmp(szArg, _T("/exception"))==0)
+                g_bException = TRUE;
+            else if(_tcscmp(szArg, _T("/exception_in_worker_thread"))==0)
+                g_bExceptionInWorkerThread = TRUE;
+            else if(_tcscmp(szArg, _T("/seh"))==0)
+                g_nExceptionType = CR_SEH_EXCEPTION;
+            else if(_tcscmp(szArg, _T("/terminate"))==0)
+                g_nExceptionType = CR_CPP_TERMINATE_CALL;
+            else if(_tcscmp(szArg, _T("/unexpected"))==0)
+                g_nExceptionType = CR_CPP_UNEXPECTED_CALL;
+            else if(_tcscmp(szArg, _T("/purecall"))==0)
+                g_nExceptionType = CR_CPP_PURE_CALL;
+            else if(_tcscmp(szArg, _T("/new"))==0)
+                g_nExceptionType = CR_CPP_NEW_OPERATOR_ERROR;
+            else if(_tcscmp(szArg, _T("/security"))==0)
+                g_nExceptionType = CR_CPP_SECURITY_ERROR;
+            else if(_tcscmp(szArg, _T("/invparam"))==0)
+                g_nExceptionType = CR_CPP_INVALID_PARAMETER;
+            else if(_tcscmp(szArg, _T("/sigabrt"))==0)
+                g_nExceptionType = CR_CPP_SIGABRT;
+            else if(_tcscmp(szArg, _T("/sigfpe"))==0)
+                g_nExceptionType = CR_CPP_SIGFPE;
+            else if(_tcscmp(szArg, _T("/sigill"))==0)
+                g_nExceptionType = CR_CPP_SIGILL;
+            else if(_tcscmp(szArg, _T("/sigint"))==0)
+                g_nExceptionType = CR_CPP_SIGINT;
+            else if(_tcscmp(szArg, _T("/sigsegv"))==0)
+                g_nExceptionType = CR_CPP_SIGSEGV;
+            else if(_tcscmp(szArg, _T("/sigterm"))==0)
+                g_nExceptionType = CR_CPP_SIGTERM;
+            else if(_tcscmp(szArg, _T("/manual_report"))==0)
+            {
+                g_bException = TRUE;
+                g_nExceptionType = -1;
+            }
             else if (_tcscmp(szArg, _T("/all")) == 0)
             {
                 g_bRunAllTest = TRUE;
@@ -142,54 +142,54 @@ int _tmain(int argc, TCHAR** argv)
         }
     }
 
-	if(g_bException && !g_bRunAllTest)
-	{
-		// Create a temporary folder for wide-char test
-		CString sAppDataFolder;
-		CString sTmpFolder;
-		Utility::GetSpecialFolder(CSIDL_APPDATA, sAppDataFolder);
-		sTmpFolder = sAppDataFolder+_T("\\CrashRptExceptionTest");
-		Utility::CreateFolder(sTmpFolder);
+    if(g_bException && !g_bRunAllTest)
+    {
+        // Create a temporary folder for wide-char test
+        CString sAppDataFolder;
+        CString sTmpFolder;
+        Utility::GetSpecialFolder(CSIDL_APPDATA, sAppDataFolder);
+        sTmpFolder = sAppDataFolder+_T("\\CrashRptExceptionTest");
+        Utility::CreateFolder(sTmpFolder);
 
-		// Install crash handler
-		CR_INSTALL_INFOW infoW;
-		memset(&infoW, 0, sizeof(CR_INSTALL_INFOW));
-		infoW.cb = sizeof(CR_INSTALL_INFOW);
-		infoW.pszAppVersion = L"1.0.0"; // Specify app version, otherwise it will fail.
-		infoW.dwFlags = CR_INST_NO_GUI|CR_INST_DONT_SEND_REPORT|CR_INST_STORE_ZIP_ARCHIVES;
-		infoW.pszErrorReportSaveDir = sTmpFolder;
+        // Install crash handler
+        CR_INSTALL_INFOW infoW;
+        memset(&infoW, 0, sizeof(CR_INSTALL_INFOW));
+        infoW.cb = sizeof(CR_INSTALL_INFOW);
+        infoW.pszAppVersion = L"1.0.0"; // Specify app version, otherwise it will fail.
+        infoW.dwFlags = CR_INST_NO_GUI|CR_INST_DONT_SEND_REPORT|CR_INST_STORE_ZIP_ARCHIVES;
+        infoW.pszErrorReportSaveDir = sTmpFolder;
 
-		CrAutoInstallHelper cr_install_helper(&infoW);
+        CrAutoInstallHelper cr_install_helper(&infoW);
 
-		crSetCrashCallback(&CrashCallback, 0);
-		if(!g_bExceptionInWorkerThread)
-		{
-			if(g_nExceptionType==-1)
-			{
-				CR_EXCEPTION_INFO ei;
-				memset(&ei, 0, sizeof(ei));
-				ei.cb = sizeof(ei);
-				ei.code = 0x1234;
+        crSetCrashCallback(&CrashCallback, 0);
+        if(!g_bExceptionInWorkerThread)
+        {
+            if(g_nExceptionType==-1)
+            {
+                CR_EXCEPTION_INFO ei;
+                memset(&ei, 0, sizeof(ei));
+                ei.cb = sizeof(ei);
+                ei.code = 0x1234;
 
-				crGenerateErrorReport(&ei);
+                crGenerateErrorReport(&ei);
 
-				TerminateProcess(GetCurrentProcess(), 1);
-			}
-			else
-			{
-				// Crash
-				crEmulateCrash(g_nExceptionType);
-			}
-		}
-		else
-		{
-			// Crash in worker thread
-			HANDLE hThread = CreateThread(NULL, 0, CrashThread, 0, 0, NULL);
-			WaitForSingleObject(hThread, INFINITE);
-		}
+                TerminateProcess(GetCurrentProcess(), 1);
+            }
+            else
+            {
+                // Crash
+                crEmulateCrash(g_nExceptionType);
+            }
+        }
+        else
+        {
+            // Crash in worker thread
+            HANDLE hThread = CreateThread(NULL, 0, CrashThread, 0, 0, NULL);
+            WaitForSingleObject(hThread, INFINITE);
+        }
 
-		return 1;
-	}
+        return 1;
+    }
 
     CTestRegistry* pRegistry = CTestRegistry::GetRegistry();
     CTestSuite* pTopSuite = pRegistry->GetTopSuite();
@@ -321,98 +321,98 @@ int fork()
     CString sCmdLine;
     CString sExeFolder;
 
-    sWorkingFolder = Utility::GetModulePath(NULL);
-    sExeFolder = Utility::GetModulePath(NULL);
-
-    if(g_bRunningFromUNICODEFolder)
     {
-        CString sAppDataFolder;
-		CString sFileName;
+        sWorkingFolder = Utility::GetModulePath(NULL);
+        sExeFolder = Utility::GetModulePath(NULL);
 
-        Utility::GetSpecialFolder(CSIDL_LOCAL_APPDATA, sAppDataFolder);
-        sWorkingFolder = sAppDataFolder+_T("\\CrashRpt UNICODE 应用程序名称");
-        BOOL bCreate = Utility::CreateFolder(sWorkingFolder);
-        if(!bCreate)
-            return 1;
+        if(g_bRunningFromUNICODEFolder)
+        {
+            CString sAppDataFolder;
+            CString sFileName;
 
-        /* Copy all required files to temporary directory. */
+            Utility::GetSpecialFolder(CSIDL_LOCAL_APPDATA, sAppDataFolder);
+            sWorkingFolder = sAppDataFolder+_T("\\CrashRpt UNICODE 应用程序名称");
+            BOOL bCreate = Utility::CreateFolder(sWorkingFolder);
+            if(!bCreate)
+                return 1;
 
-#ifdef _DEBUG
-		sFileName.Format(_T("\\CrashRpt%dd.dll"), CRASHRPT_VER);
-        BOOL bCopy = CopyFile(sExeFolder+sFileName, sWorkingFolder+sFileName, TRUE);
-        if(!bCopy)
-            goto cleanup;
-		sFileName.Format(_T("\\CrashRptProbe%dd.dll"), CRASHRPT_VER);
-        BOOL bCopy5 = CopyFile(sExeFolder+sFileName, sWorkingFolder+sFileName, TRUE);
-        if(!bCopy5)
-            goto cleanup;
-		sFileName.Format(_T("\\CrashSender%dd.exe"), CRASHRPT_VER);
-        BOOL bCopy2 = CopyFile(sExeFolder+sFileName, sWorkingFolder+sFileName, TRUE);
-        if(!bCopy2)
-            goto cleanup;
-        BOOL bCopy4 = CopyFile(sExeFolder+_T("\\Testsd.exe"), sWorkingFolder+_T("\\Testsd.exe"), TRUE);
-        if(!bCopy4)
-            goto cleanup;
-        BOOL bCopy9 = CopyFile(sExeFolder+_T("\\crproberd.exe"), sWorkingFolder+_T("\\crproberd.exe"), TRUE);
-        if(!bCopy9)
-            goto cleanup;
-#else
-#ifndef CRASHRPT_LIB
-		sFileName.Format(_T("\\CrashRpt%d.dll"), CRASHRPT_VER);
-        BOOL bCopy = CopyFile(sExeFolder+sFileName, sWorkingFolder+sFileName, TRUE);
-        if(!bCopy)
-            goto cleanup;
-		sFileName.Format(_T("\\CrashRpt%d.pdb"), CRASHRPT_VER);
-        BOOL bCopy10 = CopyFile(sExeFolder+sFileName, sWorkingFolder+sFileName, TRUE);
-        if(!bCopy10)
-            goto cleanup;
-		sFileName.Format(_T("\\CrashRptProbe%d.dll"), CRASHRPT_VER);
-        BOOL bCopy5 = CopyFile(sExeFolder+sFileName, sWorkingFolder+sFileName, TRUE);
-        if(!bCopy5)
-            goto cleanup;
-#endif //!CRASHRPT_LIB
-		sFileName.Format(_T("\\CrashSender%d.exe"), CRASHRPT_VER);
-        BOOL bCopy2 = CopyFile(sExeFolder+sFileName, sWorkingFolder+sFileName, TRUE);
-        if(!bCopy2)
-            goto cleanup;
+            /* Copy all required files to temporary directory. */
 
-        BOOL bCopy4 = CopyFile(sExeFolder+_T("\\Tests.exe"), sWorkingFolder+_T("\\Tests.exe"), TRUE);
-        if(!bCopy4)
-            goto cleanup;
-        BOOL bCopy9 = CopyFile(sExeFolder+_T("\\crprober.exe"), sWorkingFolder+_T("\\crprober.exe"), TRUE);
-        if(!bCopy9)
-            goto cleanup;
-#endif
+    #ifdef _DEBUG
+            sFileName.Format(_T("\\CrashRpt%dd.dll"), CRASHRPT_VER);
+            BOOL bCopy = CopyFile(sExeFolder+sFileName, sWorkingFolder+sFileName, TRUE);
+            if(!bCopy)
+                goto cleanup;
+            sFileName.Format(_T("\\CrashRptProbe%dd.dll"), CRASHRPT_VER);
+            BOOL bCopy5 = CopyFile(sExeFolder+sFileName, sWorkingFolder+sFileName, TRUE);
+            if(!bCopy5)
+                goto cleanup;
+            sFileName.Format(_T("\\CrashSender%dd.exe"), CRASHRPT_VER);
+            BOOL bCopy2 = CopyFile(sExeFolder+sFileName, sWorkingFolder+sFileName, TRUE);
+            if(!bCopy2)
+                goto cleanup;
+            BOOL bCopy4 = CopyFile(sExeFolder+_T("\\Testsd.exe"), sWorkingFolder+_T("\\Testsd.exe"), TRUE);
+            if(!bCopy4)
+                goto cleanup;
+            BOOL bCopy9 = CopyFile(sExeFolder+_T("\\crproberd.exe"), sWorkingFolder+_T("\\crproberd.exe"), TRUE);
+            if(!bCopy9)
+                goto cleanup;
+    #else
+    #ifndef CRASHRPT_LIB
+            sFileName.Format(_T("\\CrashRpt%d.dll"), CRASHRPT_VER);
+            BOOL bCopy = CopyFile(sExeFolder+sFileName, sWorkingFolder+sFileName, TRUE);
+            if(!bCopy)
+                goto cleanup;
+            sFileName.Format(_T("\\CrashRpt%d.pdb"), CRASHRPT_VER);
+            BOOL bCopy10 = CopyFile(sExeFolder+sFileName, sWorkingFolder+sFileName, TRUE);
+            if(!bCopy10)
+                goto cleanup;
+            sFileName.Format(_T("\\CrashRptProbe%d.dll"), CRASHRPT_VER);
+            BOOL bCopy5 = CopyFile(sExeFolder+sFileName, sWorkingFolder+sFileName, TRUE);
+            if(!bCopy5)
+                goto cleanup;
+    #endif //!CRASHRPT_LIB
+            sFileName.Format(_T("\\CrashSender%d.exe"), CRASHRPT_VER);
+            BOOL bCopy2 = CopyFile(sExeFolder+sFileName, sWorkingFolder+sFileName, TRUE);
+            if(!bCopy2)
+                goto cleanup;
 
-        BOOL bCopy3 = CopyFile(sExeFolder+_T("\\crashrpt_lang.ini"), sWorkingFolder+_T("\\crashrpt_lang.ini"), TRUE);
-        if(!bCopy3)
-            goto cleanup;
+            BOOL bCopy4 = CopyFile(sExeFolder+_T("\\Tests.exe"), sWorkingFolder+_T("\\Tests.exe"), TRUE);
+            if(!bCopy4)
+                goto cleanup;
+            BOOL bCopy9 = CopyFile(sExeFolder+_T("\\crprober.exe"), sWorkingFolder+_T("\\crprober.exe"), TRUE);
+            if(!bCopy9)
+                goto cleanup;
+    #endif
 
-        BOOL bCopy6 = CopyFile(sExeFolder+_T("\\dummy.ini"), sWorkingFolder+_T("\\dummy.ini"), TRUE);
-        if(!bCopy6)
-            goto cleanup;
+            BOOL bCopy3 = CopyFile(sExeFolder+_T("\\crashrpt_lang.ini"), sWorkingFolder+_T("\\crashrpt_lang.ini"), TRUE);
+            if(!bCopy3)
+                goto cleanup;
 
-        BOOL bCopy7 = CopyFile(sExeFolder+_T("\\dummy.log"), sWorkingFolder+_T("\\dummy.log"), TRUE);
-        if(!bCopy7)
-            goto cleanup;
+            BOOL bCopy6 = CopyFile(sExeFolder+_T("\\dummy.ini"), sWorkingFolder+_T("\\dummy.ini"), TRUE);
+            if(!bCopy6)
+                goto cleanup;
 
-        BOOL bCopy8 = CopyFile(sExeFolder+_T("\\dbghelp.dll"), sWorkingFolder+_T("\\dbghelp.dll"), TRUE);
-        if(!bCopy8)
-            goto cleanup;
-    }
+            BOOL bCopy7 = CopyFile(sExeFolder+_T("\\dummy.log"), sWorkingFolder+_T("\\dummy.log"), TRUE);
+            if(!bCopy7)
+                goto cleanup;
 
-    /* Create new process */
+            BOOL bCopy8 = CopyFile(sExeFolder+_T("\\dbghelp.dll"), sWorkingFolder+_T("\\dbghelp.dll"), TRUE);
+            if(!bCopy8)
+                goto cleanup;
+        }
 
-#ifdef _DEBUG
-    sCmdLine = _T("\"") + sWorkingFolder+_T("\\Testsd.exe") + _T("\"");
-#else
-    sCmdLine = _T("\"") + sWorkingFolder+_T("\\Tests.exe") + _T("\"");
-#endif
+        /* Create new process */
 
-    if(g_bRunningFromUNICODEFolder)
-        sCmdLine += _T(" /unicode");
+    #ifdef _DEBUG
+        sCmdLine = _T("\"") + sWorkingFolder+_T("\\Testsd.exe") + _T("\"");
+    #else
+        sCmdLine = _T("\"") + sWorkingFolder+_T("\\Tests.exe") + _T("\"");
+    #endif
 
-    {
+        if(g_bRunningFromUNICODEFolder)
+            sCmdLine += _T(" /unicode");
+
         HANDLE hProcess = NULL;
 
         STARTUPINFO si;
@@ -424,7 +424,7 @@ int fork()
 
         BOOL bCreateProcess = CreateProcess(NULL, sCmdLine.GetBuffer(0),
             NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
-        if (!bCreateProcess)
+        if(!bCreateProcess)
         {
             _tprintf(_T("Error creating process! Press any key to exit.\n."));
             _getch();
@@ -438,6 +438,7 @@ int fork()
 
         GetExitCodeProcess(hProcess, &dwExitCode);
     }
+
 cleanup:
 
     // Clean up
@@ -625,27 +626,27 @@ void CTestSuite::AfterTest(const char* szFunction)
 void CTestSuite::AddErrorMsg(const char* szFunction, const char* szAssertion, const char* szMsg, ...)
 {
     m_bTestFailed = true;
-	char szBuffer[4096];
-	memset(szBuffer, 0, 4096);
-	if(szMsg!=NULL)
-	{
-		va_list arg_list;
-		va_start(arg_list, szMsg);
-		vsnprintf_s(szBuffer, 4095, 4095, szMsg, arg_list);
-	}
+    char szBuffer[4096];
+    memset(szBuffer, 0, 4096);
+    if(szMsg!=NULL)
+    {
+        va_list arg_list;
+        va_start(arg_list, szMsg);
+        vsnprintf_s(szBuffer, 4095, 4095, szMsg, arg_list);
+    }
 
     std::string sMsg = "In test: ";
     sMsg += szFunction;
     sMsg += " Expr: ";
     sMsg += szAssertion;
-	if(szMsg!=NULL)
-	{
-		sMsg += " Msg: ";
-		sMsg += szBuffer;
-	}
+    if(szMsg!=NULL)
+    {
+        sMsg += " Msg: ";
+        sMsg += szBuffer;
+    }
     m_asErrorMsg.push_back(sMsg);
 
-	std::string sErrorMsg = "!!! " + sMsg;
+    std::string sErrorMsg = "!!! " + sMsg;
     sErrorMsg += "\n";
     printf("%s", sErrorMsg.c_str());
     fflush(stdout);

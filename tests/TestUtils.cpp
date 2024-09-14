@@ -33,12 +33,12 @@ BOOL TestUtils::CreateErrorReport(CString sTmpFolder, CString& sErrorReportName,
 
     {
         lResult = RegCreateKey(HKEY_CURRENT_USER, sKeyName, &hKey);
-        if (lResult != ERROR_SUCCESS)
+        if(lResult!=ERROR_SUCCESS)
             goto cleanup;
 
         DWORD dwVal = 12345;
         lResult = RegSetValueEx(hKey, _T("Value$%^!@#&123fer"), 0, REG_DWORD, (LPBYTE)&dwVal, sizeof(DWORD));
-        if (lResult != ERROR_SUCCESS)
+        if(lResult!=ERROR_SUCCESS)
             goto cleanup;
 
         CR_INSTALL_INFOW infoW;
@@ -48,10 +48,10 @@ BOOL TestUtils::CreateErrorReport(CString sTmpFolder, CString& sErrorReportName,
         // Use appname with restricted XML characters
         infoW.pszAppVersion = L"1.0.0 &<'a应> \"<";
         infoW.pszErrorReportSaveDir = sTmpFolder;
-        infoW.dwFlags = CR_INST_NO_GUI | CR_INST_DONT_SEND_REPORT | CR_INST_STORE_ZIP_ARCHIVES;
+        infoW.dwFlags = CR_INST_NO_GUI|CR_INST_DONT_SEND_REPORT|CR_INST_STORE_ZIP_ARCHIVES;
 
         int nInstallResult = crInstallW(&infoW);
-        if (nInstallResult != 0)
+        if(nInstallResult!=0)
             goto cleanup;
 
         crAddScreenshot(CR_AS_MAIN_WINDOW);
@@ -66,7 +66,7 @@ BOOL TestUtils::CreateErrorReport(CString sTmpFolder, CString& sErrorReportName,
 
         // Generate error report
         int nGenResult = crGenerateErrorReport(&ei);
-        if (nGenResult != 0)
+        if(nGenResult!=0)
             goto cleanup;
 
         // Wait until CrashSender process exits
@@ -74,12 +74,12 @@ BOOL TestUtils::CreateErrorReport(CString sTmpFolder, CString& sErrorReportName,
 
         // Check exit code
         GetExitCodeProcess(ei.hSenderProcess, &dwExitCode);
-        if (dwExitCode != 0)
+        if(dwExitCode!=0)
             goto cleanup;
 
         // Get ZIP name
         hFind = FindFirstFile(sSearchPattern, &ffd);
-        if (hFind == INVALID_HANDLE_VALUE)
+        if(hFind==INVALID_HANDLE_VALUE)
             goto cleanup;
 
         sErrorReportName = sTmpFolder + _T("\\") + CString(ffd.cFileName);
@@ -90,30 +90,31 @@ BOOL TestUtils::CreateErrorReport(CString sTmpFolder, CString& sErrorReportName,
         // Get MD5 name
         sSearchPattern = sTmpFolder + "\\*.md5";
         hFind = FindFirstFile(sSearchPattern, &ffd);
-        if (hFind == INVALID_HANDLE_VALUE)
+        if(hFind==INVALID_HANDLE_VALUE)
             goto cleanup;
 
         sMD5FileName = sTmpFolder + _T("\\") + CString(ffd.cFileName);
 
-#if _MSC_VER < 1400
+    #if _MSC_VER < 1400
         f = _tfopen(sMD5FileName, _T("rt"));
-#else
+    #else
         _tfopen_s(&f, sMD5FileName, _T("rt"));
-#endif
-        if (f == NULL)
+    #endif
+        if(f==NULL)
             goto cleanup;
 
         TCHAR* szHash = _fgetts(szHashBuff, 256, f);
-        if (szHash == NULL)
+        if(szHash==NULL)
             goto cleanup;
 
         sMD5Hash = szHash;
 
-        if (sMD5Hash.GetLength() != 32)
+        if(sMD5Hash.GetLength()!=32)
             goto cleanup; // Hash must be 32 characters in length
-
-        bStatus = TRUE;
     }
+
+    bStatus = TRUE;
+
 cleanup:
 
     crUninstall();
@@ -135,67 +136,67 @@ cleanup:
 // Returns the list of sections in an INI file.
 int TestUtils::EnumINIFileSections(CString sFileName, std::vector<CString>& aSections)
 {
-	TCHAR buf[4096]=_T("");
+    TCHAR buf[4096]=_T("");
 
-	aSections.clear();
+    aSections.clear();
 
-	int nLen = GetPrivateProfileString(NULL, NULL, NULL, buf, 4096, sFileName);
+    int nLen = GetPrivateProfileString(NULL, NULL, NULL, buf, 4096, sFileName);
 
-	CString sToken;
-	int i;
-	for(i=0;i<nLen;i++)
-	{
-		if(buf[i]==0)
-		{
-			if(sToken.GetLength()!=0)
-				aSections.push_back(sToken);
-			sToken.Empty();
-		}
-		else
-		{
-			sToken += buf[i];
-		}
-	}
+    CString sToken;
+    int i;
+    for(i=0;i<nLen;i++)
+    {
+        if(buf[i]==0)
+        {
+            if(sToken.GetLength()!=0)
+                aSections.push_back(sToken);
+            sToken.Empty();
+        }
+        else
+        {
+            sToken += buf[i];
+        }
+    }
 
-	return (int)aSections.size();
+    return (int)aSections.size();
 }
 
 // Returns the list of strings in the specified section in an INI file.
 int TestUtils::EnumINIFileStrings(CString sFileName, CString sSectionName, std::vector<CString>& aStrings)
 {
-	TCHAR buf[4096]=_T("");
+    TCHAR buf[4096]=_T("");
 
-	aStrings.clear();
+    aStrings.clear();
 
-	int nLen = GetPrivateProfileString(sSectionName, NULL, NULL, buf, 4096, sFileName);
+    int nLen = GetPrivateProfileString(sSectionName, NULL, NULL, buf, 4096, sFileName);
 
-	CString sToken;
-	int i;
-	for(i=0;i<nLen;i++)
-	{
-		if(buf[i]==0)
-		{
-			if(sToken.GetLength()!=0)
-				aStrings.push_back(sToken);
-			sToken.Empty();
-		}
-		else
-		{
-			sToken += buf[i];
-		}
-	}
+    CString sToken;
+    int i;
+    for(i=0;i<nLen;i++)
+    {
+        if(buf[i]==0)
+        {
+            if(sToken.GetLength()!=0)
+                aStrings.push_back(sToken);
+            sToken.Empty();
+        }
+        else
+        {
+            sToken += buf[i];
+        }
+    }
 
-	return (int)aStrings.size();
+    return (int)aStrings.size();
 }
 
 int TestUtils::RunProgram(CString sExeName, CString sParams)
 {
-	BOOL bExecute = false;
-	SHELLEXECUTEINFO sei;
+    BOOL bExecute = false;
+    SHELLEXECUTEINFO sei;
     memset(&sei, 0, sizeof(SHELLEXECUTEINFO));
     DWORD dwExitCode = 1;
 
-	sei.cbSize = sizeof(SHELLEXECUTEINFO);
+    sei.cbSize = sizeof(SHELLEXECUTEINFO);
     sei.fMask = SEE_MASK_NOCLOSEPROCESS|SEE_MASK_FLAG_NO_UI;
     sei.lpVerb = _T("open");
     sei.lpFile = sExeName;
@@ -203,15 +204,15 @@ int TestUtils::RunProgram(CString sExeName, CString sParams)
 
     bExecute = ShellExecuteEx(&sei);
     if(!bExecute)
-		return 255;
+        return 255;
 
-	// Wait until process exits
+    // Wait until process exits
     WaitForSingleObject(sei.hProcess, 10000);
 
     // Check crprober.exe process exit code - it should equal to 0
     GetExitCodeProcess(sei.hProcess, &dwExitCode);
 
-	return (int)dwExitCode;
+    return (int)dwExitCode;
 }
 
 void TestUtils::wtrim(std::wstring& str, const wchar_t* szTrim)
@@ -232,11 +233,11 @@ std::wstring TestUtils::exec(LPCTSTR szCmd)
     wchar_t buffer[4096];
     std::wstring result;
     while(!feof(pipe))
-	{
-    	if(fgetws(buffer, 4096, pipe) != NULL)
-    		result += buffer;
+    {
+        if(fgetws(buffer, 4096, pipe) != NULL)
+            result += buffer;
     }
-	wtrim(result);
+    wtrim(result);
     _pclose(pipe);
     return result;
 }
