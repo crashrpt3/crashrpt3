@@ -119,11 +119,11 @@ BOOL CHttpRequestSender::InternalSend()
             goto cleanup;
         }
 
-	    // Set large receive timeout to avoid problems in case of
-	    // slow upload => slow response from the server.
-	    DWORD dwReceiveTimeout = 0;
-	    InternetSetOption(hConnect, INTERNET_OPTION_RECEIVE_TIMEOUT,
-		    &dwReceiveTimeout, sizeof(dwReceiveTimeout));
+        // Set large receive timeout to avoid problems in case of
+        // slow upload => slow response from the server.
+        DWORD dwReceiveTimeout = 0;
+        InternetSetOption(hConnect, INTERNET_OPTION_RECEIVE_TIMEOUT,
+            &dwReceiveTimeout, sizeof(dwReceiveTimeout));
 
         // Check if canceled
         if(m_Assync->IsCancelled()){ goto cleanup; }
@@ -134,11 +134,11 @@ BOOL CHttpRequestSender::InternalSend()
         // Configure flags for HttpOpenRequest
         DWORD dwFlags = INTERNET_FLAG_NO_CACHE_WRITE | INTERNET_FLAG_NO_AUTO_REDIRECT;
         if(dwPort==INTERNET_DEFAULT_HTTPS_PORT)
-	        dwFlags |= INTERNET_FLAG_SECURE; // Use SSL
+            dwFlags |= INTERNET_FLAG_SECURE; // Use SSL
 
         BOOL bRedirect = FALSE;
         int nCount = 0;
-        while (nCount == 0 || bRedirect)
+        while(nCount==0 || bRedirect)
         {
             nCount++;
 
@@ -152,7 +152,7 @@ BOOL CHttpRequestSender::InternalSend()
                 szAccept,
                 dwFlags,
                 0
-            );
+                );
             if (!hRequest)
             {
                 m_Assync->SetProgress(_T("HttpOpenRequest has failed."), 0, true);
@@ -163,18 +163,18 @@ BOOL CHttpRequestSender::InternalSend()
             // that MVS doesn't have a valid SSL certificate.
             DWORD extraSSLDwFlags = 0;
             DWORD dwBuffLen = sizeof(extraSSLDwFlags);
-            InternetQueryOption(hRequest, INTERNET_OPTION_SECURITY_FLAGS,
-                (LPVOID)&extraSSLDwFlags, &dwBuffLen);
+            InternetQueryOption (hRequest, INTERNET_OPTION_SECURITY_FLAGS,
+            (LPVOID)&extraSSLDwFlags, &dwBuffLen);
             // We have to specifically ignore these 2 errors for MVS
             extraSSLDwFlags |= SECURITY_FLAG_IGNORE_REVOCATION |  // Ignores certificate revocation problems.
-                SECURITY_FLAG_IGNORE_WRONG_USAGE | // Ignores incorrect usage problems.
-                SECURITY_FLAG_IGNORE_CERT_CN_INVALID | // Ignores the ERROR_INTERNET_SEC_CERT_CN_INVALID error message.
-                SECURITY_FLAG_IGNORE_CERT_DATE_INVALID; // Ignores the ERROR_INTERNET_SEC_CERT_DATE_INVALID error message.
-            InternetSetOption(hRequest, INTERNET_OPTION_SECURITY_FLAGS,
-                &extraSSLDwFlags, sizeof(extraSSLDwFlags));
+                               SECURITY_FLAG_IGNORE_WRONG_USAGE | // Ignores incorrect usage problems.
+                               SECURITY_FLAG_IGNORE_CERT_CN_INVALID | // Ignores the ERROR_INTERNET_SEC_CERT_CN_INVALID error message.
+                               SECURITY_FLAG_IGNORE_CERT_DATE_INVALID; // Ignores the ERROR_INTERNET_SEC_CERT_DATE_INVALID error message.
+            InternetSetOption (hRequest, INTERNET_OPTION_SECURITY_FLAGS,
+                                &extraSSLDwFlags, sizeof (extraSSLDwFlags) );
 
             // Fill in buffer
-            BufferIn.dwStructSize = sizeof(INTERNET_BUFFERS); // Must be set or error will occur
+            BufferIn.dwStructSize = sizeof( INTERNET_BUFFERS ); // Must be set or error will occur
             BufferIn.Next = NULL;
             BufferIn.lpcszHeader = sHeaders;
             BufferIn.dwHeadersLength = sHeaders.GetLength();
@@ -191,38 +191,38 @@ BOOL CHttpRequestSender::InternalSend()
             // Add a message to log
             m_Assync->SetProgress(_T("Sending HTTP request..."), 0);
             // Send request
-            if (!HttpSendRequestEx(hRequest, &BufferIn, NULL, 0, 0))
+            if(!HttpSendRequestEx( hRequest, &BufferIn, NULL, 0, 0))
             {
                 m_Assync->SetProgress(_T("HttpSendRequestEx has failed."), 0);
                 goto cleanup;
             }
 
             // Write text fields
-            for (it = m_Request.m_aTextFields.begin(); it != m_Request.m_aTextFields.end(); it++)
+            for(it=m_Request.m_aTextFields.begin(); it!=m_Request.m_aTextFields.end(); it++)
             {
                 bRet = WriteTextPart(hRequest, it->first);
-                if (!bRet)
+                if(!bRet)
                     goto cleanup;
             }
 
             // Write attachments
-            for (it2 = m_Request.m_aIncludedFiles.begin(); it2 != m_Request.m_aIncludedFiles.end(); it2++)
+            for(it2=m_Request.m_aIncludedFiles.begin(); it2!=m_Request.m_aIncludedFiles.end(); it2++)
             {
                 bRet = WriteAttachmentPart(hRequest, it2->first);
-                if (!bRet)
+                if(!bRet)
                     goto cleanup;
             }
 
             // Write boundary
             bRet = WriteTrailingBoundary(hRequest);
-            if (!bRet)
+            if(!bRet)
                 goto cleanup;
 
             // Add a message to log
             m_Assync->SetProgress(_T("Ending HTTP request..."), 0);
 
             // End request
-            if (!HttpEndRequest(hRequest, NULL, 0, 0))
+            if(!HttpEndRequest(hRequest, NULL, 0, 0))
             {
                 m_Assync->SetProgress(_T("HttpEndRequest has failed."), 0);
                 goto cleanup;
@@ -234,10 +234,10 @@ BOOL CHttpRequestSender::InternalSend()
             // Get HTTP response code from HTTP headers
             DWORD lHttpStatus = 0;
             DWORD lHttpStatusSize = sizeof(lHttpStatus);
-            BOOL bQueryInfo = HttpQueryInfo(hRequest, HTTP_QUERY_STATUS_CODE | HTTP_QUERY_FLAG_NUMBER,
-                &lHttpStatus, &lHttpStatusSize, 0);
+            BOOL bQueryInfo = HttpQueryInfo(hRequest, HTTP_QUERY_STATUS_CODE|HTTP_QUERY_FLAG_NUMBER,
+                                            &lHttpStatus, &lHttpStatusSize, 0);
 
-            if (bQueryInfo)
+            if(bQueryInfo)
             {
                 sMsg.Format(_T("Server response code: %ld"), lHttpStatus);
                 m_Assync->SetProgress(sMsg, 0);
@@ -247,17 +247,17 @@ BOOL CHttpRequestSender::InternalSend()
             InternetReadFile(hRequest, pBuffer, 4095, &dwBuffSize);
             pBuffer[dwBuffSize] = 0;
             sMsg = CString((LPCSTR)pBuffer, dwBuffSize);
-            sMsg = _T("Server response body:") + sMsg;
+            sMsg = _T("Server response body:")  + sMsg;
             m_Assync->SetProgress(sMsg, 0);
 
             // If the first byte of HTTP response is a digit, than assume a legacy way
             // of determining delivery status - the HTTP response starts with a delivery status code
-            if (dwBuffSize > 0 && pBuffer[0] >= '0' && pBuffer[0] <= '9')
+            if(dwBuffSize>0 && pBuffer[0]>='0' && pBuffer[0]<='9')
             {
                 m_Assync->SetProgress(_T("Assuming legacy method of determining delivery status (from HTTP response body)."), 0);
 
                 // Get status code from HTTP response
-                if (atoi((LPCSTR)pBuffer) != 200)
+                if(atoi((LPCSTR)pBuffer)!=200)
                 {
                     m_Assync->SetProgress(_T("Failed (HTTP response body doesn't start with code 200)."), 100, false);
                     goto cleanup;
@@ -271,10 +271,10 @@ BOOL CHttpRequestSender::InternalSend()
                 // the delivery status should be read from HTTP header
 
                 // Check if we have a redirect (302 response code)
-                if (bQueryInfo && lHttpStatus == 302)
+                if(bQueryInfo && lHttpStatus==302)
                 {
                     // Check for multiple redirects
-                    if (bRedirect)
+                    if(bRedirect)
                     {
                         m_Assync->SetProgress(_T("Multiple redirects are not allowed."), 100, false);
                         goto cleanup;
@@ -282,15 +282,15 @@ BOOL CHttpRequestSender::InternalSend()
 
                     bRedirect = TRUE;
 
-                    TCHAR szBuffer[1024] = _T("");
-                    DWORD dwBuffSize = 1024 * sizeof(TCHAR);
+                    TCHAR szBuffer[1024]=_T("");
+                    DWORD dwBuffSize = 1024*sizeof(TCHAR);
                     DWORD nIndex = 0;
 
                     BOOL bQueryInfo = HttpQueryInfo(hRequest, HTTP_QUERY_LOCATION,
-                        szBuffer,
-                        &dwBuffSize,
-                        &nIndex);
-                    if (!bQueryInfo)
+                            szBuffer,
+                            &dwBuffSize,
+                            &nIndex);
+                    if(!bQueryInfo)
                     {
                         m_Assync->SetProgress(_T("Failed to redirect."), 100, false);
                         goto cleanup;
@@ -308,7 +308,7 @@ BOOL CHttpRequestSender::InternalSend()
                 }
 
                 // Check for server response code - expected code 200
-                if (!bQueryInfo || lHttpStatus != 200)
+                if(!bQueryInfo || lHttpStatus!=200)
                 {
                     m_Assync->SetProgress(_T("Failed (HTTP response code is not equal to 200)."), 100, false);
                     goto cleanup;
@@ -317,11 +317,12 @@ BOOL CHttpRequestSender::InternalSend()
                 break;
             }
         }
-
-        // Add a message to log
-        m_Assync->SetProgress(_T("Error report has been sent OK!"), 100, false);
-        bStatus = TRUE;
     }
+
+    // Add a message to log
+    m_Assync->SetProgress(_T("Error report has been sent OK!"), 100, false);
+    bStatus = TRUE;
+
 cleanup:
 
     if(!bStatus)
@@ -617,15 +618,15 @@ BOOL CHttpRequestSender::CalcRequestSize(LONGLONG& lSize)
 {
     lSize = 0;
 
-	// Calculate summary size of all text fields included into request
+    // Calculate summary size of all text fields included into request
     for(const auto& it : m_Request.m_aTextFields)
     {
         LONGLONG lPartSize = 0;
         BOOL bCalc = CalcTextPartSize(it.first, lPartSize);
         if(!bCalc) {
-		    m_Assync->SetProgress(_T("CHttpRequestSender::CalcRequestSize - CalcTextPartSize() FAILED"), 0);
+            m_Assync->SetProgress(_T("CHttpRequestSender::CalcRequestSize - CalcTextPartSize() FAILED"), 0);
             return FALSE;
-		}
+        }
         lSize += lPartSize;
     }
 
@@ -635,9 +636,9 @@ BOOL CHttpRequestSender::CalcRequestSize(LONGLONG& lSize)
         LONGLONG lPartSize = 0;
         BOOL bCalc = CalcAttachmentPartSize(it2.first, lPartSize);
         if(!bCalc) {
-		    m_Assync->SetProgress(_T("CHttpRequestSender::CalcRequestSize - CalcAttachmentPartSize() FAILED"), 0);
+            m_Assync->SetProgress(_T("CHttpRequestSender::CalcRequestSize - CalcAttachmentPartSize() FAILED"), 0);
             return FALSE;
-		}
+        }
         lSize += lPartSize;
     }
 
@@ -645,7 +646,7 @@ BOOL CHttpRequestSender::CalcRequestSize(LONGLONG& lSize)
     FormatTrailingBoundary(sTrailingBoundary);
     lSize += sTrailingBoundary.GetLength();
 
-	return TRUE;
+    return TRUE;
 }
 
 BOOL CHttpRequestSender::CalcTextPartSize(CString sName, LONGLONG& lSize)

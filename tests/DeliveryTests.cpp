@@ -52,7 +52,7 @@ void DeliveryTests::Test_HttpDelivery()
     {
         // Create a temporary folder
         Utility::GetSpecialFolder(CSIDL_APPDATA, sAppDataFolder);
-        sTmpFolder = sAppDataFolder + _T("\\CrashRpt");
+        sTmpFolder = sAppDataFolder+_T("\\CrashRpt");
         BOOL bCreate = Utility::CreateFolder(sTmpFolder);
         TEST_ASSERT(bCreate);
 
@@ -69,22 +69,23 @@ void DeliveryTests::Test_HttpDelivery()
         info.uPriorities[CR_SMAPI] = CR_NEGATIVE_PRIORITY;
         info.pszErrorReportSaveDir = sTmpFolder;
         int nInstResult = crInstall(&info);
-        TEST_ASSERT(nInstResult == 0);
+        TEST_ASSERT(nInstResult==0);
 
         // Generate and send error report
         CR_EXCEPTION_INFO exc;
         memset(&exc, 0, sizeof(CR_EXCEPTION_INFO));
         exc.cb = sizeof(CR_EXCEPTION_INFO);
         int nResult2 = crGenerateErrorReport(&exc);
-        TEST_ASSERT(nResult2 == 0);
+        TEST_ASSERT(nResult2==0);
 
         // Wait until CrashSender exits and check exit code
         WaitForSingleObject(exc.hSenderProcess, INFINITE);
 
         DWORD dwExitCode = 1;
         GetExitCodeProcess(exc.hSenderProcess, &dwExitCode);
-        TEST_ASSERT(dwExitCode == 0); // Exit code should be zero
+        TEST_ASSERT(dwExitCode==0); // Exit code should be zero
     }
+
     __TEST_CLEANUP__;
 
     // Uninstall
@@ -103,7 +104,7 @@ void DeliveryTests::Test_SmtpDelivery()
     {
         // Create a temporary folder
         Utility::GetSpecialFolder(CSIDL_APPDATA, sAppDataFolder);
-        sTmpFolder = sAppDataFolder + _T("\\CrashRpt");
+        sTmpFolder = sAppDataFolder+_T("\\CrashRpt");
         BOOL bCreate = Utility::CreateFolder(sTmpFolder);
         TEST_ASSERT(bCreate);
 
@@ -122,22 +123,23 @@ void DeliveryTests::Test_SmtpDelivery()
         info.uPriorities[CR_SMAPI] = CR_NEGATIVE_PRIORITY;
         info.pszErrorReportSaveDir = sTmpFolder;
         int nInstResult = crInstall(&info);
-        TEST_ASSERT(nInstResult == 0);
+        TEST_ASSERT(nInstResult==0);
 
         // Generate and send error report
         CR_EXCEPTION_INFO exc;
         memset(&exc, 0, sizeof(CR_EXCEPTION_INFO));
         exc.cb = sizeof(CR_EXCEPTION_INFO);
         int nResult2 = crGenerateErrorReport(&exc);
-        TEST_ASSERT(nResult2 == 0);
+        TEST_ASSERT(nResult2==0);
 
         // Wait until CrashSender exits and check exit code
         WaitForSingleObject(exc.hSenderProcess, INFINITE);
 
         DWORD dwExitCode = 1;
         GetExitCodeProcess(exc.hSenderProcess, &dwExitCode);
-        TEST_ASSERT(dwExitCode == 0); // Exit code should be zero
+        TEST_ASSERT(dwExitCode==0); // Exit code should be zero
     }
+
     __TEST_CLEANUP__;
 
     // Uninstall
@@ -156,7 +158,7 @@ void DeliveryTests::Test_SmtpDelivery_proxy()
     {
         // Create a temporary folder
         Utility::GetSpecialFolder(CSIDL_APPDATA, sAppDataFolder);
-        sTmpFolder = sAppDataFolder + _T("\\CrashRpt");
+        sTmpFolder = sAppDataFolder+_T("\\CrashRpt");
         BOOL bCreate = Utility::CreateFolder(sTmpFolder);
         TEST_ASSERT(bCreate);
 
@@ -176,22 +178,23 @@ void DeliveryTests::Test_SmtpDelivery_proxy()
         info.uPriorities[CR_SMAPI] = CR_NEGATIVE_PRIORITY;
         info.pszErrorReportSaveDir = sTmpFolder;
         int nInstResult = crInstall(&info);
-        TEST_ASSERT(nInstResult == 0);
+        TEST_ASSERT(nInstResult==0);
 
         // Generate and send error report
         CR_EXCEPTION_INFO exc;
         memset(&exc, 0, sizeof(CR_EXCEPTION_INFO));
         exc.cb = sizeof(CR_EXCEPTION_INFO);
         int nResult2 = crGenerateErrorReport(&exc);
-        TEST_ASSERT(nResult2 == 0);
+        TEST_ASSERT(nResult2==0);
 
         // Wait until CrashSender exits and check exit code
         WaitForSingleObject(exc.hSenderProcess, INFINITE);
 
         DWORD dwExitCode = 1;
         GetExitCodeProcess(exc.hSenderProcess, &dwExitCode);
-        TEST_ASSERT(dwExitCode == 0); // Exit code should be zero
+        TEST_ASSERT(dwExitCode==0); // Exit code should be zero
     }
+
     __TEST_CLEANUP__;
 
     // Uninstall
@@ -213,7 +216,7 @@ void DeliveryTests::Test_SMAPI_Delivery()
     {
         // Create a temporary folder
         Utility::GetSpecialFolder(CSIDL_APPDATA, sAppDataFolder);
-        sTmpFolder = sAppDataFolder + _T("\\CrashRpt");
+        sTmpFolder = sAppDataFolder+_T("\\CrashRpt");
         BOOL bCreate = Utility::CreateFolder(sTmpFolder);
         TEST_ASSERT(bCreate);
 
@@ -232,14 +235,14 @@ void DeliveryTests::Test_SMAPI_Delivery()
         info.uPriorities[CR_SMAPI] = 0;
         info.pszErrorReportSaveDir = sTmpFolder;
         int nInstResult = crInstall(&info);
-        TEST_ASSERT(nInstResult == 0);
+        TEST_ASSERT(nInstResult==0);
 
         // Generate and send error report
         CR_EXCEPTION_INFO exc;
         memset(&exc, 0, sizeof(CR_EXCEPTION_INFO));
         exc.cb = sizeof(CR_EXCEPTION_INFO);
         int nResult2 = crGenerateErrorReport(&exc);
-        TEST_ASSERT(nResult2 == 0);
+        TEST_ASSERT(nResult2==0);
 
         // Wait until CrashSender exits and check exit code
         WaitForSingleObject(exc.hSenderProcess, INFINITE);
@@ -247,8 +250,9 @@ void DeliveryTests::Test_SMAPI_Delivery()
         DWORD dwExitCode = 1;
         GetExitCodeProcess(exc.hSenderProcess, &dwExitCode);
         // Since SMAPI is not available in silent mode, test passes when delivery fails.
-        TEST_ASSERT(dwExitCode != 0); // Exit code should be non-zero
+        TEST_ASSERT(dwExitCode!=0); // Exit code should be non-zero
     }
+
     __TEST_CLEANUP__;
 
     // Uninstall

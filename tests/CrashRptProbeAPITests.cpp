@@ -71,7 +71,7 @@ void CrashRptProbeAPITests::SetUp()
     {
         // Create a temporary folder for wide-char test
         Utility::GetSpecialFolder(CSIDL_APPDATA, sAppDataFolder);
-        m_sTmpFolderW = sAppDataFolder + _T("\\CrashRpt 应用程序名称");
+        m_sTmpFolderW = sAppDataFolder+_T("\\CrashRpt 应用程序名称");
         BOOL bCreate = Utility::CreateFolder(m_sTmpFolderW);
         TEST_ASSERT(bCreate);
 
@@ -81,7 +81,7 @@ void CrashRptProbeAPITests::SetUp()
 
         // Create a temporary folder for ANSI test
         Utility::GetSpecialFolder(CSIDL_APPDATA, sAppDataFolder);
-        m_sTmpFolderA = sAppDataFolder + _T("\\CrashRpt");
+        m_sTmpFolderA = sAppDataFolder+_T("\\CrashRpt");
         BOOL bCreate2 = Utility::CreateFolder(m_sTmpFolderA);
         TEST_ASSERT(bCreate2);
 
@@ -89,6 +89,7 @@ void CrashRptProbeAPITests::SetUp()
         BOOL bCreateReport2 = TestUtils::CreateErrorReport(m_sTmpFolderA, m_sErrorReportNameA, m_sMD5HashA);
         TEST_ASSERT(bCreateReport2);
     }
+
     __TEST_CLEANUP__;
 }
 
@@ -108,37 +109,38 @@ void CrashRptProbeAPITests::Test_crpOpenErrorReportW()
     {
         // Open NULL report - should fail
         int nOpenResult = crpOpenErrorReportW(NULL, NULL, NULL, 0, &hReport);
-        TEST_ASSERT(nOpenResult != 0);
+        TEST_ASSERT(nOpenResult!=0);
 
         // Open report - should succeed
         LPCWSTR szReportName = strconv.t2w(m_sErrorReportNameW);
         int nOpenResult2 = crpOpenErrorReportW(szReportName, NULL, NULL, 0, &hReport);
-        TEST_ASSERT(nOpenResult2 == 0 && hReport != 0);
+        TEST_ASSERT(nOpenResult2==0 && hReport!=0);
 
         // Close report - should succeed
         int nCloseResult = crpCloseErrorReport(hReport);
-        TEST_ASSERT(nCloseResult == 0);
+        TEST_ASSERT(nCloseResult==0);
         hReport = 0;
 
         // Open report and check MD5 - should succeed
         LPCWSTR szMD5Hash = strconv.t2w(m_sMD5HashW);
         int nOpenResult3 = crpOpenErrorReportW(szReportName, szMD5Hash, NULL, 0, &hReport);
-        TEST_ASSERT(nOpenResult3 == 0 && hReport != 0);
+        TEST_ASSERT(nOpenResult3==0 && hReport!=0);
 
         // Close report - should succeed
         int nCloseResult2 = crpCloseErrorReport(hReport);
-        TEST_ASSERT(nCloseResult2 == 0);
+        TEST_ASSERT(nCloseResult2==0);
         hReport = 0;
 
         // Open report with incorrect MD5 - should fail
         LPCWSTR szInvalidMD5 = L"1234567890123456";
         int nOpenResult4 = crpOpenErrorReportW(szReportName, szInvalidMD5, NULL, 0, &hReport);
-        TEST_ASSERT(nOpenResult4 != 0);
+        TEST_ASSERT(nOpenResult4!=0);
 
         // Open not existing file - should fail
         int nOpenResult5 = crpOpenErrorReportW(L"NotExisting.zip", NULL, NULL, 0, &hReport);
-        TEST_ASSERT(nOpenResult5 != 0);
+        TEST_ASSERT(nOpenResult5!=0);
     }
+
     __TEST_CLEANUP__;
 
     crpCloseErrorReport(hReport);
@@ -152,37 +154,38 @@ void CrashRptProbeAPITests::Test_crpOpenErrorReportA()
     {
         // Open NULL report - should fail
         int nOpenResult = crpOpenErrorReportA(NULL, NULL, NULL, 0, &hReport);
-        TEST_ASSERT(nOpenResult != 0);
+        TEST_ASSERT(nOpenResult!=0);
 
         // Open report - should succeed
         LPCSTR szReportName = strconv.t2a(m_sErrorReportNameA);
         int nOpenResult2 = crpOpenErrorReportA(szReportName, NULL, NULL, 0, &hReport);
-        TEST_ASSERT(nOpenResult2 == 0 && hReport != 0);
+        TEST_ASSERT(nOpenResult2==0 && hReport!=0);
 
         // Close report - should succeed
         int nCloseResult = crpCloseErrorReport(hReport);
-        TEST_ASSERT(nCloseResult == 0);
+        TEST_ASSERT(nCloseResult==0);
         hReport = 0;
 
         // Open report and check MD5 - should succeed
         LPCSTR szMD5Hash = strconv.t2a(m_sMD5HashA);
         int nOpenResult3 = crpOpenErrorReportA(szReportName, szMD5Hash, NULL, 0, &hReport);
-        TEST_ASSERT(nOpenResult3 == 0 && hReport != 0);
+        TEST_ASSERT(nOpenResult3==0 && hReport!=0);
 
         // Close report - should succeed
         int nCloseResult2 = crpCloseErrorReport(hReport);
-        TEST_ASSERT(nCloseResult2 == 0);
+        TEST_ASSERT(nCloseResult2==0);
         hReport = 0;
 
         // Open report with incorrect MD5 - should fail
         LPCSTR szInvalidMD5 = "1234567890123456";
         int nOpenResult4 = crpOpenErrorReportA(szReportName, szInvalidMD5, NULL, 0, &hReport);
-        TEST_ASSERT(nOpenResult4 != 0);
+        TEST_ASSERT(nOpenResult4!=0);
 
         // Open not existing file - should fail
         int nOpenResult5 = crpOpenErrorReportW(L"NotExisting.zip", NULL, NULL, 0, &hReport);
-        TEST_ASSERT(nOpenResult5 != 0);
+        TEST_ASSERT(nOpenResult5!=0);
     }
+
     __TEST_CLEANUP__;
 
     crpCloseErrorReport(hReport);
@@ -214,19 +217,19 @@ void CrashRptProbeAPITests::Test_crpExtractFileW()
         // Open report - should succeed
         LPCWSTR szReportName = strconv.t2w(m_sErrorReportNameW);
         int nOpenResult = crpOpenErrorReportW(szReportName, NULL, NULL, 0, &hReport);
-        TEST_ASSERT(nOpenResult == 0 && hReport != 0);
+        TEST_ASSERT(nOpenResult==0 && hReport!=0);
 
         // Enumerate files contained in error report and extract each one
 
         int nRowCount = crpGetPropertyW(hReport, CRP_TBL_XMLDESC_FILE_ITEMS, CRP_META_ROW_COUNT, 0, NULL, 0, NULL);
-        TEST_ASSERT(nRowCount > 0); // Ensure there are files in the report
+        TEST_ASSERT(nRowCount>0); // Ensure there are files in the report
 
         int i;
-        for (i = 0; i < nRowCount; i++)
+        for(i=0; i<nRowCount; i++)
         {
             // Get file name
             int nResult = crpGetPropertyW(hReport, CRP_TBL_XMLDESC_FILE_ITEMS, CRP_COL_FILE_ITEM_NAME, i, szBuffer, BUFF_SIZE, NULL);
-            TEST_ASSERT(nResult == 0);
+            TEST_ASSERT(nResult==0);
 
             CString sDstFile = m_sTmpFolderW + _T("\\") + CString(szBuffer);
             strconv_t strconv;
@@ -235,52 +238,53 @@ void CrashRptProbeAPITests::Test_crpExtractFileW()
             // Check file extension
             CString sExt;
             int nDotPos = sDstFile.ReverseFind('.');
-            if (nDotPos >= 0)
+            if(nDotPos>=0)
                 sExt = sDstFile.Mid(nDotPos);
 
-            if (sExt.CompareNoCase(_T(".XML")) == 0)
+            if(sExt.CompareNoCase(_T(".XML"))==0)
                 nXmlFileCount++;
-            else if (sExt.CompareNoCase(_T(".DMP")) == 0)
+            else if(sExt.CompareNoCase(_T(".DMP"))==0)
                 nDmpFileCount++;
-            else if (sExt.CompareNoCase(_T(".PNG")) == 0)
+            else if(sExt.CompareNoCase(_T(".PNG"))==0)
                 nPngFileCount++;
             else
                 nOtherFileCount++;
 
             // Extract file - should succeed
             int nExtract = crpExtractFileW(hReport, szBuffer, szDstFile, FALSE);
-            TEST_ASSERT(nExtract == 0);
+            TEST_ASSERT(nExtract==0);
 
             // Check that file exists
             DWORD dwAttrs = GetFileAttributesW(szDstFile);
-            TEST_ASSERT(dwAttrs != INVALID_FILE_ATTRIBUTES);
+            TEST_ASSERT(dwAttrs!=INVALID_FILE_ATTRIBUTES);
 
             // Extract file the second time - should fail, because it already exists
             int nExtract2 = crpExtractFileW(hReport, szBuffer, szDstFile, FALSE);
-            TEST_ASSERT(nExtract2 != 0);
+            TEST_ASSERT(nExtract2!=0);
 
             // Extract file the second time and overwrite existing - should succeed
             int nExtract3 = crpExtractFileW(hReport, szBuffer, szDstFile, TRUE);
-            TEST_ASSERT(nExtract3 == 0);
+            TEST_ASSERT(nExtract3==0);
 
             // Check that file exists
             DWORD dwAttrs2 = GetFileAttributesW(szDstFile);
-            TEST_ASSERT(dwAttrs2 != INVALID_FILE_ATTRIBUTES);
+            TEST_ASSERT(dwAttrs2!=INVALID_FILE_ATTRIBUTES);
 
             // Extract file that doesnt exist - should fail
             int nExtract4 = crpExtractFileW(hReport, L"NotExisting.txt", szDstFile, TRUE);
-            TEST_ASSERT(nExtract4 != 0);
+            TEST_ASSERT(nExtract4!=0);
         }
 
         // Enusure there are two XML file (assume it is crashrpt.xml and regkey.xml)
-        TEST_ASSERT(nXmlFileCount == 2);
+        TEST_ASSERT(nXmlFileCount==2);
 
         // Enusure there is exactly one DMP file (assume it is crashdump.dmp)
-        TEST_ASSERT(nDmpFileCount >= 1);
+        TEST_ASSERT(nDmpFileCount>=1);
 
         // Enusure there is at least one PNG file (desktop screenshot)
-        TEST_ASSERT(nPngFileCount >= 1);
+        TEST_ASSERT(nPngFileCount>=1);
     }
+
     __TEST_CLEANUP__;
 
     crpCloseErrorReport(hReport);
@@ -297,19 +301,19 @@ void CrashRptProbeAPITests::Test_crpExtractFileA()
         // Open report - should succeed
         LPCSTR szReportName = strconv.t2a(m_sErrorReportNameA);
         int nOpenResult = crpOpenErrorReportA(szReportName, NULL, NULL, 0, &hReport);
-        TEST_ASSERT(nOpenResult == 0 && hReport != 0);
+        TEST_ASSERT(nOpenResult==0 && hReport!=0);
 
         // Enumerate files contained in error report and extract each one
 
         int nRowCount = crpGetPropertyA(hReport, "XmlDescFileItems", "RowCount", 0, NULL, 0, NULL);
-        TEST_ASSERT(nRowCount > 0);
+        TEST_ASSERT(nRowCount>0);
 
         int i;
-        for (i = 0; i < nRowCount; i++)
+        for(i=0; i<nRowCount; i++)
         {
             // Get file name
             int nResult = crpGetPropertyA(hReport, "XmlDescFileItems", "FileItemName", i, szBuffer, BUFF_SIZE, NULL);
-            TEST_ASSERT(nResult == 0);
+            TEST_ASSERT(nResult==0);
 
             CString sDstFile = m_sTmpFolderA + _T("\\") + CString(szBuffer);
             strconv_t strconv;
@@ -317,29 +321,30 @@ void CrashRptProbeAPITests::Test_crpExtractFileA()
 
             // Extract file - should succeed
             int nExtract = crpExtractFileA(hReport, szBuffer, szDstFile, FALSE);
-            TEST_ASSERT(nExtract == 0);
+            TEST_ASSERT(nExtract==0);
 
             // Check that file exists
             DWORD dwAttrs = GetFileAttributesA(szDstFile);
-            TEST_ASSERT(dwAttrs != INVALID_FILE_ATTRIBUTES);
+            TEST_ASSERT(dwAttrs!=INVALID_FILE_ATTRIBUTES);
 
             // Extract file the second time - should fail, because it already exists
             int nExtract2 = crpExtractFileA(hReport, szBuffer, szDstFile, FALSE);
-            TEST_ASSERT(nExtract2 != 0);
+            TEST_ASSERT(nExtract2!=0);
 
             // Extract file the second time and overwrite existing - should succeed
             int nExtract3 = crpExtractFileA(hReport, szBuffer, szDstFile, TRUE);
-            TEST_ASSERT(nExtract3 == 0);
+            TEST_ASSERT(nExtract3==0);
 
             // Check that file exists
             DWORD dwAttrs2 = GetFileAttributesA(szDstFile);
-            TEST_ASSERT(dwAttrs2 != INVALID_FILE_ATTRIBUTES);
+            TEST_ASSERT(dwAttrs2!=INVALID_FILE_ATTRIBUTES);
 
             // Extract file that doesnt exist - should fail
             int nExtract4 = crpExtractFileA(hReport, "NotExisting.txt", szDstFile, TRUE);
-            TEST_ASSERT(nExtract4 != 0);
+            TEST_ASSERT(nExtract4!=0);
         }
     }
+
     __TEST_CLEANUP__;
 
     crpCloseErrorReport(hReport);
@@ -351,27 +356,28 @@ void CrashRptProbeAPITests::Test_crpGetLastErrorW()
         // Get error message
         WCHAR szErrMsg[256] = L"";
         int nResult = crpGetLastErrorMsgW(szErrMsg, 256);
-        TEST_ASSERT(nResult > 0);
+        TEST_ASSERT(nResult>0);
 
         // Get error message to NULL buffer - must fail
         int nResult2 = crpGetLastErrorMsgW(NULL, 256);
-        TEST_ASSERT(nResult2 < 0);
+        TEST_ASSERT(nResult2<0);
 
         // Get error message to a buffer, but zero length - must fail
         WCHAR szErrMsg2[256] = L"";
         int nResult3 = crpGetLastErrorMsgW(szErrMsg2, 0);
-        TEST_ASSERT(nResult3 < 0);
+        TEST_ASSERT(nResult3<0);
 
         // Get error message to a single-char buffer, must trunkate message and succeed
         WCHAR szErrMsg3[1] = L"";
         int nResult4 = crpGetLastErrorMsgW(szErrMsg3, 1);
-        TEST_ASSERT(nResult4 == 0);
+        TEST_ASSERT(nResult4==0);
 
         // Get error message to a small buffer, must trunkate message and succeed
         WCHAR szErrMsg6[2] = L"";
         int nResult6 = crpGetLastErrorMsgW(szErrMsg6, 2);
-        TEST_ASSERT(nResult6 > 0);
+        TEST_ASSERT(nResult6>0);
     }
+
     __TEST_CLEANUP__;
 
 }
@@ -382,27 +388,28 @@ void CrashRptProbeAPITests::Test_crpGetLastErrorA()
         // Get error message
         char szErrMsg[256] = "";
         int nResult = crpGetLastErrorMsgA(szErrMsg, 256);
-        TEST_ASSERT(nResult > 0);
+        TEST_ASSERT(nResult>0);
 
         // Get error message to NULL buffer - must fail
         int nResult2 = crpGetLastErrorMsgA(NULL, 256);
-        TEST_ASSERT(nResult2 < 0);
+        TEST_ASSERT(nResult2<0);
 
         // Get error message to a buffer, but zero length - must fail
         char szErrMsg2[256] = "";
         int nResult3 = crpGetLastErrorMsgA(szErrMsg2, 0);
-        TEST_ASSERT(nResult3 < 0);
+        TEST_ASSERT(nResult3<0);
 
         // Get error message to a single-char buffer, must trunkate message and succeed
         char szErrMsg3[1] = "";
         int nResult4 = crpGetLastErrorMsgA(szErrMsg3, 1);
-        TEST_ASSERT(nResult4 == 0);
+        TEST_ASSERT(nResult4==0);
 
         // Get error message to a small buffer, must trunkate message and succeed
         char szErrMsg6[2] = "";
         int nResult6 = crpGetLastErrorMsgA(szErrMsg6, 2);
-        TEST_ASSERT(nResult6 > 0);
+        TEST_ASSERT(nResult6>0);
     }
+
     __TEST_CLEANUP__;
 
 }
@@ -419,18 +426,19 @@ void CrashRptProbeAPITests::Test_crpGetPropertyW()
         // Get property from unopened report - should fail
         int nResult = crpGetPropertyW(hReport, CRP_TBL_XMLDESC_MISC, CRP_COL_APP_NAME,
             0, szBuffer, BUFF_SIZE, &uCount);
-        TEST_ASSERT(nResult != 0 && uCount == 0);
+        TEST_ASSERT(nResult!=0 && uCount==0);
 
         // Open report - should succeed
         LPCWSTR szReportName = strconv.t2w(m_sErrorReportNameW);
         int nOpenResult = crpOpenErrorReportW(szReportName, NULL, NULL, 0, &hReport);
-        TEST_ASSERT(nOpenResult == 0 && hReport != 0);
+        TEST_ASSERT(nOpenResult==0 && hReport!=0);
 
         // Get property from opened report - should succeed
         int nResult2 = crpGetPropertyW(hReport, CRP_TBL_XMLDESC_MISC, CRP_COL_APP_NAME,
             0, szBuffer, BUFF_SIZE, &uCount);
-        TEST_ASSERT(nResult2 == 0 && uCount > 0);
+        TEST_ASSERT(nResult2==0 && uCount>0);
     }
+
     __TEST_CLEANUP__;
 
     crpCloseErrorReport(hReport);
@@ -448,18 +456,19 @@ void CrashRptProbeAPITests::Test_crpGetPropertyA()
         // Get property from unopened report - should fail
         int nResult = crpGetPropertyA(hReport, "XmlDescMisc", "AppName",
             0, szBuffer, BUFF_SIZE, &uCount);
-        TEST_ASSERT(nResult != 0 && uCount == 0);
+        TEST_ASSERT(nResult!=0 && uCount==0);
 
         // Open report - should succeed
         LPCSTR szReportName = strconv.t2a(m_sErrorReportNameA);
         int nOpenResult = crpOpenErrorReportA(szReportName, NULL, NULL, 0, &hReport);
-        TEST_ASSERT(nOpenResult == 0 && hReport != 0);
+        TEST_ASSERT(nOpenResult==0 && hReport!=0);
 
         // Get property from opened report - should succeed
         int nResult2 = crpGetPropertyA(hReport, "XmlDescMisc", "AppName",
             0, szBuffer, BUFF_SIZE, &uCount);
-        TEST_ASSERT(nResult2 == 0 && uCount > 0);
+        TEST_ASSERT(nResult2==0 && uCount>0);
     }
+
     __TEST_CLEANUP__;
 
     crpCloseErrorReport(hReport);
@@ -478,43 +487,44 @@ void CrashRptProbeAPITests::Test_crpGetProperty()
     {
         // Open report - should succeed
         int nOpenResult = crpOpenErrorReport(m_sErrorReportNameW, NULL, NULL, 0, &hReport);
-        TEST_ASSERT(nOpenResult == 0 && hReport != 0);
+        TEST_ASSERT(nOpenResult==0 && hReport!=0);
 
         // Get row count in CRP_TBL_XMLDESC_MISC table - should return 1 (this table always has single row)
         int nResult = crpGetProperty(hReport, CRP_TBL_XMLDESC_MISC, CRP_META_ROW_COUNT,
             0, szBuffer, BUFF_SIZE, &uCount);
-        TEST_ASSERT(nResult == 1 && uCount == 0);
+        TEST_ASSERT(nResult==1 && uCount==0);
 
         // Get row count in CRP_TBL_XMLDESC_FILE_ITEMS table - should return >0
         int nResult2 = crpGetProperty(hReport, CRP_TBL_XMLDESC_FILE_ITEMS, CRP_META_ROW_COUNT,
             0, szBuffer, BUFF_SIZE, &uCount);
-        TEST_ASSERT(nResult2 > 1 && uCount == 0);
+        TEST_ASSERT(nResult2>1 && uCount==0);
 
         // Get row count in CRP_TBL_XMLDESC_FILE_ITEMS table - should return >0
         int nResult3 = crpGetProperty(hReport, CRP_TBL_XMLDESC_FILE_ITEMS, CRP_META_ROW_COUNT,
             0, szBuffer, BUFF_SIZE, &uCount);
-        TEST_ASSERT(nResult3 > 1 && uCount == 0);
+        TEST_ASSERT(nResult3>1 && uCount==0);
 
         // Get row count in CRP_TBL_XMLDESC_CUSTOM_PROPS table - should return 1 (added one custom property)
         int nResult4 = crpGetProperty(hReport, CRP_TBL_XMLDESC_CUSTOM_PROPS, CRP_META_ROW_COUNT,
             0, szBuffer, BUFF_SIZE, &uCount);
-        TEST_ASSERT(nResult4 == 1 && uCount == 0);
+        TEST_ASSERT(nResult4==1 && uCount==0);
 
         // Get row count in CRP_TBL_MDMP_MISC table - should return 1 (always has one row)
         int nResult5 = crpGetProperty(hReport, CRP_TBL_MDMP_MISC, CRP_META_ROW_COUNT,
             0, szBuffer, BUFF_SIZE, &uCount);
-        TEST_ASSERT(nResult5 == 1 && uCount == 0);
+        TEST_ASSERT(nResult5==1 && uCount==0);
 
         // Get row count in CRP_TBL_MDMP_MODULES table - should return >0
         int nResult6 = crpGetProperty(hReport, CRP_TBL_MDMP_MODULES, CRP_META_ROW_COUNT,
             0, szBuffer, BUFF_SIZE, &uCount);
-        TEST_ASSERT(nResult6 > 0 && uCount == 0);
+        TEST_ASSERT(nResult6>0 && uCount==0);
 
         // Get row count in CRP_TBL_MDMP_THREADS table - should return >0
         int nResult7 = crpGetProperty(hReport, CRP_TBL_MDMP_THREADS, CRP_META_ROW_COUNT,
             0, szBuffer, BUFF_SIZE, &uCount);
-        TEST_ASSERT(nResult7 > 0 && uCount == 0);
+        TEST_ASSERT(nResult7>0 && uCount==0);
     }
+
     __TEST_CLEANUP__;
 
     crpCloseErrorReport(hReport);
@@ -533,29 +543,28 @@ void CrashRptProbeAPITests::Test_crashrptprobe_dll_file_version()
     VS_FIXEDFILEINFO* fi = NULL;
     UINT uLen = 0;
 
-    // Load CrashRpt.dll dynamically
-    CString sDllPath;
-#ifdef _DEBUG
-    sDllPath.Format(_T("%s\\CrashRptProbe%dd.dll"), (LPCTSTR) Utility::GetModulePath(NULL), CRASHRPT_VER);
-#else
-    sDllPath.Format(_T("%s\\CrashRptProbe%d.dll"), (LPCTSTR) Utility::GetModulePath(NULL), CRASHRPT_VER);
-#endif
-
     {
+        // Load CrashRpt.dll dynamically
+        CString sDllPath;
+    #ifdef _DEBUG
+        sDllPath.Format(_T("%s\\CrashRptProbe%dd.dll"), (LPCTSTR) Utility::GetModulePath(NULL), CRASHRPT_VER);
+    #else
+        sDllPath.Format(_T("%s\\CrashRptProbe%d.dll"), (LPCTSTR) Utility::GetModulePath(NULL), CRASHRPT_VER);
+    #endif
         hModule = LoadLibrary(sDllPath);
-        TEST_ASSERT(hModule != NULL);
+        TEST_ASSERT(hModule!=NULL);
 
         // Get module file name
         GetModuleFileName(hModule, szModuleName, _MAX_PATH);
 
         // Get module version
         dwBuffSize = GetFileVersionInfoSize(szModuleName, 0);
-        TEST_ASSERT(dwBuffSize != 0);
+        TEST_ASSERT(dwBuffSize!=0);
 
         pBuff = (LPBYTE)GlobalAlloc(GPTR, dwBuffSize);
-        TEST_ASSERT(pBuff != NULL);
+        TEST_ASSERT(pBuff!=NULL);
 
-        TEST_ASSERT(0 != GetFileVersionInfo(szModuleName, 0, dwBuffSize, pBuff));
+        TEST_ASSERT(0!=GetFileVersionInfo(szModuleName, 0, dwBuffSize, pBuff));
 
         VerQueryValue(pBuff, _T("\\"), (LPVOID*)&fi, &uLen);
 
@@ -563,10 +572,11 @@ void CrashRptProbeAPITests::Test_crashrptprobe_dll_file_version()
         WORD dwVerMinor = LOWORD(fi->dwProductVersionMS);
         WORD dwVerBuild = LOWORD(fi->dwProductVersionLS);
 
-        DWORD dwModuleVersion = dwVerMajor * 1000 + dwVerMinor * 100 + dwVerBuild;
+        DWORD dwModuleVersion = dwVerMajor*1000+dwVerMinor*100+dwVerBuild;
 
-        TEST_ASSERT(CRASHRPT_VER == dwModuleVersion);
+        TEST_ASSERT(CRASHRPT_VER==dwModuleVersion);
     }
+
     __TEST_CLEANUP__
 
     if(pBuff)
