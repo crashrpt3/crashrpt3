@@ -2,7 +2,9 @@ A crash reporting system for Windows applications.
 
 ----
 
-> Since the author has not updated and maintained it for too long, this repository is used to collect newer patches and features.
+Since the author has not updated and maintained it for too long, this repository is used to collect newer patches and features.
+
+CrashRpt only supports Windows systems, and it is the most powerful crash reporting system for Windows applications.
 
 
 
