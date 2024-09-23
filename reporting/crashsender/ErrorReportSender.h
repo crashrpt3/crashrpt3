@@ -15,7 +15,6 @@ be found in the Authors.txt file in the root of the source tree.
 #include "HttpRequestSender.h"
 #include "tinyxml.h"
 #include "CrashInfoReader.h"
-#include "VideoRec.h"
 
 // Action type
 enum ActionType
@@ -147,9 +146,6 @@ private:
     // Takes desktop screenshot.
     BOOL TakeDesktopScreenshot();
 
-	// This method enters the video recording loop.
-	BOOL RecordVideo();
-
     // Creates crash dump file.
     BOOL CreateMiniDump();
 
@@ -212,7 +208,6 @@ private:
 	// Internal variables
 	static CErrorReportSender* m_pInstance; // Singleton
 	CCrashInfoReader m_CrashInfo;       // Contains crash information.
-	CVideoRecorder m_VideoRec;            // Video recorder.
 	CString m_sErrorMsg;                // Last error message.
 	HWND m_hWndNotify;                  // Notification window.
     int m_nStatus;                      // Error report sending status.

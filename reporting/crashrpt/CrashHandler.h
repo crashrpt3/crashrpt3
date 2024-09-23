@@ -148,10 +148,6 @@ public:
     // Adds desktop screenshot of crash into error report.
     int AddScreenshot(DWORD dwFlags, int nJpegQuality);
 
-    // Starts a video recording of desktop state;
-    // if crash will happen sometime, the video will be included into crash report.
-    int AddVideo(DWORD dwFlags, int nDuration, int nFrameInterval, SIZE* pDesiredFrameSize, HWND hWndParent);
-
     // Adds a registry key to crash report.
     int AddRegKey(__in_z LPCTSTR szRegKey, __in_z LPCTSTR szDstFileName, DWORD dwFlags);
 
@@ -314,12 +310,6 @@ public:
     BOOL m_bAddScreenshot;         // Should we add screenshot?
     DWORD m_dwScreenshotFlags;     // Screenshot flags.
     int m_nJpegQuality;            // Quality of JPEG screenshot images.
-    BOOL  m_bAddVideo;             // Wether to add video recording.
-    DWORD m_dwVideoFlags;          // Flags for video recording.
-    int   m_nVideoDuration;        // Video duration.
-    int   m_nVideoFrameInterval;   // Video frame interval.
-    SIZE   m_DesiredFrameSize;     // Video frame size.
-    HWND m_hWndVideoParent;        // Parent window for video recording dialog.
     CString m_sCustomSenderIcon;   // Resource name that can be used as custom Error Report dialog icon.
     std::map<CString, FileItem> m_files; // File items to include.
     std::map<CString, CString> m_props;  // User-defined properties to include.

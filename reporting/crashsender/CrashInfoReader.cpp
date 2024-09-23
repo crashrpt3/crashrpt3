@@ -392,14 +392,6 @@ CCrashInfoReader::CCrashInfoReader()
 	m_nJpegQuality = 0;
 	m_ptCursorPos = CPoint(0, 0);
 	m_rcAppWnd = CRect(0, 0, 0, 0);
-	m_bAddVideo = FALSE;
-	m_dwVideoFlags = 0;
-	m_nVideoDuration = 0;
-	m_nVideoFrameInterval = 0;
-	m_nVideoQuality = 0;
-	m_DesiredFrameSize.cx = 0;
-	m_DesiredFrameSize.cy = 0;
-	m_hWndVideoParent = NULL;
 	m_bClientAppCrashed = FALSE;
 	m_bQueueEnabled = FALSE;
 	m_dwProcessId = 0;
@@ -568,12 +560,6 @@ int CCrashInfoReader::UnpackCrashDescription(CErrorReportInfo& eri)
     UnpackString(m_pCrashDesc->m_dwCustomSenderIconOffs, m_sCustomSenderIcon);
 	UnpackString(m_pCrashDesc->m_dwSmtpLoginOffs, m_sSmtpLogin);
 	UnpackString(m_pCrashDesc->m_dwSmtpPasswordOffs, m_sSmtpPassword);
-	m_bAddVideo = m_pCrashDesc->m_bAddVideo;
-    m_dwVideoFlags = m_pCrashDesc->m_dwVideoFlags;
-	m_nVideoDuration = m_pCrashDesc->m_nVideoDuration;
-	m_nVideoFrameInterval = m_pCrashDesc->m_nVideoFrameInterval;
-    m_DesiredFrameSize = m_pCrashDesc->m_DesiredFrameSize;
-	m_hWndVideoParent = m_pCrashDesc->m_hWndVideoParent;
 	m_bClientAppCrashed = m_pCrashDesc->m_bClientAppCrashed;
 
     DWORD dwOffs = m_pCrashDesc->m_wSize;

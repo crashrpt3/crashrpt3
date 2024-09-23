@@ -113,12 +113,6 @@ struct CRASH_DESCRIPTION
 								   // If FALSE, CrashSender.exe needs to send single report.
 	DWORD m_dwSmtpLoginOffs;       // Offset of SMTP login name.
 	DWORD m_dwSmtpPasswordOffs;    // Offset of SMTP login name.
-	BOOL  m_bAddVideo;             // Wether to add video recording.
-	DWORD m_dwVideoFlags;          // Flags for video recording.
-	int   m_nVideoDuration;        // Video duration.
-	int   m_nVideoFrameInterval;   // Video frame interval.
-	SIZE  m_DesiredFrameSize;      // Video frame size.
-	HWND m_hWndVideoParent;        // Parent window for video recording dialog.
 	BOOL m_bClientAppCrashed;      // If TRUE, the client app has crashed; otherwise the client has exited without crash.
 };
 

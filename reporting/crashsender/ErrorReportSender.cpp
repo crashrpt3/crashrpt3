@@ -23,8 +23,6 @@ be found in the Authors.txt file in the root of the source tree.
 #include "base64.h"
 #include <sys/stat.h>
 #include "dbghelp.h"
-#include "VideoRec.h"
-#include "VideoRecDlg.h"
 #include "iowin32.h"
 
 CErrorReportSender* CErrorReportSender::m_pInstance = NULL;
@@ -87,40 +85,6 @@ BOOL CErrorReportSender::Init(LPCTSTR szFileMappingName)
     {
         // Set Right-to-Left reading order
         SetProcessDefaultLayout(LAYOUT_RTL);
-    }
-
-    // Determine whether to record video
-    if(GetCrashInfo()->m_bAddVideo)
-    {
-        // The following enters the video recording loop
-        // and returns when the parent process signals the event.
-        BOOL bRec = RecordVideo();
-        if(!bRec)
-        {
-            // Clean up temp files
-            m_VideoRec.Destroy();
-            return FALSE;
-        }
-
-        // Reread crash information from the file mapping object.
-        int nInit = m_CrashInfo.Init(szFileMappingName);
-        if(nInit!=0)
-        {
-            m_sErrorMsg.Format(_T("Error reading crash info: %s"), m_CrashInfo.GetErrorMsg().GetBuffer(0));
-            return FALSE;
-        }
-
-        // Check if the client app has crashed or exited successfully.
-        if(!m_CrashInfo.m_bClientAppCrashed)
-        {
-            // Let the parent process to continue its work
-            UnblockParentProcess();
-
-            // Clean up temp files
-            m_VideoRec.Destroy();
-
-            return FALSE;
-        }
     }
 
     if(!m_CrashInfo.m_bSendRecentReports)
@@ -479,7 +443,7 @@ BOOL CErrorReportSender::Finalize()
     WaitForCompletion();
 
     if((m_CrashInfo.m_bSendErrorReport && !m_CrashInfo.m_bQueueEnabled) ||
-        (m_CrashInfo.m_bAddVideo && !m_CrashInfo.m_bClientAppCrashed))
+        (!m_CrashInfo.m_bClientAppCrashed))
     {
         // Kaneva - Added
         auto pReport = GetReport();
@@ -2752,106 +2716,4 @@ int CErrorReportSender::TerminateAllCrashSenderProcesses()
     CloseHandle(snapshot);
 
     return 0;
-}
-
-BOOL CErrorReportSender::RecordVideo()
-{
-    // Kaneva - Added
-    auto pReport = GetReport();
-    if (!pReport) return FALSE;
-
-    // The following method enters the video recording loop
-    // and returns when the parent process signals the event.
-
-    DWORD dwFlags = m_CrashInfo.m_dwVideoFlags;
-
-    // Show notification dialog
-    if((dwFlags & CR_AV_NO_GUI) == 0)
-    {
-        CVideoRecDlg dlg;
-        INT_PTR res = dlg.DoModal(
-            IsWindow(m_CrashInfo.m_hWndVideoParent)?m_CrashInfo.m_hWndVideoParent:NULL);
-        if(res!=IDOK)
-            return FALSE;
-    }
-
-    // Determine screenshot type.
-    SCREENSHOT_TYPE type = SCREENSHOT_TYPE_VIRTUAL_SCREEN;
-    if((dwFlags&CR_AV_MAIN_WINDOW)!=0) // We need to capture the main window
-        type = SCREENSHOT_TYPE_MAIN_WINDOW;
-    else if((dwFlags&CR_AV_PROCESS_WINDOWS)!=0) // Capture all process windows
-        type = SCREENSHOT_TYPE_ALL_PROCESS_WINDOWS;
-    else // (dwFlags&CR_AV_VIRTUAL_SCREEN)!=0 // Capture the virtual screen
-        type = SCREENSHOT_TYPE_VIRTUAL_SCREEN;
-
-    // Determine what encoding quality to use
-    int quality = 10;
-    if((dwFlags&CR_AV_QUALITY_GOOD)!=0)
-        quality = 40;
-    else if((dwFlags&CR_AV_QUALITY_BEST)!=0)
-        quality = 63;
-
-    // Add a message to log
-    CString sMsg;
-    sMsg.Format(_T("Start video recording."));
-    m_Assync.SetProgress(sMsg, 0, false);
-
-    // Open the event we will use for synchronization with the parent process
-    CString sEventName;
-    sEventName.Format(_T("Local\\CrashRptEvent_%s_2"), (LPCTSTR)pReport->GetCrashGUID());
-    HANDLE hEvent = CreateEvent(NULL, FALSE, FALSE, sEventName);
-    if(hEvent==NULL)
-    {
-        // Add a message to log
-        sMsg.Format(_T("Error opening event."));
-        m_Assync.SetProgress(sMsg, 0, false);
-        return FALSE;
-    }
-
-    // Init video recorder object
-    if(!m_VideoRec.Init(pReport->GetErrorReportDirName(),
-                type, m_CrashInfo.m_dwProcessId, m_CrashInfo.m_nVideoDuration,
-                m_CrashInfo.m_nVideoFrameInterval,
-                quality, &m_CrashInfo.m_DesiredFrameSize))
-    {
-        // Add a message to log
-        sMsg.Format(_T("Error initializing video recorder."));
-        m_Assync.SetProgress(sMsg, 0, false);
-        return FALSE;
-    }
-
-    // Video recording loop.
-    for(;;)
-    {
-        // Wait for a while
-        BOOL bExitLoop = WAIT_OBJECT_0==WaitForSingleObject(hEvent, m_CrashInfo.m_nVideoFrameInterval);
-
-        // This will record a single BMP file
-        m_VideoRec.RecordVideoFrame();
-
-        if(bExitLoop)
-            break; // Event is signaled; break the loop
-
-        // Check if the client app is still alive
-        HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, m_CrashInfo.m_dwProcessId);
-        if(hProcess==NULL)
-            return FALSE; // Process seems to be terminated!
-
-        // If process handle is still accessible, check its exit code
-        DWORD dwExitCode = 1;
-        if(GetExitCodeProcess(hProcess, &dwExitCode) && dwExitCode!=STILL_ACTIVE)
-        {
-            CloseHandle(hProcess);
-            return FALSE; // Process seems to exit!
-        }
-
-        CloseHandle(hProcess);
-    }
-
-    // Add a message to log
-    sMsg.Format(_T("Video recording completed."));
-    m_Assync.SetProgress(sMsg, 0, false);
-
-    // Return TRUE to indicate video recording completed successfully.
-    return TRUE;
 }

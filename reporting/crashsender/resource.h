@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Visual C++ generated include file.
-// Used by CrashSender.rc
+// Microsoft Visual C++ 生成的包含文件。
+// 供 CrashSender.rc 使用
 //
 #define IDM_ABOUTBOX                    0x0010
 #define IDR_MAINFRAME                   128
@@ -13,9 +13,7 @@
 #define IDD_RESEND                      215
 #define IDD_PROGRESSMULTI               216
 #define IDD_ACTIONPROGRESS              216
-#define IDD_VIDEOREC                    217
 #define IDI_ICON1                       218
-#define IDI_VIDEOREC                    218
 #define IDS_NAME                        1000
 #define IDS_DESC                        1001
 #define IDS_TYPE                        1002
@@ -69,7 +67,6 @@
 #define IDC_ACTIONDESC                  1045
 #define IDC_CURRENTACTION               1046
 #define IDC_CANCEL                      1047
-#define IDC_ICONVIDEO                   1048
 #define ID_MENU1_COPYTHISLINE           32772
 #define ID_MENU1_COPYTHEWHOLELOG        32773
 #define ID_MENU1_COPYSEL                32774
@@ -123,7 +120,7 @@
 #define IDS_ABOUTBOX                    57654
 
 // Next default values for new objects
-//
+// 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        219

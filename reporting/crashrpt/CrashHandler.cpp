@@ -50,13 +50,6 @@ CCrashHandler::CCrashHandler()
 	m_bAddScreenshot = FALSE;
     m_dwScreenshotFlags = 0;
     m_nJpegQuality = 95;
-	m_bAddVideo = FALSE;
-	m_dwVideoFlags = 0;
-	m_nVideoDuration = 60*1000; // 60 sec
-	m_nVideoFrameInterval = 500; // 500 msec
-	m_DesiredFrameSize.cx = 0; // default video frame size
-	m_DesiredFrameSize.cy = 0;
-	m_hWndVideoParent = NULL;
     m_hEvent = NULL;
 	m_hEvent2 = NULL;
     m_pCrashDesc = NULL;
@@ -545,8 +538,6 @@ CRASH_DESCRIPTION* CCrashHandler::PackCrashInfoIntoSharedMem(CSharedMem* pShared
     m_pTmpCrashDesc->m_dwScreenshotFlags = m_dwScreenshotFlags;
 	m_pTmpCrashDesc->m_nJpegQuality = m_nJpegQuality;
     memcpy(m_pTmpCrashDesc->m_uPriorities, m_uPriorities, sizeof(UINT)*3);
-	m_pTmpCrashDesc->m_bAddVideo = m_bAddVideo;
-	m_pTmpCrashDesc->m_hWndVideoParent = m_hWndVideoParent;
 	m_pTmpCrashDesc->m_dwProcessId = GetCurrentProcessId();
 	m_pTmpCrashDesc->m_bClientAppCrashed = FALSE;
 	m_pTmpCrashDesc->m_nRestartTimeout = m_nRestartTimeout;
@@ -700,17 +691,6 @@ int CCrashHandler::Destroy()
         crSetErrorMsg(_T("Can't destroy not initialized crash handler."));
         return 1;
     }
-
-	// If we are recording video, we need to notify the CrashSender.exe about
-	// our exit.
-	if(m_bAddVideo)
-	{
-		// Set event 2, so CrashSender.exe will exit from video recording loop
-		SetEvent(m_hEvent2);
-
-		// Wait until CrashSender.exe completes its task
-		WaitForSingleObject(m_hEvent, INFINITE);
-	}
 
 	// Free handle to CrashSender.exe process.
 	if(m_hSenderProcess!=NULL)
@@ -1173,94 +1153,6 @@ int CCrashHandler::AddScreenshot(DWORD dwFlags, int nJpegQuality)
     return 0;
 }
 
-// Adds a video recording of desktop state just before crash.
-int CCrashHandler::AddVideo(DWORD dwFlags, int nDuration, int nFrameInterval,
-	SIZE* pDesiredFrameSize, HWND hWndParent)
-{
-	// Check duration - it should be less than 10 minutes
-	if(nDuration<0 || nDuration>10*60*1000)
-	{
-		crSetErrorMsg(_T("Invalid video duration."));
-		return 2;
-	}
-
-	// If not specified, set default
-	if(nDuration==0)
-	{
-		// Default duration - 1 min
-		nDuration = 60*1000;
-	}
-
-	// Check frame interval
-	if(nFrameInterval<0 || nFrameInterval>nDuration)
-	{
-		crSetErrorMsg(_T("Invalid frame interval."));
-        return 3;
-	}
-
-	// If not specified, set default
-	if(nFrameInterval==0)
-	{
-		// Default frame interval - 500 msec
-		nFrameInterval = 500;
-	}
-
-	// Check if we already have a video recording enabled.
-	if(m_bAddVideo==TRUE)
-	{
-        crSetErrorMsg(_T("Can not add video recording twice."));
-        return 4;
-	}
-
-	// Save video recording parameters
-	m_bAddVideo = TRUE;
-    m_dwVideoFlags = dwFlags;
-	m_nVideoDuration = nDuration;
-	m_nVideoFrameInterval = nFrameInterval;
-	if(pDesiredFrameSize)
-		m_DesiredFrameSize = *pDesiredFrameSize;
-	else
-	{
-		m_DesiredFrameSize.cx = 0;
-	}
-
-	// Determine parent window for our notification dialog.
-	if(hWndParent!=NULL)
-		m_hWndVideoParent = hWndParent;
-	else
-		m_hWndVideoParent = GetActiveWindow();
-
-	// Pack this info into shared memory
-    m_pTmpCrashDesc->m_bAddVideo = TRUE;
-    m_pTmpCrashDesc->m_dwVideoFlags = dwFlags;
-	m_pTmpCrashDesc->m_nVideoDuration = nDuration;
-	m_pTmpCrashDesc->m_nVideoFrameInterval = nFrameInterval;
-    m_pTmpCrashDesc->m_DesiredFrameSize = m_DesiredFrameSize;
-	m_pTmpCrashDesc->m_hWndVideoParent = m_hWndVideoParent;
-
-	// Create sync event (we will use it for synchronizing with CrashSender.exe).
-	CString sEventName;
-    sEventName.Format(_T("Local\\CrashRptEvent_%s_2"), (LPCTSTR)m_sCrashGUID);
-    m_hEvent2 = CreateEvent(NULL, FALSE, FALSE, sEventName);
-    if(m_hEvent2==NULL)
-    {
-        crSetErrorMsg(_T("Couldn't create synchronization event."));
-        return 5;
-    }
-
-	// Launch the CrashSender.exe process that will continuously record video
-	// in background.
-    if(0!=LaunchCrashSender(m_SharedMem.GetName(), FALSE, &m_hSenderProcess))
-    {
-		crSetErrorMsg(_T("Couldn't launch CrashSender.exe process."));
-        return 6;
-    }
-
-	// OK
-	crSetErrorMsg(_T("Success."));
-	return 0;
-}
-
 // Generates error report
 int CCrashHandler::GenerateErrorReport(
         PCR_EXCEPTION_INFO pExceptionInfo)
@@ -1300,9 +1192,6 @@ int CCrashHandler::GenerateErrorReport(
 
 	// Set "client app crashed" flag.
 	m_pCrashDesc->m_bClientAppCrashed = TRUE;
-
-	// Reset "add video" flag (to ensure CrashSender.exe won't start video recording loop the second time).
-	m_pCrashDesc->m_bAddVideo = FALSE;
 
 	// Save current process ID, thread ID and exception pointers address to shared mem.
     m_pCrashDesc->m_dwProcessId = GetCurrentProcessId();
@@ -1347,50 +1236,11 @@ int CCrashHandler::GenerateErrorReport(
     // notify user about crash, compress the report into ZIP archive and send
     // the error report.
 
-    int result = 0; // result of launching CrashSender.exe
-
-	// If we are not recording video or video recording process has been terminated by some reason...
-	if(!m_bAddVideo || (m_bAddVideo && !IsSenderProcessAlive()))
-	{
-		// Run new CrashSender.exe process
-		result = LaunchCrashSender(m_sCrashGUID, TRUE, &pExceptionInfo->hSenderProcess);
-	}
-	else // we are recording video
-	{
-		// The CrashSender.exe process is already launched by the AddVideo method.
-		// We need to signal the event to make CrashSender.exe generate error report.
-		SetEvent(m_hEvent2);
-
-		// Wait until CrashSender finishes with making screenshot,
-        // copying files, creating minidump and encoding recorded video.
-        WaitForSingleObject(m_hEvent, INFINITE);
-
-		// Free sync event (it is not needed since now).
-		CloseHandle(m_hEvent2);
-		m_hEvent2 = NULL;
-
-		// Return handle to CrashSender.exe process to the caller.
-		pExceptionInfo->hSenderProcess = m_hSenderProcess;
-	}
+    int result = LaunchCrashSender(m_sCrashGUID, TRUE, &pExceptionInfo->hSenderProcess);
 
 	// New-style callback. Notify client about the second stage
 	// (CR_CB_STAGE_FINISH) of crash report generation.
 	CallBack(CR_CB_STAGE_FINISH, pExceptionInfo);
-
-	// Check if the client program requests to continue its execution
-	// after crash.
-	if(m_bContinueExecution)
-	{
-		if(m_bAddVideo)
-		{
-			// Relaunch video recording loop for the next crash.
-			// Avoid displaying video notification dialog (as the user already has
-			// approved video recording).
-			m_bAddVideo = FALSE;
-			AddVideo(m_dwVideoFlags|CR_AV_NO_GUI, m_nVideoDuration, m_nVideoFrameInterval,
-				&m_DesiredFrameSize, m_hWndVideoParent);
-		}
-	}
 
 	// Check the result of launching the crash sender process.
 	if(result!=0)
@@ -1635,9 +1485,6 @@ int CCrashHandler::PerCrashInit()
 
 	// Set default ret code for callback func.
 	m_nCallbackRetCode = CR_CB_NOTIFY_NEXT_STAGE;
-
-	// Reset video flag to let user add new videos.
-	//m_bAddVideo = FALSE;
 
 	// Generate new GUID for new crash report
 	// (if, for example, user will generate new error report manually).

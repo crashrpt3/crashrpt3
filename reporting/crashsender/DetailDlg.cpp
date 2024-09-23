@@ -278,7 +278,6 @@ LRESULT CDetailDlg::OnPreviewRClick(int /*idCtrl*/, LPNMHDR /*pnmh*/, BOOL& /*bH
     CString sText = pSender->GetLangStr(_T("DetailDlg"), _T("PreviewText"));
     CString sHex = pSender->GetLangStr(_T("DetailDlg"), _T("PreviewHex"));
     CString sImage = pSender->GetLangStr(_T("DetailDlg"), _T("PreviewImage"));
-    CString sVideo = pSender->GetLangStr(_T("DetailDlg"), _T("PreviewVideo"));
     CString sEncoding = pSender->GetLangStr(_T("DetailDlg"), _T("Encoding"));
 
     mii.dwTypeData = sAuto.GetBuffer(0);
@@ -293,9 +292,6 @@ LRESULT CDetailDlg::OnPreviewRClick(int /*idCtrl*/, LPNMHDR /*pnmh*/, BOOL& /*bH
     mii.dwTypeData = sImage.GetBuffer(0);
     submenu.SetMenuItemInfo(ID_PREVIEW_IMAGE, FALSE, &mii);
 
-    mii.dwTypeData = sVideo.GetBuffer(0);
-    submenu.SetMenuItemInfo(ID_PREVIEW_VIDEO, FALSE, &mii);
-
     UINT uItem = ID_PREVIEW_AUTO;
     if(m_previewMode==PREVIEW_HEX)
         uItem = ID_PREVIEW_HEX;
@@ -303,8 +299,6 @@ LRESULT CDetailDlg::OnPreviewRClick(int /*idCtrl*/, LPNMHDR /*pnmh*/, BOOL& /*bH
         uItem = ID_PREVIEW_TEXT;
     else if(m_previewMode==PREVIEW_IMAGE)
         uItem = ID_PREVIEW_IMAGE;
-
-    submenu.CheckMenuRadioItem(ID_PREVIEW_AUTO, ID_PREVIEW_VIDEO, uItem, MF_BYCOMMAND);
 
     if(m_filePreview.GetPreviewMode()!=PREVIEW_TEXT)
     {
