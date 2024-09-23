@@ -10,7 +10,6 @@ be found in the Authors.txt file in the root of the source tree.
 
 #include "stdafx.h"
 #include "FilePreviewCtrl.h"
-#include "jpeglib.h"
 #include "strconv.h"
 
 #pragma warning(disable:4611)

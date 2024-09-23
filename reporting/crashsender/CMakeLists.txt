@@ -28,7 +28,6 @@ include_directories(
   ${REPOSITORY_DIR}/thirdparty/wtl
   ${REPOSITORY_DIR}/thirdparty/zlib
   ${REPOSITORY_DIR}/thirdparty/minizip
-  ${REPOSITORY_DIR}/thirdparty/jpeg
   ${REPOSITORY_DIR}/thirdparty/tinyxml
   ${DBGHELP_INCLUDE_DIR}
 )
@@ -46,7 +45,6 @@ add_executable(CrashSender WIN32 ${SOURCE_FILE_LIST} ${HEADER_FILE_LIST})
 target_link_libraries(CrashSender
   zlib
   minizip
-  libjpeg
   tinyxml
   WS2_32.lib
   Dnsapi.lib

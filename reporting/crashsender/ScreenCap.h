@@ -13,8 +13,6 @@ be found in the Authors.txt file in the root of the source tree.
 
 #include "stdafx.h"
 
-#include "jpeglib.h"
-
 // Window information
 struct WindowInfo
 {
