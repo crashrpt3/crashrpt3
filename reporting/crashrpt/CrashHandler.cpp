@@ -1083,7 +1083,7 @@ int CCrashHandler::GenerateErrorReport(
 		// Set invalid parameter exception info fields
         m_pCrashDesc->m_dwInvParamExprOffs = PackString(pExceptionInfo->lpAssertionExpression);
         m_pCrashDesc->m_dwInvParamFunctionOffs = PackString(pExceptionInfo->lpFunction);
-        m_pCrashDesc->m_dwInvParamFileOffs = PackString(pExceptionInfo->file);
+        m_pCrashDesc->m_dwInvParamFileOffs = PackString(pExceptionInfo->lpFile);
         m_pCrashDesc->m_uInvParamLine = pExceptionInfo->uLine;
     }
 
@@ -1618,7 +1618,7 @@ void __cdecl CCrashHandler::InvalidParameterHandler(
         ei.nExceptionType = CR_CPP_INVALID_PARAMETER;
         ei.lpAssertionExpression = expression;
         ei.lpFunction = funcName;
-        ei.file = file;
+        ei.lpFile = file;
         ei.uLine = line;
 
 		// Generate error report.

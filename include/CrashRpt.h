@@ -53,7 +53,7 @@ typedef struct
     UINT32 uFloatPointExceptionSubcode;      //!< Floating point exception subcode.
     LPCWSTR lpAssertionExpression;           //!< Assertion expression.
     LPCWSTR lpFunction;                      //!< Function in which assertion happened.
-    LPCWSTR file;                            //!< File in which assertion happened.
+    LPCWSTR lpFile;                            //!< File in which assertion happened.
     UINT32 uLine;                            //!< Line number.
     BOOL bManual;                            //!< Flag telling if the error report is generated manually or not.
     HANDLE hSenderProcess;                   //!< Handle to the CrashSender.exe process.
