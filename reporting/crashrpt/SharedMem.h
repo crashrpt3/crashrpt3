@@ -78,7 +78,6 @@ struct CRASH_DESCRIPTION
     int m_nSmtpProxyPort;          // Smtp proxy port.
     UINT m_uPriorities[3];         // Delivery priorities.
     MINIDUMP_TYPE m_MinidumpType;  // Minidump type.
-    int m_nJpegQuality;            // Jpeg image quality.
     DWORD m_dwUrlOffs;             // Offset of recipient URL.
     DWORD m_dwAppNameOffs;         // Offset of application name.
     DWORD m_dwAppVersionOffs;      // Offset of app version.

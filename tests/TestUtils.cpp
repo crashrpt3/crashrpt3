@@ -55,7 +55,6 @@ BOOL TestUtils::CreateErrorReport(CString sTmpFolder, CString& sErrorReportName,
             goto cleanup;
 
         crAddProperty(L"CustomProp", L"Property Value");
-        crAddRegKey(sKeyName2, L"regkey.xml", 0);
 
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));

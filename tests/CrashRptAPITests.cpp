@@ -29,7 +29,6 @@ class CrashRptAPITests : public CTestSuite
         REGISTER_TEST(Test_crInstallToCurrentThread2_concurrent)
         REGISTER_TEST(Test_crAddFile2W)
         REGISTER_TEST(Test_crAddPropertyW)
-        REGISTER_TEST(Test_crAddRegKeyW)
         REGISTER_TEST(Test_crSetCrashCallbackW)
         REGISTER_TEST(Test_crSetCrashCallbackW_stage)
         REGISTER_TEST(Test_crSetCrashCallbackW_cancel)
@@ -62,7 +61,6 @@ class CrashRptAPITests : public CTestSuite
     void Test_crInstallToCurrentThread2_concurrent();
     void Test_crAddFile2W();
     void Test_crAddPropertyW();
-    void Test_crAddRegKeyW();
     void Test_crSetCrashCallbackW();
     void Test_crSetCrashCallbackW_stage();
     void Test_crSetCrashCallbackW_cancel();
@@ -370,49 +368,6 @@ void CrashRptAPITests::Test_crAddPropertyW()
     // Uninstall
     crUninstall();
 
-}
-
-void CrashRptAPITests::Test_crAddRegKeyW()
-{
-    {
-        // Should fail, because crInstall() should be called first
-        int nResult = crAddRegKey(L"HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows", L"regkey.xml", 0);
-        TEST_ASSERT(nResult!=0);
-
-        // Install crash handler
-        CR_INSTALL_INFO infoW;
-        memset(&infoW, 0, sizeof(CR_INSTALL_INFO));
-        infoW.cb = sizeof(CR_INSTALL_INFO);
-        infoW.pszAppVersion = L"1.0.0"; // Specify app version, otherwise it will fail.
-
-        int nInstallResult = crInstall(&infoW);
-        TEST_ASSERT(nInstallResult==0);
-
-        // Should fail, because registry key name is NULL
-        int nResult2 = crAddRegKey(NULL, L"regkey.xml", 0);
-        TEST_ASSERT(nResult2!=0);
-
-        // Should fail, because registry key name is empty
-        int nResult3 = crAddRegKey(L"", L"regkey.xml", 0);
-        TEST_ASSERT(nResult3!=0);
-
-        // Should succeed
-        int nResult4 = crAddRegKey(L"HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows", L"regkey.xml", 0);
-        TEST_ASSERT(nResult4==0);
-
-        // Should fail, because registry key doesn't exist
-        int nResult5 = crAddRegKey(L"HKEY_LOCAL_MACHINE\\Softweeere\\", L"regkey.xml", 0);
-        TEST_ASSERT(nResult5!=0);
-
-        // Should fail, because registry key is a parent key
-        int nResult6 = crAddRegKey(L"HKEY_LOCAL_MACHINE\\", L"regkey.xml", 0);
-        TEST_ASSERT(nResult6!=0);
-    }
-
-    __TEST_CLEANUP__;
-
-    // Uninstall
-    crUninstall();
 }
 
 void CrashRptAPITests::Test_crGetLastErrorMsgW()

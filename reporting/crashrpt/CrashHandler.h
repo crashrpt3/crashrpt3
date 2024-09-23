@@ -143,9 +143,6 @@ public:
     // Adds a named text property to the report.
     int AddProperty(CString sPropName, CString sPropValue);
 
-    // Adds a registry key to crash report.
-    int AddRegKey(__in_z LPCTSTR szRegKey, __in_z LPCTSTR szDstFileName, DWORD dwFlags);
-
     // Generates error report
     int GenerateErrorReport(__in_opt PCR_EXCEPTION_INFO pExceptionInfo = NULL);
 
@@ -301,7 +298,6 @@ public:
     CString m_sLangFileName;       // Language file.
     CString m_sPathToDebugHelpDll; // Path to dbghelp.dll.
     CString m_sUnsentCrashReportsFolder; // Path to the folder where to save error reports.
-    int m_nJpegQuality;            // Quality of JPEG screenshot images.
     CString m_sCustomSenderIcon;   // Resource name that can be used as custom Error Report dialog icon.
     std::map<CString, FileItem> m_files; // File items to include.
     std::map<CString, CString> m_props;  // User-defined properties to include.

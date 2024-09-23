@@ -46,7 +46,6 @@ CCrashHandler::CCrashHandler()
     m_nSmtpPort = 25;
     m_nSmtpProxyPort = 2525;
     memset(&m_uPriorities, 0, 3*sizeof(UINT));
-    m_nJpegQuality = 95;
     m_hEvent = NULL;
 	m_hEvent2 = NULL;
     m_pCrashDesc = NULL;
@@ -527,7 +526,6 @@ CRASH_DESCRIPTION* CCrashHandler::PackCrashInfoIntoSharedMem(CSharedMem* pShared
     m_pTmpCrashDesc->m_MinidumpType = m_MinidumpType;
     m_pTmpCrashDesc->m_nSmtpPort = m_nSmtpPort;
     m_pTmpCrashDesc->m_nSmtpProxyPort = m_nSmtpProxyPort;
-	m_pTmpCrashDesc->m_nJpegQuality = m_nJpegQuality;
     memcpy(m_pTmpCrashDesc->m_uPriorities, m_uPriorities, sizeof(UINT)*3);
 	m_pTmpCrashDesc->m_dwProcessId = GetCurrentProcessId();
 	m_pTmpCrashDesc->m_bClientAppCrashed = FALSE;
@@ -1236,77 +1234,6 @@ BOOL CCrashHandler::IsSenderProcessAlive()
 	}
 
 	return TRUE;
-}
-
-// Adds a registry key dump to the error report
-int CCrashHandler::AddRegKey(LPCTSTR szRegKey, LPCTSTR szDstFileName, DWORD dwFlags)
-{
-    crSetErrorMsg(_T("Unspecified error."));
-
-    if(szDstFileName==NULL ||
-        szRegKey==NULL)
-    {
-        // Invalid param
-        crSetErrorMsg(_T("Invalid registry key or invalid destination file is specified."));
-        return 1;
-    }
-
-    CString sDstFileName = CString(szDstFileName);
-    if(sDstFileName.Find(_T("\\"))>=0 ||
-        sDstFileName.Find(_T("\r"))>=0 ||
-        sDstFileName.Find(_T("\n"))>=0 ||
-        sDstFileName.Find(_T("\t"))>=0)
-    {
-        // Inacceptable character found.
-        return 1;
-    }
-
-    HKEY hKey = NULL;
-    CString sKey = szRegKey;
-    int nSkip = 0;
-    if(sKey.Left(19).Compare(_T("HKEY_LOCAL_MACHINE\\"))==0)
-    {
-        hKey = HKEY_LOCAL_MACHINE;
-        nSkip = 18;
-    }
-    else if(sKey.Left(18).Compare(_T("HKEY_CURRENT_USER\\"))==0)
-    {
-        hKey = HKEY_CURRENT_USER;
-        nSkip = 17;
-    }
-    else
-    {
-        crSetErrorMsg(_T("Invalid registry branch is specified."));
-        return 1; // Invalid key.
-    }
-
-    CString sSubKey = sKey.Mid(nSkip+1);
-    if(sSubKey.IsEmpty())
-    {
-        crSetErrorMsg(_T("Empty subkey is not allowed."));
-        return 2; // Empty subkey not allowed
-    }
-
-    HKEY hKeyResult = NULL;
-    LRESULT lResult = RegOpenKeyEx(hKey, sSubKey, 0, KEY_READ, &hKeyResult);
-    if(lResult!=ERROR_SUCCESS)
-    {
-        crSetErrorMsg(_T("The registry key coudn't be open."));
-        return 3; // Invalid key.
-    }
-    RegCloseKey(hKeyResult);
-
-	RegKeyInfo rki;
-	rki.m_sDstFileName = sDstFileName;
-	rki.m_bAllowDelete = (dwFlags&CR_AR_ALLOW_DELETE)!=0;
-
-    m_RegKeys[CString(szRegKey)] = rki;
-
-    PackRegKey(szRegKey, rki);
-
-    // OK
-    crSetErrorMsg(_T("Success."));
-    return 0;
 }
 
 // The following code gets exception pointers using a workaround found in CRT code.

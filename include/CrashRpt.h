@@ -175,9 +175,6 @@ typedef CR_INSTALL_INFO* PCR_INSTALL_INFO;
 #define CR_AV_NO_GUI         16  //!< Do not display the notification dialog.
 #define CR_AV_ALLOW_DELETE   32  //!< If this flag is specified, the file will be deletable from context menu of Error Report Details dialog.
 
-// Flags that can be passed to crAddRegKey() function
-#define CR_AR_ALLOW_DELETE   0x1  //!< If this flag is specified, the file will be deletable from context menu of Error Report Details dialog.
-
 // Flags used by crEmulateCrash() function
 #define CR_NONCONTINUABLE_EXCEPTION  32  //!< Non continuable sofware exception.
 #define CR_THROW                     33  //!< Throw C++ typed exception.
@@ -193,9 +190,7 @@ CRASHRPTAPI(int) crSetCrashCallback(PFNCRASHCALLBACK pfnCallbackFunc, LPVOID lpP
 CRASHRPTAPI(int) crSetEmailSubject(LPCWSTR pszSubject);
 
 CRASHRPTAPI(int) crAddFile2(LPCWSTR pszFile, LPCWSTR pszDestFile, LPCWSTR pszDesc, DWORD dwFlags);
-CRASHRPTAPI(int) crAddScreenshot2(DWORD dwFlags, int nJpegQuality);
 CRASHRPTAPI(int) crAddProperty(LPCWSTR pszPropName, LPCWSTR pszPropValue);
-CRASHRPTAPI(int) crAddRegKey(LPCWSTR pszRegKey, LPCWSTR pszDstFileName, DWORD dwFlags);
 
 CRASHRPTAPI(int) crGetLastErrorMsg(LPWSTR pszBuffer, UINT uBuffSize);
 

@@ -156,12 +156,6 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 	nResult = crAddProperty(_T("UserName"),_T("TheUserName"));
     ATLASSERT(nResult==0);
 
-    nResult = crAddRegKey(_T("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer"), _T("regkey.xml"), CR_AR_ALLOW_DELETE);
-    ATLASSERT(nResult==0);
-
-    nResult = crAddRegKey(_T("HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings"), _T("regkey.xml"), CR_AR_ALLOW_DELETE);
-    ATLASSERT(nResult==0);
-
     /* Create another thread */
     g_CrashThreadInfo.m_bStop = false;
     g_CrashThreadInfo.m_hWakeUpEvent = CreateEvent(NULL, FALSE, FALSE, _T("WakeUpEvent"));

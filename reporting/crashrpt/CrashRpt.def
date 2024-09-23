@@ -9,6 +9,5 @@ crAddProperty
 crGenerateErrorReport
 crEmulateCrash
 crGetLastErrorMsg
-crAddRegKey
 crSetCrashCallback
 crSetEmailSubject
