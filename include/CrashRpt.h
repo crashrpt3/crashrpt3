@@ -189,8 +189,7 @@ typedef struct tagCR_EXCEPTION_INFO
     unsigned int line;         //!< Line number.
     BOOL bManual;              //!< Flag telling if the error report is generated manually or not.
     HANDLE hSenderProcess;     //!< Handle to the CrashSender.exe process.
-}
-CR_EXCEPTION_INFO;
+} CR_EXCEPTION_INFO;
 
 typedef CR_EXCEPTION_INFO* PCR_EXCEPTION_INFO;
 
@@ -250,7 +249,7 @@ typedef CR_EXCEPTION_INFO* PCR_EXCEPTION_INFO;
 *
 *  \sa PFNCRASHCALLBACK()
 */
-typedef struct tagCR_CRASH_CALLBACK_INFOW
+typedef struct tagCR_CRASH_CALLBACK_INFO
 {
     WORD cb;                            //!< Size of this structure in bytes.
 	int nStage;                         //!< Stage.
@@ -258,32 +257,7 @@ typedef struct tagCR_CRASH_CALLBACK_INFOW
     CR_EXCEPTION_INFO* pExceptionInfo;  //!< Pointer to information about the crash.
 	LPVOID pUserParam;                  //!< Pointer to user-defined data.
 	BOOL bContinueExecution;            //!< Whether to terminate the process (the default) or to continue program execution.
-}
-CR_CRASH_CALLBACK_INFOW;
-
-/*! \ingroup CrashRptStructs
-*  \struct CR_CRASH_CALLBACK_INFOA
-*  \copydoc CR_CRASH_CALLBACK_INFOW
-*/
-typedef struct tagCR_CRASH_CALLBACK_INFOA
-{
-    WORD cb;                            //!< Size of this structure in bytes.
-	int nStage;                         //!< Stage.
-	LPCSTR pszErrorReportFolder;        //!< Directory where crash report files are located.
-    CR_EXCEPTION_INFO* pExceptionInfo;  //!< Pointer to information about the crash.
-	LPVOID pUserParam;                  //!< Pointer to user-defined data.
-	BOOL bContinueExecution;            //!< Whether to terminate the process (the default) or to continue program execution.
-}
-CR_CRASH_CALLBACK_INFOA;
-
-/*! \brief Character set-independent mapping of CR_CRASH_CALLBACK_INFOW and CR_CRASH_CALLBACK_INFOA structures.
-*  \ingroup CrashRptStructs
-*/
-#ifdef UNICODE
-typedef CR_CRASH_CALLBACK_INFOW CR_CRASH_CALLBACK_INFO;
-#else
-typedef CR_CRASH_CALLBACK_INFOA CR_CRASH_CALLBACK_INFO;
-#endif // UNICODE
+} CR_CRASH_CALLBACK_INFO;
 
 // Constants that may be returned by the crash callback function.
 #define CR_CB_CANCEL             0 //!< Cancel crash report generation on the current stage.
@@ -379,21 +353,7 @@ typedef CR_CRASH_CALLBACK_INFOA CR_CRASH_CALLBACK_INFO;
 *
 *  \sa CR_CRASH_CALLBACK_INFO, crSetCrashCallback(), crAddFile2(), crAddProperty(), crAddScreenshot2(), crAddRegKey()
 */
-typedef int (CALLBACK *PFNCRASHCALLBACKW) (CR_CRASH_CALLBACK_INFOW* pInfo);
-
-/*! \ingroup CrashRptAPI
-*  \copydoc PFNCRASHCALLBACKW()
-*/
-typedef int (CALLBACK *PFNCRASHCALLBACKA) (CR_CRASH_CALLBACK_INFOA* pInfo);
-
-/*! \brief Character set-independent mapping of \ref PFNCRASHCALLBACKW() and \ref PFNCRASHCALLBACKA() function prototrypes.
-*  \ingroup CrashRptStructs
-*/
-#ifdef UNICODE
-typedef PFNCRASHCALLBACKW PFNCRASHCALLBACK;
-#else
-typedef PFNCRASHCALLBACKA PFNCRASHCALLBACK;
-#endif // UNICODE
+typedef int (CALLBACK *PFNCRASHCALLBACK) (CR_CRASH_CALLBACK_INFO* pInfo);
 
 /*! \ingroup CrashRptAPI
 *  \brief Sets the crash callback function.
@@ -417,49 +377,8 @@ typedef PFNCRASHCALLBACKA PFNCRASHCALLBACK;
 *   PFNCRASHCALLBACK()
 */
 
-CRASHRPTAPI(int)
-crSetCrashCallbackW(
-             PFNCRASHCALLBACKW pfnCallbackFunc,
-			 LPVOID lpParam
-             );
-
-CRASHRPTAPI(int)
-crSetEmailSubjectW(
-    LPCWSTR pszSubject
-);
-
-CRASHRPTAPI(int)
-crSetEmailSubjectA(
-    LPCSTR pszSubject
-);
-
-/*! \brief Character set-independent mapping of crSetEmailSubjectW() and crSetEmailSubjectA() functions.
-*  \ingroup CrashRptAPI
-*/
-#ifdef UNICODE
-#define crSetEmailSubject crSetEmailSubjectW
-#else
-#define crSetEmailSubject crSetEmailSubjectA
-#endif //UNICODE
-
-/*! \ingroup CrashRptAPI
-*  \copydoc crSetCrashCallbackW()
-*/
-CRASHRPTAPI(int)
-crSetCrashCallbackA(
-             PFNCRASHCALLBACKA pfnCallbackFunc,
-			 LPVOID lpParam
-             );
-
-
-/*! \brief Character set-independent mapping of crSetCrashCallbackW() and crSetCrashCallbackA() functions.
-*  \ingroup CrashRptAPI
-*/
-#ifdef UNICODE
-#define crSetCrashCallback crSetCrashCallbackW
-#else
-#define crSetCrashCallback crSetCrashCallbackA
-#endif //UNICODE
+CRASHRPTAPI(int) crSetCrashCallback(PFNCRASHCALLBACK pfnCallbackFunc, LPVOID lpParam);
+CRASHRPTAPI(int) crSetEmailSubject(LPCWSTR pszSubject);
 
 // Array indices for CR_INSTALL_INFO::uPriorities.
 #define CR_HTTP 0  //!< Send error report via HTTP (or HTTPS) connection.
@@ -755,56 +674,9 @@ typedef struct tagCR_INSTALL_INFOW
 	LPCWSTR pszSmtpPassword;        //!< Password used for SMTP authentication when sending error report as E-mail.
 	int nRestartTimeout;            //!< Timeout for application restart.
 	int nMaxReportsPerDay;          //!< Maximum number of crash reports that will be sent per calendar day.
-}
-CR_INSTALL_INFOW;
+} CR_INSTALL_INFO;
 
-typedef CR_INSTALL_INFOW* PCR_INSTALL_INFOW;
-
-/*! \ingroup CrashRptStructs
-*  \struct CR_INSTALL_INFOA
-*  \copydoc CR_INSTALL_INFOW
-*/
-
-typedef struct tagCR_INSTALL_INFOA
-{
-    WORD cb;                       //!< Size of this structure in bytes; must be initialized before using!
-    LPCSTR pszAppName;             //!< Name of application.
-    LPCSTR pszAppVersion;          //!< Application version.
-    LPCSTR pszEmailTo;             //!< E-mail address of crash reports recipient.
-    LPCSTR pszEmailSubject;        //!< Subject of crash report e-mail.
-    LPCSTR pszUrl;                 //!< URL of server-side script (used in HTTP connection).
-    LPCSTR pszCrashSenderPath;     //!< Directory name where CrashSender.exe is located.
-    LPGETLOGFILE pfnCrashCallback; //!< Deprecated, do not use.
-    UINT uPriorities[5];           //!< Array of error sending transport priorities.
-    DWORD dwFlags;                 //!< Flags.
-    LPCSTR pszPrivacyPolicyURL;    //!< URL of privacy policy agreement.
-    LPCSTR pszDebugHelpDLL;        //!< File name or folder of Debug help DLL.
-    MINIDUMP_TYPE uMiniDumpType;   //!< Mini dump type.
-    LPCSTR pszErrorReportSaveDir;  //!< Directory where to save error reports.
-    LPCSTR pszRestartCmdLine;      //!< Command line for application restart (without executable name).
-    LPCSTR pszLangFilePath;        //!< Path to the language file (including file name).
-    LPCSTR pszEmailText;           //!< Custom E-mail text (used when deliverying report as E-mail).
-    LPCSTR pszSmtpProxy;           //!< Network address and port to be used as SMTP proxy.
-    LPCSTR pszCustomSenderIcon;    //!< Custom icon used for Error Report dialog.
-	LPCSTR pszSmtpLogin;           //!< Login name used for SMTP authentication when sending error report as E-mail.
-	LPCSTR pszSmtpPassword;        //!< Password used for SMTP authentication when sending error report as E-mail.
-	int nRestartTimeout;           //!< Timeout for application restart.
-	int nMaxReportsPerDay;         //!< Maximum number of crash reports that will be sent per calendar day.
-}
-CR_INSTALL_INFOA;
-
-typedef CR_INSTALL_INFOA* PCR_INSTALL_INFOA;
-
-/*! \brief Character set-independent mapping of CR_INSTALL_INFOW and CR_INSTALL_INFOA structures.
-*  \ingroup CrashRptStructs
-*/
-#ifdef UNICODE
-typedef CR_INSTALL_INFOW CR_INSTALL_INFO;
-typedef PCR_INSTALL_INFOW PCR_INSTALL_INFO;
-#else
-typedef CR_INSTALL_INFOA CR_INSTALL_INFO;
-typedef PCR_INSTALL_INFOA PCR_INSTALL_INFO;
-#endif // UNICODE
+typedef CR_INSTALL_INFO* PCR_INSTALL_INFO;
 
 /*! \ingroup CrashRptAPI
 *  \brief  Installs exception handlers for the caller process.
@@ -867,28 +739,7 @@ typedef PCR_INSTALL_INFOA PCR_INSTALL_INFO;
 *      CrAutoInstallHelper
 */
 
-CRASHRPTAPI(int)
-crInstallW(
-           __in PCR_INSTALL_INFOW pInfo
-           );
-
-/*! \ingroup CrashRptAPI
-*  \copydoc crInstallW()
-*/
-
-CRASHRPTAPI(int)
-crInstallA(
-           __in PCR_INSTALL_INFOA pInfo
-           );
-
-/*! \brief Character set-independent mapping of crInstallW() and crInstallA() functions.
-* \ingroup CrashRptAPI
-*/
-#ifdef UNICODE
-#define crInstall crInstallW
-#else
-#define crInstall crInstallA
-#endif //UNICODE
+CRASHRPTAPI(int) crInstall(__in PCR_INSTALL_INFO pInfo);
 
 /*! \ingroup CrashRptAPI
 *  \brief Uninitializes the CrashRpt library and unsinstalls exception handlers previously installed with crInstall().
@@ -911,8 +762,7 @@ crInstallA(
 *      CrAutoInstallHelper
 */
 
-CRASHRPTAPI(int)
-crUninstall();
+CRASHRPTAPI(int) crUninstall();
 
 /*! \ingroup CrashRptAPI
 *  \brief Installs exception handlers to the caller thread.
@@ -957,8 +807,7 @@ crUninstall();
 *    crInstall()
 */
 
-CRASHRPTAPI(int)
-crInstallToCurrentThread2(DWORD dwFlags);
+CRASHRPTAPI(int) crInstallToCurrentThread2(DWORD dwFlags);
 
 /*! \ingroup CrashRptAPI
 *  \brief Uninstalls C++ exception handlers from the current thread.
@@ -982,8 +831,7 @@ crInstallToCurrentThread2(DWORD dwFlags);
 *       crUninstallFromCurrentThread(), CrThreadAutoInstallHelper
 */
 
-CRASHRPTAPI(int)
-crUninstallFromCurrentThread();
+CRASHRPTAPI(int) crUninstallFromCurrentThread();
 
 // Flags for crAddFile2() function.
 
@@ -1075,36 +923,7 @@ crUninstallFromCurrentThread();
 *
 *  \sa crAddFile2W(), crAddFile2A(), crAddFile2()
 */
-
-CRASHRPTAPI(int)
-crAddFile2W(
-            LPCWSTR pszFile,
-            LPCWSTR pszDestFile,
-            LPCWSTR pszDesc,
-            DWORD dwFlags
-            );
-
-/*! \ingroup CrashRptAPI
-*  \copydoc crAddFile2W()
-*/
-
-CRASHRPTAPI(int)
-crAddFile2A(
-            LPCSTR pszFile,
-            LPCSTR pszDestFile,
-            LPCSTR pszDesc,
-            DWORD dwFlags
-            );
-
-/*! \brief Character set-independent mapping of crAddFile2W() and crAddFile2A() functions.
-*  \ingroup CrashRptAPI
-*/
-#ifdef UNICODE
-#define crAddFile2 crAddFile2W
-#else
-#define crAddFile2 crAddFile2A
-#endif //UNICODE
-
+CRASHRPTAPI(int) crAddFile2(LPCWSTR pszFile, LPCWSTR pszDestFile, LPCWSTR pszDesc, DWORD dwFlags);
 
 // Flags for crAddScreenshot function.
 #define CR_AS_VIRTUAL_SCREEN  0  //!< Take a screenshot of the virtual screen.
@@ -1167,10 +986,7 @@ crAddFile2A(
 *   crAddFile2()
 */
 
-CRASHRPTAPI(int)
-crAddScreenshot(
-                DWORD dwFlags
-                );
+CRASHRPTAPI(int) crAddScreenshot(DWORD dwFlags);
 
 /*! \ingroup CrashRptAPI
 *  \brief Adds a screenshot to the crash report.
@@ -1221,11 +1037,7 @@ crAddScreenshot(
 *   crAddFile2()
 */
 
-CRASHRPTAPI(int)
-crAddScreenshot2(
-                 DWORD dwFlags,
-                 int nJpegQuality
-                 );
+CRASHRPTAPI(int) crAddScreenshot2(DWORD dwFlags, int nJpegQuality);
 
 // Flags for crAddVideo function.
 #define CR_AV_VIRTUAL_SCREEN  0  //!< Capture the whole virtual screen.
@@ -1351,14 +1163,7 @@ crAddScreenshot2(
 *   crAddFile2(), crAddScreenshot2(), crAddRegKey(), crUninstall().
 */
 
-CRASHRPTAPI(int)
-crAddVideo(
-            DWORD dwFlags,
-			int nDuration,
-			int nFrameInterval,
-            PSIZE pDesiredFrameSize,
-			HWND hWndParent
-            );
+CRASHRPTAPI(int) crAddVideo(DWORD dwFlags, int nDuration, int nFrameInterval, PSIZE pDesiredFrameSize, HWND hWndParent);
 
 /*! \ingroup CrashRptAPI
 *  \brief Adds a string property to the crash report.
@@ -1389,30 +1194,7 @@ crAddVideo(
 *   crAddFile2(), crAddScreenshot()
 */
 
-CRASHRPTAPI(int)
-crAddPropertyW(
-               LPCWSTR pszPropName,
-               LPCWSTR pszPropValue
-               );
-
-/*! \ingroup CrashRptAPI
-*  \copydoc crAddPropertyW()
-*/
-
-CRASHRPTAPI(int)
-crAddPropertyA(
-               LPCSTR pszPropName,
-               LPCSTR pszPropValue
-               );
-
-/*! \brief Character set-independent mapping of crAddPropertyW() and crAddPropertyA() functions.
-*  \ingroup CrashRptAPI
-*/
-#ifdef UNICODE
-#define crAddProperty crAddPropertyW
-#else
-#define crAddProperty crAddPropertyA
-#endif //UNICODE
+CRASHRPTAPI(int) crAddProperty(LPCWSTR pszPropName, LPCWSTR pszPropValue);
 
 // Flags that can be passed to crAddRegKey() function
 #define CR_AR_ALLOW_DELETE   0x1  //!< If this flag is specified, the file will be deletable from context menu of Error Report Details dialog.
@@ -1455,32 +1237,7 @@ crAddPropertyA(
 *   crAddFile2(), crAddScreenshot(), crAddProperty()
 */
 
-CRASHRPTAPI(int)
-crAddRegKeyW(
-             LPCWSTR pszRegKey,
-             LPCWSTR pszDstFileName,
-             DWORD dwFlags
-             );
-
-/*! \ingroup CrashRptAPI
-*  \copydoc crAddRegKeyW()
-*/
-
-CRASHRPTAPI(int)
-crAddRegKeyA(
-             LPCSTR pszRegKey,
-             LPCSTR pszDstFileName,
-             DWORD dwFlags
-             );
-
-/*! \brief Character set-independent mapping of crAddRegKeyW() and crAddRegKeyA() functions.
-*  \ingroup CrashRptAPI
-*/
-#ifdef UNICODE
-#define crAddRegKey crAddRegKeyW
-#else
-#define crAddRegKey crAddRegKeyA
-#endif //UNICODE
+CRASHRPTAPI(int) crAddRegKey(LPCWSTR pszRegKey, LPCWSTR pszDstFileName, DWORD dwFlags);
 
 /*! \ingroup CrashRptAPI
 *  \brief Manually generates an error report.
@@ -1526,10 +1283,7 @@ crAddRegKeyA(
 *    \endcode
 */
 
-CRASHRPTAPI(int)
-crGenerateErrorReport(
-                      __in_opt CR_EXCEPTION_INFO* pExceptionInfo
-                      );
+CRASHRPTAPI(int) crGenerateErrorReport(__in_opt CR_EXCEPTION_INFO* pExceptionInfo);
 
 /*! \ingroup CrashRptAPI
 *  \brief Can be used as a SEH exception filter.
@@ -1569,10 +1323,7 @@ crGenerateErrorReport(
 *     \endcode
 */
 
-CRASHRPTAPI(int)
-crExceptionFilter(
-                  unsigned int code,
-                  __in_opt struct _EXCEPTION_POINTERS* ep);
+CRASHRPTAPI(int) crExceptionFilter(unsigned int code, __in_opt struct _EXCEPTION_POINTERS* ep);
 
 
 // Flags used by crEmulateCrash() function
@@ -1631,16 +1382,7 @@ crExceptionFilter(
 *  \endcode
 *
 */
-
-#if _MSC_VER >= 1900
-CRASHRPTAPI(int)
-crEmulateCrash(
-    unsigned ExceptionType) noexcept(false);
-#else
-CRASHRPTAPI(int)
-crEmulateCrash(
-    unsigned ExceptionType) throw(...);
-#endif
+CRASHRPTAPI(int) crEmulateCrash(unsigned ExceptionType) noexcept(false);
 
 
 
@@ -1676,31 +1418,7 @@ crEmulateCrash(
 *  \sa crGetLastErrorMsgA(), crGetLastErrorMsgW(), crGetLastErrorMsg()
 */
 
-CRASHRPTAPI(int)
-crGetLastErrorMsgW(
-                   __out_ecount_z(uBuffSize) LPWSTR pszBuffer,
-                   UINT uBuffSize);
-
-/*! \ingroup CrashRptAPI
-*  \copydoc crGetLastErrorMsgW()
-*
-*/
-
-CRASHRPTAPI(int)
-crGetLastErrorMsgA(
-                   __out_ecount_z(uBuffSize) LPSTR pszBuffer,
-                   UINT uBuffSize);
-
-/*! \brief Defines character set-independent mapping for crGetLastErrorMsgW() and crGetLastErrorMsgA().
-*  \ingroup CrashRptAPI
-*/
-
-#ifdef UNICODE
-#define crGetLastErrorMsg crGetLastErrorMsgW
-#else
-#define crGetLastErrorMsg crGetLastErrorMsgA
-#endif //UNICODE
-
+CRASHRPTAPI(int) crGetLastErrorMsg(__out_ecount_z(uBuffSize) LPWSTR pszBuffer, UINT uBuffSize);
 
 //// Helper wrapper classes
 
@@ -1754,27 +1472,20 @@ crGetLastErrorMsgA(
 class CrAutoInstallHelper
 {
 public:
-
-    //! Installs exception handlers to the caller process
-    CrAutoInstallHelper(__in PCR_INSTALL_INFOA pInfo)
+    CrAutoInstallHelper(__in PCR_INSTALL_INFO pInfo)
     {
-        m_nInstallStatus = crInstallA(pInfo);
+        m_nInstallStatus = crInstall(pInfo);
     }
 
-    //! Installs exception handlers to the caller process
-    CrAutoInstallHelper(__in PCR_INSTALL_INFOW pInfo)
-    {
-        m_nInstallStatus = crInstallW(pInfo);
-    }
-
-    //! Uninstalls exception handlers from the caller process
     ~CrAutoInstallHelper()
     {
-		if(m_nInstallStatus==0)
-			crUninstall();
+        if (m_nInstallStatus == 0)
+        {
+            crUninstall();
+        }
     }
 
-    //! Install status
+private:
     int m_nInstallStatus;
 };
 
@@ -1806,21 +1517,20 @@ public:
 class CrThreadAutoInstallHelper
 {
 public:
-
-    //! Installs exception handlers to the caller thread
     CrThreadAutoInstallHelper(DWORD dwFlags=0)
     {
         m_nInstallStatus = crInstallToCurrentThread2(dwFlags);
     }
 
-    //! Uninstalls exception handlers from the caller thread
     ~CrThreadAutoInstallHelper()
 	{
-		if (m_nInstallStatus == 0)
-			 crUninstallFromCurrentThread();
+        if (m_nInstallStatus == 0)
+        {
+            crUninstallFromCurrentThread();
+        }
 	}
 
-    //! Install status
+private:
     int m_nInstallStatus;
 };
 

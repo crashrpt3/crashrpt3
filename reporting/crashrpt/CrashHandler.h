@@ -136,10 +136,7 @@ public:
     int Destroy();
 
     // Sets crash callback function (wide-char version).
-    int SetCrashCallbackW(PFNCRASHCALLBACKW pfnCallback, LPVOID pUserParam);
-
-    // Sets crash callback function (multi-byte version).
-    int SetCrashCallbackA(PFNCRASHCALLBACKA pfnCallback, LPVOID pUserParam);
+    int SetCrashCallbackW(PFNCRASHCALLBACK pfnCallback, LPVOID pUserParam);
 
     // Adds a file to the crash report.
     int AddFile(__in_z LPCTSTR lpFile, __in_opt LPCTSTR lpDestFile,
@@ -335,8 +332,7 @@ public:
     CSharedMem* m_pTmpSharedMem;   // Used temporarily
     CRASH_DESCRIPTION* m_pTmpCrashDesc; // Used temporarily
     HANDLE m_hSenderProcess;       // Handle to CrashSender.exe process.
-    PFNCRASHCALLBACKW m_pfnCallback2W; // Client crash callback.
-    PFNCRASHCALLBACKA m_pfnCallback2A; // Client crash callback.
+    PFNCRASHCALLBACK m_pfnCallback2W; // Client crash callback.
     LPVOID m_pCallbackParam;       // User-specified argument for callback function.
     std::string m_sErrorReportDirA;  // Error report directory name (multi-byte).
     std::wstring m_sErrorReportDirW; // Error report directory name (wide-char).

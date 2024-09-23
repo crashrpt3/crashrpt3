@@ -62,7 +62,6 @@ CCrashHandler::CCrashHandler()
     m_pCrashDesc = NULL;
 	m_hSenderProcess = NULL;
 	m_pfnCallback2W = NULL;
-	m_pfnCallback2A = NULL;
 	m_pCallbackParam = NULL;
 	m_nCallbackRetCode = CR_CB_NOTIFY_NEXT_STAGE;
 	m_bContinueExecution = TRUE;
@@ -491,17 +490,9 @@ int CCrashHandler::Init(
     return 0;
 }
 
-int CCrashHandler::SetCrashCallbackW(PFNCRASHCALLBACKW pfnCallback, LPVOID pUserParam)
+int CCrashHandler::SetCrashCallbackW(PFNCRASHCALLBACK pfnCallback, LPVOID pUserParam)
 {
 	m_pfnCallback2W = pfnCallback;
-	m_pCallbackParam = pUserParam;
-
-	return 0;
-}
-
-int CCrashHandler::SetCrashCallbackA(PFNCRASHCALLBACKA pfnCallback, LPVOID pUserParam)
-{
-	m_pfnCallback2A = pfnCallback;
 	m_pCallbackParam = pUserParam;
 
 	return 0;
@@ -1707,9 +1698,9 @@ int CCrashHandler::CallBack(int nStage, CR_EXCEPTION_INFO* pExInfo)
 		// Call the wide-char version of the callback function.
 
 		// Prepare callback info structure
-		CR_CRASH_CALLBACK_INFOW cci;
-		memset(&cci, 0, sizeof(CR_CRASH_CALLBACK_INFOW));
-		cci.cb = sizeof(CR_CRASH_CALLBACK_INFOW);
+		CR_CRASH_CALLBACK_INFO cci;
+		memset(&cci, 0, sizeof(CR_CRASH_CALLBACK_INFO));
+		cci.cb = sizeof(CR_CRASH_CALLBACK_INFO);
 		cci.nStage = nStage;
 		cci.pExceptionInfo = pExInfo;
 		cci.pUserParam = m_pCallbackParam;
@@ -1718,26 +1709,6 @@ int CCrashHandler::CallBack(int nStage, CR_EXCEPTION_INFO* pExInfo)
 
 		// Call the function and get the ret code
 		m_nCallbackRetCode = m_pfnCallback2W(&cci);
-
-		// Save continue execution flag
-		m_bContinueExecution = cci.bContinueExecution;
-	}
-	else if(m_pfnCallback2A!=NULL)
-	{
-		// Call the multi-byte version of the callback function.
-
-		// Prepare callback info structure
-		CR_CRASH_CALLBACK_INFOA cci;
-		memset(&cci, 0, sizeof(CR_CRASH_CALLBACK_INFOA));
-		cci.cb = sizeof(CR_CRASH_CALLBACK_INFOA);
-		cci.nStage = nStage;
-		cci.pExceptionInfo = pExInfo;
-		cci.pUserParam = m_pCallbackParam;
-		cci.pszErrorReportFolder = m_sErrorReportDirA.c_str();
-		cci.bContinueExecution = m_bContinueExecution;
-
-		// Call the function and get the ret code
-		m_nCallbackRetCode = m_pfnCallback2A(&cci);
 
 		// Save continue execution flag
 		m_bContinueExecution = cci.bContinueExecution;

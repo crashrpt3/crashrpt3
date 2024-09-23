@@ -152,9 +152,9 @@ int _tmain(int argc, TCHAR** argv)
         Utility::CreateFolder(sTmpFolder);
 
         // Install crash handler
-        CR_INSTALL_INFOW infoW;
-        memset(&infoW, 0, sizeof(CR_INSTALL_INFOW));
-        infoW.cb = sizeof(CR_INSTALL_INFOW);
+        CR_INSTALL_INFO infoW;
+        memset(&infoW, 0, sizeof(CR_INSTALL_INFO));
+        infoW.cb = sizeof(CR_INSTALL_INFO);
         infoW.pszAppVersion = L"1.0.0"; // Specify app version, otherwise it will fail.
         infoW.dwFlags = CR_INST_NO_GUI|CR_INST_DONT_SEND_REPORT|CR_INST_STORE_ZIP_ARCHIVES;
         infoW.pszErrorReportSaveDir = sTmpFolder;

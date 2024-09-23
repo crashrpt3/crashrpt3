@@ -26,7 +26,7 @@ std::map<DWORD, CString> g_sErrorMsg; // Last error messages for each calling th
 // Forward declaration.
 int crClearErrorMsg();
 
-CRASHRPTAPI(int) crInstallW(CR_INSTALL_INFOW* pInfo)
+CRASHRPTAPI(int) crInstall(CR_INSTALL_INFO* pInfo)
 {
     int nStatus = -1;
     crSetErrorMsg(_T("Success."));
@@ -35,7 +35,7 @@ CRASHRPTAPI(int) crInstallW(CR_INSTALL_INFOW* pInfo)
 
     // Validate input parameters.
     if(pInfo==NULL ||
-        pInfo->cb!=sizeof(CR_INSTALL_INFOW))
+        pInfo->cb!=sizeof(CR_INSTALL_INFO))
     {
         crSetErrorMsg(_T("pInfo is NULL or pInfo->cb member is not valid."));
         nStatus = 1;
@@ -82,113 +82,6 @@ CRASHRPTAPI(int) crInstallW(CR_INSTALL_INFOW* pInfo)
         LPCTSTR ptszCustomSenderIcon = strconv.w2t((LPWSTR)pInfo->pszCustomSenderIcon);
         LPCTSTR ptszSmtpLogin = strconv.w2t((LPWSTR)pInfo->pszSmtpLogin);
         LPCTSTR ptszSmtpPassword = strconv.w2t((LPWSTR)pInfo->pszSmtpPassword);
-
-        int nInitResult = pCrashHandler->Init(
-            ptszAppName,
-            ptszAppVersion,
-            ptszCrashSenderPath,
-            pInfo->pfnCrashCallback,
-            ptszEmailTo,
-            ptszEmailSubject,
-            ptszUrl,
-            &pInfo->uPriorities,
-            pInfo->dwFlags,
-            ptszPrivacyPolicyURL,
-            ptszDebugHelpDLL_file,
-            miniDumpType,
-            ptszErrorReportSaveDir,
-            ptszRestartCmdLine,
-            ptszLangFilePath,
-            ptszEmailText,
-            ptszSmtpProxy,
-            ptszCustomSenderIcon,
-            ptszSmtpLogin,
-            ptszSmtpPassword,
-            pInfo->nRestartTimeout,
-            pInfo->nMaxReportsPerDay
-            );
-
-        if(nInitResult!=0)
-        {
-            nStatus = 4;
-            goto cleanup;
-        }
-    }
-
-    // OK.
-    nStatus = 0;
-
-cleanup:
-
-    if(nStatus!=0) // If failed
-    {
-        if(pCrashHandler!=NULL &&
-            !pCrashHandler->IsInitialized())
-        {
-            // Release crash handler object
-            CCrashHandler::ReleaseCurrentProcessCrashHandler();
-        }
-    }
-
-    return nStatus;
-}
-
-CRASHRPTAPI(int) crInstallA(CR_INSTALL_INFOA* pInfo)
-{
-    int nStatus = -1;
-    crSetErrorMsg(_T("Success."));
-    strconv_t strconv;
-    CCrashHandler *pCrashHandler = NULL;
-
-    // Validate input parameters.
-    if(pInfo==NULL ||
-        pInfo->cb!=sizeof(CR_INSTALL_INFOA))
-    {
-        crSetErrorMsg(_T("pInfo is NULL or pInfo->cb member is not valid."));
-        nStatus = 1;
-        goto cleanup;
-    }
-
-    // Check if crInstall() already was called for current process.
-    pCrashHandler = CCrashHandler::GetCurrentProcessCrashHandler();
-
-    if(pCrashHandler!=NULL &&
-        pCrashHandler->IsInitialized())
-    {
-        crSetErrorMsg(_T("Can't install crash handler to the same process twice."));
-        nStatus = 2;
-        goto cleanup;
-    }
-
-    if(pCrashHandler==NULL)
-    {
-        pCrashHandler = new CCrashHandler();
-        if(pCrashHandler==NULL)
-        {
-            crSetErrorMsg(_T("Error allocating memory for crash handler."));
-            nStatus = 3;
-            goto cleanup;
-        }
-    }
-
-    {
-        LPCTSTR ptszAppName = strconv.a2t((LPSTR)pInfo->pszAppName);
-        LPCTSTR ptszAppVersion = strconv.a2t((LPSTR)pInfo->pszAppVersion);
-        LPCTSTR ptszCrashSenderPath = strconv.a2t((LPSTR)pInfo->pszCrashSenderPath);
-        LPCTSTR ptszEmailTo = strconv.a2t((LPSTR)pInfo->pszEmailTo);
-        LPCTSTR ptszEmailSubject = strconv.a2t((LPSTR)pInfo->pszEmailSubject);
-        LPCTSTR ptszUrl = strconv.a2t((LPSTR)pInfo->pszUrl);
-        LPCTSTR ptszPrivacyPolicyURL = strconv.a2t((LPSTR)pInfo->pszPrivacyPolicyURL);
-        LPCTSTR ptszDebugHelpDLL_file = strconv.a2t((LPSTR)pInfo->pszDebugHelpDLL);
-        MINIDUMP_TYPE miniDumpType = pInfo->uMiniDumpType;
-        LPCTSTR ptszErrorReportSaveDir = strconv.a2t((LPSTR)pInfo->pszErrorReportSaveDir);
-        LPCTSTR ptszRestartCmdLine = strconv.a2t((LPSTR)pInfo->pszRestartCmdLine);
-        LPCTSTR ptszLangFilePath = strconv.a2t((LPSTR)pInfo->pszLangFilePath);
-        LPCTSTR ptszEmailText = strconv.a2t((LPSTR)pInfo->pszEmailText);
-        LPCTSTR ptszSmtpProxy = strconv.a2t((LPSTR)pInfo->pszSmtpProxy);
-        LPCTSTR ptszCustomSenderIcon = strconv.a2t((LPSTR)pInfo->pszCustomSenderIcon);
-        LPCTSTR ptszSmtpLogin = strconv.a2t((LPSTR)pInfo->pszSmtpLogin);
-        LPCTSTR ptszSmtpPassword = strconv.a2t((LPSTR)pInfo->pszSmtpPassword);
 
         int nInitResult = pCrashHandler->Init(
             ptszAppName,
@@ -335,8 +228,8 @@ crInstallToCurrentThread()
 }
 
 CRASHRPTAPI(int)
-crSetCrashCallbackW(
-             PFNCRASHCALLBACKW pfnCallbackFunc,
+crSetCrashCallback(
+    PFNCRASHCALLBACK pfnCallbackFunc,
              LPVOID lpParam
              )
 {
@@ -358,33 +251,8 @@ crSetCrashCallbackW(
     return 0;
 }
 
-
 CRASHRPTAPI(int)
-crSetCrashCallbackA(
-             PFNCRASHCALLBACKA pfnCallbackFunc,
-             LPVOID lpParam
-             )
-{
-    crSetErrorMsg(_T("Unspecified error."));
-
-    CCrashHandler *pCrashHandler =
-        CCrashHandler::GetCurrentProcessCrashHandler();
-
-    if(pCrashHandler==NULL)
-    {
-        crSetErrorMsg(_T("Crash handler wasn't previously installed for current process."));
-        return 1; // No handler installed for current process?
-    }
-
-    pCrashHandler->SetCrashCallbackA(pfnCallbackFunc, lpParam);
-
-    // OK
-    crSetErrorMsg(_T("Success."));
-    return 0;
-}
-
-CRASHRPTAPI(int)
-crSetEmailSubjectW(
+crSetEmailSubject(
     LPCWSTR pszSubject
     )
 {
@@ -405,32 +273,7 @@ crSetEmailSubjectW(
 }
 
 CRASHRPTAPI(int)
-crSetEmailSubjectA(
-    LPCSTR pszSubject
-)
-{
-    crSetErrorMsg(_T("Success."));
-
-    CCrashHandler *pCrashHandler =
-        CCrashHandler::GetCurrentProcessCrashHandler();
-
-    if(pCrashHandler==NULL)
-    {
-        crSetErrorMsg(_T("Crash handler wasn't previously installed for current process."));
-        return 1; // No handler installed for current process?
-    }
-
-    strconv_t strconv;
-
-    LPCWSTR pwszSubject = strconv.a2w(pszSubject);
-
-    pCrashHandler->m_sEmailSubject = pwszSubject;
-
-    return 0;
-}
-
-CRASHRPTAPI(int)
-crAddFile2W(PCWSTR pszFile, PCWSTR pszDestFile, PCWSTR pszDesc, DWORD dwFlags)
+crAddFile2(PCWSTR pszFile, PCWSTR pszDestFile, PCWSTR pszDesc, DWORD dwFlags)
 {
     crSetErrorMsg(_T("Success."));
 
@@ -458,20 +301,6 @@ crAddFile2W(PCWSTR pszFile, PCWSTR pszDestFile, PCWSTR pszDesc, DWORD dwFlags)
 
     // OK.
     return 0;
-}
-
-CRASHRPTAPI(int)
-crAddFile2A(PCSTR pszFile, PCSTR pszDestFile, PCSTR pszDesc, DWORD dwFlags)
-{
-    // Convert parameters to wide char
-
-    strconv_t strconv;
-
-    LPCWSTR pwszFile = strconv.a2w(pszFile);
-    LPCWSTR pwszDestFile = strconv.a2w(pszDestFile);
-    LPCWSTR pwszDesc = strconv.a2w(pszDesc);
-
-    return crAddFile2W(pwszFile, pwszDestFile, pwszDesc, dwFlags);
 }
 
 CRASHRPTAPI(int)
@@ -526,7 +355,7 @@ crAddVideo(
 }
 
 CRASHRPTAPI(int)
-crAddPropertyW(
+crAddProperty(
                LPCWSTR pszPropName,
                LPCWSTR pszPropValue
                )
@@ -558,18 +387,7 @@ crAddPropertyW(
 }
 
 CRASHRPTAPI(int)
-crAddPropertyA(
-               LPCSTR pszPropName,
-               LPCSTR pszPropValue
-               )
-{
-    // This is just a wrapper for wide-char function version
-    strconv_t strconv;
-    return crAddPropertyW(strconv.a2w(pszPropName), strconv.a2w(pszPropValue));
-}
-
-CRASHRPTAPI(int)
-crAddRegKeyW(
+crAddRegKey(
              LPCWSTR pszRegKey,
              LPCWSTR pszDstFileName,
              DWORD dwFlags
@@ -602,18 +420,6 @@ crAddRegKeyW(
 }
 
 CRASHRPTAPI(int)
-crAddRegKeyA(
-             LPCSTR pszRegKey,
-             LPCSTR pszDstFileName,
-             DWORD dwFlags
-             )
-{
-    // This is just a wrapper for wide-char function version
-    strconv_t strconv;
-    return crAddRegKeyW(strconv.a2w(pszRegKey), strconv.a2w(pszDstFileName), dwFlags);
-}
-
-CRASHRPTAPI(int)
 crGenerateErrorReport(
                       CR_EXCEPTION_INFO* pExceptionInfo)
 {
@@ -641,7 +447,7 @@ crGenerateErrorReport(
 }
 
 CRASHRPTAPI(int)
-crGetLastErrorMsgW(LPWSTR pszBuffer, UINT uBuffSize)
+crGetLastErrorMsg(LPWSTR pszBuffer, UINT uBuffSize)
 {
     if(pszBuffer==NULL || uBuffSize==0)
         return -1; // Null pointer to buffer
@@ -670,27 +476,6 @@ crGetLastErrorMsgW(LPWSTR pszBuffer, UINT uBuffSize)
     pszBuffer[uBuffSize-1] = 0; // Zero terminator
     g_cs.Unlock();
     return size;
-}
-
-CRASHRPTAPI(int)
-crGetLastErrorMsgA(LPSTR pszBuffer, UINT uBuffSize)
-{
-    if(pszBuffer==NULL || uBuffSize==0)
-        return -1;
-
-    strconv_t strconv;
-
-    WCHAR* pwszBuffer = new WCHAR[uBuffSize];
-
-    int res = crGetLastErrorMsgW(pwszBuffer, uBuffSize);
-
-    LPCSTR paszBuffer = strconv.w2a(pwszBuffer);
-
-    STRCPY_S(pszBuffer, uBuffSize, paszBuffer);
-
-    delete [] pwszBuffer;
-
-    return res;
 }
 
 int crSetErrorMsg(LPCTSTR pszErrorMsg)
