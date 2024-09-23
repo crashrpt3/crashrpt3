@@ -14,9 +14,6 @@ add_msvc_precompiled_header(stdafx.h ./StdAfx.cpp srcs_using_precomp)
 # Define _UNICODE and UNICODE (use wide-char encoding)
 add_compile_definitions( _UNICODE UNICODE )
 
-# Modify default compiler settings
-fix_default_compiler_settings_()
-
 # Add include dir
 include_directories( ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/thirdparty/wtl )
 

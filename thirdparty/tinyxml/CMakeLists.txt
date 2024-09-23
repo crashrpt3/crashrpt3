@@ -1,14 +1,13 @@
 project(tinyxml)
 
-# Create the list of source files
-aux_source_directory( . source_files )
+# source files
+aux_source_directory( . SOURCE_FILE_LIST )
 
-# Define _UNICODE (use wide-char encoding)
-add_compile_definitions( _UNICODE )
+# unicode
+add_compile_definitions(UNICODE _UNICODE)
 
-fix_default_compiler_settings_()
+# target
+add_library(tinyxml STATIC ${SOURCE_FILE_LIST})
 
-# Add library build target
-add_library(tinyxml STATIC ${source_files})
-
+# add "d" postfix to output file name in debug
 set_target_properties(tinyxml PROPERTIES DEBUG_POSTFIX d )

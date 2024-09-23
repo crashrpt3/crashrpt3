@@ -1,61 +1,52 @@
 project(WTLDemo)
 
-# Create the list of source files
-aux_source_directory( . source_files )
-file( GLOB header_files *.h )
+# source files
+aux_source_directory(. SOURCE_FILE_LIST)
+file(GLOB HEADER_FILE_LIST *.h)
 
-# Enable usage of precompiled header
-set(srcs_using_precomp ${source_files})
-list(REMOVE_ITEM srcs_using_precomp ./stdafx.cpp)
-add_msvc_precompiled_header(stdafx.h ./stdafx.cpp srcs_using_precomp)
+# pre-compile header
+set(USE_PCH_FILE_LIST ${SOURCE_FILE_LIST})
+list(REMOVE_ITEM USE_PCH_FILE_LIST ./stdafx.cpp)
+add_msvc_precompiled_header(stdafx.h ./stdafx.cpp USE_PCH_FILE_LIST)
 
-# Include resource file
-list(APPEND source_files ./WTLDemo.rc )
+# resource files
+list(APPEND SOURCE_FILE_LIST ./WTLDemo.rc )
 
-# Define _UNICODE (use wide-char encoding)
-add_definitions(-D_UNICODE )
+# unicode
+add_compile_definitions(UNICODE _UNICODE)
 
-fix_default_compiler_settings_()
+# include paths
+cmake_path(SET REPOSITORY_DIR NORMALIZE "${CMAKE_CURRENT_SOURCE_DIR}/../..")
+include_directories(
+  ${REPOSITORY_DIR}/include
+  ${REPOSITORY_DIR}/thirdparty/wtl)
 
-# Add include dir
-include_directories(${CRASHRPT_SRC}/include
-          ${CRASHRPT_SRC}/thirdparty/wtl)
+# exe
+add_executable(WTLDemo WIN32 ${SOURCE_FILE_LIST} ${HEADER_FILE_LIST})
 
-# Add executable build target
-add_executable(WTLDemo WIN32 ${source_files} ${header_files})
-
-# Add input link libraries
+# link
 target_link_libraries(WTLDemo CrashRpt)
 
-# Add "d" postfix to output file name in Debug
+# add "d" postfix to output file name in debug
 set_target_properties(WTLDemo PROPERTIES DEBUG_POSTFIX d )
 set_target_properties(WTLDemo PROPERTIES COMPILE_FLAGS "/Od /Zi /fp:except" LINK_FLAGS "/DEBUG")
 
 # Add post-build event
-IF(CMAKE_CL_64)
-SET(AMD_SUFFIX "amd64")
-ENDIF()
-
-ADD_CUSTOM_COMMAND(
-    TARGET WTLDemo
-    POST_BUILD
-    COMMAND ${CMAKE_COMMAND} ARGS -E copy "\"${CRASHRPT_SRC}/demos/WTLDemo/dummy.ini\" \"${CMAKE_BINARY_DIR}/bin/\""
-    COMMAND ${CMAKE_COMMAND} ARGS -E copy "\"${CRASHRPT_SRC}/demos/WTLDemo/dummy.log\" \"${CMAKE_BINARY_DIR}/bin/\""
-    COMMAND ${CMAKE_COMMAND} ARGS -E copy "\"${CRASHRPT_SRC}/lang_files\\crashrpt_lang_EN.ini\" \"${CMAKE_BINARY_DIR}/bin/crashrpt_lang.ini\""
-)
-
-if( NOT DBGHELP_USE_INSTALLED_SDK )
-  ADD_CUSTOM_COMMAND(
-      TARGET WTLDemo
-      POST_BUILD
-      COMMAND ${CMAKE_COMMAND} ARGS -E copy "\"${CRASHRPT_SRC}/thirdparty/dbghelp/bin/${AMD_SUFFIX}/dbghelp.dll\" \"${CMAKE_BINARY_DIR}/bin/\""
-  )
+if(CMAKE_CL_64)
+set(AMD_SUFFIX "amd64")
 endif()
 
-INSTALL(TARGETS WTLDemo LIBRARY DESTINATION ${CRASHRPT_INSTALLDIR_BIN}
-             ARCHIVE DESTINATION ${CRASHRPT_INSTALLDIR_LIB}
-             RUNTIME DESTINATION ${CRASHRPT_INSTALLDIR_BIN})
+# command
+add_custom_command(
+    TARGET WTLDemo
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} ARGS -E copy "\"${REPOSITORY_DIR}/demos/WTLDemo/dummy.ini\" \"${CMAKE_BINARY_DIR}/bin/\""
+    COMMAND ${CMAKE_COMMAND} ARGS -E copy "\"${REPOSITORY_DIR}/demos/WTLDemo/dummy.log\" \"${CMAKE_BINARY_DIR}/bin/\""
+    COMMAND ${CMAKE_COMMAND} ARGS -E copy "\"${REPOSITORY_DIR}/lang_files\\crashrpt_lang_EN.ini\" \"${CMAKE_BINARY_DIR}/bin/crashrpt_lang.ini\"")
 
-INSTALL(FILES ${CRASHRPT_SRC}/demos/WTLDemo/dummy.ini DESTINATION ${CRASHRPT_INSTALLDIR_BIN})
-INSTALL(FILES ${CRASHRPT_SRC}/demos/WTLDemo/dummy.log DESTINATION ${CRASHRPT_INSTALLDIR_BIN})
-INSTALL(FILES "${CRASHRPT_SRC}/lang_files/crashrpt_lang_EN.ini" DESTINATION ${CRASHRPT_INSTALLDIR_BIN} RENAME crashrpt_lang.ini)
+if(NOT DBGHELP_USE_INSTALLED_SDK)
+  add_custom_command(
+    TARGET WTLDemo
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} ARGS -E copy "\"${REPOSITORY_DIR}/thirdparty/dbghelp/bin/${AMD_SUFFIX}/dbghelp.dll\" \"${CMAKE_BINARY_DIR}/bin/\"")
+endif()

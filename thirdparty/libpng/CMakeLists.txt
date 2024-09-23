@@ -1,22 +1,21 @@
 project(libpng)
 
 # Create the list of source files
-aux_source_directory( . source_files )
+aux_source_directory(. SOURCE_FILE_LIST)
 
-# Define _UNICODE (use wide-char encoding)
-add_compile_definitions( _UNICODE _CRT_SECURE_NO_WARNINGS )
+# unicode
+add_compile_definitions(_UNICODE UNICODE _CRT_SECURE_NO_WARNINGS)
 
-add_compile_options( /wd4206 /wd4245 /wd4267 /wd4310 )
+add_compile_options(/wd4206 /wd4245 /wd4267 /wd4310)
 
-# Add include dir
-include_directories( ${CRASHRPT_SRC}/thirdparty/zlib )
+# include paths
+cmake_path(SET REPOSITORY_DIR NORMALIZE "${CMAKE_CURRENT_SOURCE_DIR}/../..")
+include_directories(${REPOSITORY_DIR}/thirdparty/zlib)
 
-fix_default_compiler_settings_()
+# target
+add_library(libpng STATIC ${SOURCE_FILE_LIST})
 
-# Add library build target
-add_library(libpng STATIC ${source_files})
-
-# Add linker input libraries
+# link
 target_link_libraries(libpng zlib)
 
-set_target_properties(libpng PROPERTIES DEBUG_POSTFIX d )
+set_target_properties(libpng PROPERTIES DEBUG_POSTFIX d)

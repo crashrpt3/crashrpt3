@@ -1,32 +1,21 @@
 project(ConsoleDemo)
 
-# Create the list of source files
-aux_source_directory( . source_files )
-file( GLOB header_files *.h )
+# source files
+aux_source_directory(. SOURCE_FILE_LIST)
+file(GLOB HEADER_FILE_LIST *.h)
 
-# Define _UNICODE (use wide-char encoding)
-add_definitions(-D_UNICODE )
+# exe
+add_executable(ConsoleDemo ${SOURCE_FILE_LIST} ${HEADER_FILE_LIST})
 
-fix_default_compiler_settings_()
+# include paths
+cmake_path(SET REPOSITORY_DIR NORMALIZE "${CMAKE_CURRENT_SOURCE_DIR}/../..")
+include_directories(${REPOSITORY_DIR}/include)
 
-# Add include dir
-include_directories(${CRASHRPT_SRC}/include 
-          ${CRASHRPT_SRC}/reporting/CrashRpt
-          ${CRASHRPT_SRC}/thirdparty/wtl 
-          ${CRASHRPT_SRC}/thirdparty/zlib
-          ${CRASHRPT_SRC}/thirdparty/minizip  
-          ${CRASHRPT_SRC}/thirdparty/jpeg 
-          ${CRASHRPT_SRC}/thirdparty/libpng 
-          ${CRASHRPT_SRC}/thirdparty/tinyxml )
+# unicode
+add_compile_definitions(UNICODE _UNICODE)
 
-# Add executable build target
-add_executable(ConsoleDemo ${source_files} ${header_files})
-
-# Add input link libraries
+# link
 target_link_libraries(ConsoleDemo CrashRpt)
 
+# add "d" postfix to output file name in debug
 set_target_properties(ConsoleDemo PROPERTIES DEBUG_POSTFIX d )
-
-INSTALL(TARGETS ConsoleDemo LIBRARY DESTINATION ${CRASHRPT_INSTALLDIR_BIN}
-             ARCHIVE DESTINATION ${CRASHRPT_INSTALLDIR_LIB}
-             RUNTIME DESTINATION ${CRASHRPT_INSTALLDIR_BIN})

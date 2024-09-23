@@ -1,48 +1,43 @@
 project(Tests)
 
 # Create the list of source files
-aux_source_directory( . source_files )
-file( GLOB header_files *.h )
+aux_source_directory( . SOURCE_FILE_LIST )
+file( GLOB HEADER_FILE_LIST *.h )
 
-list(APPEND source_files ${CRASHRPT_SRC}/reporting/CrashRpt/Utility.cpp)
+# repository directory
+cmake_path(SET REPOSITORY_DIR NORMALIZE "${CMAKE_CURRENT_SOURCE_DIR}/..")
+
+list(APPEND SOURCE_FILE_LIST ${REPOSITORY_DIR}/reporting/CrashRpt/Utility.cpp)
 
 # Enable usage of precompiled header
-set(srcs_using_precomp ${source_files})
-list(REMOVE_ITEM srcs_using_precomp ./stdafx.cpp )
-add_msvc_precompiled_header(stdafx.h ./stdafx.cpp srcs_using_precomp )
+set(srcs_using_precomp ${SOURCE_FILE_LIST})
+list(REMOVE_ITEM srcs_using_precomp ./stdafx.cpp)
+add_msvc_precompiled_header(stdafx.h ./stdafx.cpp srcs_using_precomp)
 
 # Define _UNICODE and UNICODE (use wide-char encoding)
-add_compile_definitions( _UNICODE UNICODE )
+add_compile_definitions(_UNICODE UNICODE)
 
 add_compile_options( /wd4100 )
 
 if(NOT CRASHRPT_BUILD_SHARED_LIBS)
-  add_compile_definitions( CRASHRPT_LIB )
+  add_compile_definitions(CRASHRPT_LIB)
 endif(NOT CRASHRPT_BUILD_SHARED_LIBS)
-
-fix_default_compiler_settings_()
 
 set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /DEBUG")
 
 # Add include dir
 include_directories(
-  ${CRASHRPT_SRC}/include
-  ${CRASHRPT_SRC}/reporting/CrashRpt
-  ${CRASHRPT_SRC}/thirdparty/wtl
+  ${REPOSITORY_DIR}/include
+  ${REPOSITORY_DIR}/reporting/CrashRpt
+  ${REPOSITORY_DIR}/thirdparty/wtl
 )
 
 # Add executable build target
-add_executable(Tests ${source_files} ${header_files})
+add_executable(Tests ${SOURCE_FILE_LIST} ${HEADER_FILE_LIST})
 
 # Add input link libraries
 target_link_libraries(Tests CrashRpt CrashRptProbe)
 
 set_target_properties(Tests PROPERTIES DEBUG_POSTFIX d )
 
-INSTALL(TARGETS Tests
-  LIBRARY DESTINATION ${CRASHRPT_INSTALLDIR_BIN}
-  ARCHIVE DESTINATION ${CRASHRPT_INSTALLDIR_LIB}
-  RUNTIME DESTINATION ${CRASHRPT_INSTALLDIR_BIN}
-)
-
-ADD_DEPENDENCIES(Tests CrashRpt CrashRptProbe CrashSender crprober)
+add_dependencies(Tests CrashRpt CrashRptProbe CrashSender crprober)

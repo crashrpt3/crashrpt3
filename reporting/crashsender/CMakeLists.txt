@@ -1,48 +1,49 @@
 project(CrashSender)
 
 # Create the list of source files
-aux_source_directory( . source_files )
-file( GLOB header_files *.h )
+aux_source_directory( . SOURCE_FILE_LIST )
+file( GLOB HEADER_FILE_LIST *.h )
+
+# repository directory
+cmake_path(SET REPOSITORY_DIR NORMALIZE "${CMAKE_CURRENT_SOURCE_DIR}/../..")
 
 # Enable usage of precompiled header
-set(srcs_using_precomp ${source_files})
+set(srcs_using_precomp ${SOURCE_FILE_LIST})
 list(REMOVE_ITEM srcs_using_precomp ./stdafx.cpp ./md5.cpp ./base64.cpp)
 add_msvc_precompiled_header(stdafx.h ./stdafx.cpp srcs_using_precomp)
 
-list(APPEND source_files
+list(APPEND SOURCE_FILE_LIST
   ./CrashSender.rc
-  ${CRASHRPT_SRC}/reporting/CrashRpt/Utility.cpp
-  ${CRASHRPT_SRC}/reporting/CrashRpt/SharedMem.cpp
+  ${REPOSITORY_DIR}/reporting/CrashRpt/Utility.cpp
+  ${REPOSITORY_DIR}/reporting/CrashRpt/SharedMem.cpp
 )
 
 # Define _UNICODE and UNICODE (use wide-char encoding)
 add_compile_definitions( _UNICODE UNICODE )
 
-fix_default_compiler_settings_()
-
 # Add include dir
 include_directories(
-  ${CRASHRPT_SRC}/include
-  ${CRASHRPT_SRC}/reporting/CrashRpt
-  ${CRASHRPT_SRC}/thirdparty/wtl
-  ${CRASHRPT_SRC}/thirdparty/zlib
-  ${CRASHRPT_SRC}/thirdparty/minizip
-  ${CRASHRPT_SRC}/thirdparty/jpeg
-  ${CRASHRPT_SRC}/thirdparty/libpng
-  ${CRASHRPT_SRC}/thirdparty/tinyxml
+  ${REPOSITORY_DIR}/include
+  ${REPOSITORY_DIR}/reporting/CrashRpt
+  ${REPOSITORY_DIR}/thirdparty/wtl
+  ${REPOSITORY_DIR}/thirdparty/zlib
+  ${REPOSITORY_DIR}/thirdparty/minizip
+  ${REPOSITORY_DIR}/thirdparty/jpeg
+  ${REPOSITORY_DIR}/thirdparty/libpng
+  ${REPOSITORY_DIR}/thirdparty/tinyxml
   ${DBGHELP_INCLUDE_DIR}
-  ${CRASHRPT_SRC}/thirdparty/libogg/include
-  ${CRASHRPT_SRC}/thirdparty/libtheora/include
+  ${REPOSITORY_DIR}/thirdparty/libogg/include
+  ${REPOSITORY_DIR}/thirdparty/libtheora/include
 )
 
 if(NOT CMAKE_CL_64)
-  link_directories( ${CRASHRPT_SRC}/thirdparty/dbghelp/lib )
+  link_directories( ${REPOSITORY_DIR}/thirdparty/dbghelp/lib )
 else(NOT CMAKE_CL_64)
-  link_directories( ${CRASHRPT_SRC}/thirdparty/dbghelp/lib/amd64 )
+  link_directories( ${REPOSITORY_DIR}/thirdparty/dbghelp/lib/amd64 )
 endif(NOT CMAKE_CL_64)
 
 # Add executable build target
-add_executable(CrashSender WIN32 ${source_files} ${header_files})
+add_executable(CrashSender WIN32 ${SOURCE_FILE_LIST} ${HEADER_FILE_LIST})
 
 # Add input link libraries
 target_link_libraries(CrashSender

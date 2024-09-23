@@ -1,27 +1,21 @@
 project(crprober)
 
-# Create the list of source files
-aux_source_directory( . source_files )
-file( GLOB header_files *.h )
+# source files
+aux_source_directory( . SOURCE_FILE_LIST )
+file( GLOB HEADER_FILE_LIST *.h )
 
-# Define _UNICODE and UNICODE (use wide-char encoding)
+# unicode
 add_compile_definitions( _UNICODE UNICODE )
 
-fix_default_compiler_settings_()
+# include paths
+cmake_path(SET REPOSITORY_DIR NORMALIZE "${CMAKE_CURRENT_SOURCE_DIR}/../..")
+include_directories(${REPOSITORY_DIR}/include)
 
-# Add include dir
-include_directories(${CRASHRPT_SRC}/include)
+# exe
+add_executable(crprober ${SOURCE_FILE_LIST} ${HEADER_FILE_LIST})
 
-# Add executable build target
-add_executable(crprober ${source_files} ${header_files})
-
-# Add input link libraries
+# link
 target_link_libraries(crprober CrashRptProbe)
 
+# add "d" postfix to output file name in debug
 set_target_properties(crprober PROPERTIES DEBUG_POSTFIX d )
-
-INSTALL(TARGETS crprober
-  LIBRARY DESTINATION ${CRASHRPT_INSTALLDIR_BIN}
-  ARCHIVE DESTINATION ${CRASHRPT_INSTALLDIR_LIB}
-  RUNTIME DESTINATION ${CRASHRPT_INSTALLDIR_BIN}
-)

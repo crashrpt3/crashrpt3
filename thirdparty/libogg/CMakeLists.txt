@@ -1,17 +1,16 @@
 project(libogg)
 
-# Create the list of source files
-aux_source_directory( ./src source_files )
+# source files
+aux_source_directory(./src SOURCE_FILE_LIST)
 
-# Define _UNICODE (use wide-char encoding)
-add_compile_definitions( _UNICODE )
+# unicode
+add_compile_definitions(_UNICODE UNICODE)
 
-# Add include dir
-include_directories(${CMAKE_SOURCE_DIR}/thirdparty/libogg/include)
+# include paths
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-fix_default_compiler_settings_()
+# target
+add_library(libogg STATIC ${SOURCE_FILE_LIST})
 
-# Add library build target
-add_library(libogg STATIC ${source_files})
-
-set_target_properties(libogg PROPERTIES DEBUG_POSTFIX d )
+# add "d" postfix to output file name in debug
+set_target_properties(libogg PROPERTIES DEBUG_POSTFIX d)

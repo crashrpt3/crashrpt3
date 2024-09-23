@@ -4,7 +4,6 @@ project (CrashRpt)
 
 # CrashRpt version number and path
 set (CRASHRPT_VER 1500)
-set (CRASHRPT_SRC ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Check supported generators
 if(NOT MSVC OR ${MSVC_VERSION} LESS 1600)
@@ -89,42 +88,23 @@ MACRO(ADD_MSVC_PRECOMPILED_HEADER PrecompiledHeader PrecompiledSource SourcesVar
   ENDIF(MSVC)
 ENDMACRO(ADD_MSVC_PRECOMPILED_HEADER)
 
-# Modifies CMake's default compiler/linker settings.
-macro(fix_default_compiler_settings_)
-  if (MSVC)
-    # For MSVC, CMake sets certain flags to defaults we want to override.
-    # This replacement code is taken from sample in the CMake Wiki at
-    # https://gitlab.kitware.com/cmake/community/-/wikis/FAQ#dynamic-replace.
-    foreach(flag_var
-        CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
-        CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-      if(${flag_var} MATCHES "/MD" AND NOT CRASHRPT_LINK_CRT_AS_DLL)
-        string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
-      endif()
-    endforeach()
-  endif(MSVC)
-endmacro()
-
-fix_default_compiler_settings_()
-
 # Other CMakeLists are located in project subdirectories
 
 if( DBGHELP_USE_INSTALLED_SDK )
   set( DBGHELP_INCLUDE_DIR )
   set( DBGHELP_IMPORT_LIB )
 else()
-  set( DBGHELP_INCLUDE_DIR "${CRASHRPT_SRC}/thirdparty/dbghelp/include" )
+  set( DBGHELP_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/dbghelp/include" )
   if( CMAKE_CL_64 )
-    set(DBGHELP_IMPORT_LIB ${CRASHRPT_SRC}/thirdparty/dbghelp/lib/amd64/dbghelp.lib)
+    set(DBGHELP_IMPORT_LIB ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/dbghelp/lib/amd64/dbghelp.lib)
   else()
-    set(DBGHELP_IMPORT_LIB ${CRASHRPT_SRC}/thirdparty/dbghelp/lib/dbghelp.lib)
+    set(DBGHELP_IMPORT_LIB ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/dbghelp/lib/dbghelp.lib)
   endif()
 endif()
 
 IF(CRASHRPT_BUILD_DEMOS)
 add_subdirectory("demos/ConsoleDemo")
 add_subdirectory("demos/WTLDemo")
-add_subdirectory("demos/MFCDemo")
 ENDIF()
 
 add_subdirectory("reporting/crashrpt")
@@ -150,25 +130,25 @@ add_subdirectory("thirdparty/libtheora")
 if( NOT DBGHELP_USE_INSTALLED_SDK )
   MESSAGE("Copying DLLs in bin directory...")
   if(NOT CMAKE_CL_64)
-    FILE(COPY ${CRASHRPT_SRC}/thirdparty/dbghelp/bin/dbghelp.dll DESTINATION ${CMAKE_BINARY_DIR}/bin/)
+    FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/dbghelp/bin/dbghelp.dll DESTINATION ${CMAKE_BINARY_DIR}/bin/)
   ELSE()
-    FILE(COPY ${CRASHRPT_SRC}/thirdparty/dbghelp/bin/amd64/dbghelp.dll DESTINATION ${CMAKE_BINARY_DIR}/bin/)
+    FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/dbghelp/bin/amd64/dbghelp.dll DESTINATION ${CMAKE_BINARY_DIR}/bin/)
   ENDIF()
-  INSTALL(FILES ${CRASHRPT_SRC}/thirdparty/dbghelp/bin/${AMD_3RD_SUFFIX}/dbghelp.dll DESTINATION ${CRASHRPT_INSTALLDIR_BIN})
+  INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/dbghelp/bin/${AMD_3RD_SUFFIX}/dbghelp.dll DESTINATION ${CRASHRPT_INSTALLDIR_BIN})
 endif()
 
 MESSAGE("Copying test data files...")
-FILE(COPY ${CRASHRPT_SRC}/lang_files/crashrpt_lang_EN.ini DESTINATION ${CMAKE_BINARY_DIR}/bin/)
+FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/lang_files/crashrpt_lang_EN.ini DESTINATION ${CMAKE_BINARY_DIR}/bin/)
 FILE(RENAME ${CMAKE_BINARY_DIR}/bin/crashrpt_lang_EN.ini ${CMAKE_BINARY_DIR}/bin/crashrpt_lang.ini)
 
 IF(CRASHRPT_BUILD_TESTS)
-  FILE(COPY ${CRASHRPT_SRC}/tests/dummy.ini DESTINATION ${CMAKE_BINARY_DIR}/bin/)
-  FILE(COPY ${CRASHRPT_SRC}/tests/dummy.log DESTINATION ${CMAKE_BINARY_DIR}/bin/)
+  FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/tests/dummy.ini DESTINATION ${CMAKE_BINARY_DIR}/bin/)
+  FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/tests/dummy.log DESTINATION ${CMAKE_BINARY_DIR}/bin/)
 ENDIF(CRASHRPT_BUILD_TESTS)
 
 # Installation
 
-INSTALL(DIRECTORY ${CRASHRPT_SRC}/include/ DESTINATION ${CMAKE_INSTALL_PREFIX}/include/)
-INSTALL(DIRECTORY ${CRASHRPT_SRC}/demos/ DESTINATION ${CMAKE_INSTALL_PREFIX}/demos/)
-INSTALL(DIRECTORY ${CRASHRPT_SRC}/lang_files/ DESTINATION ${CMAKE_INSTALL_PREFIX}/lang_files/)
-INSTALL(DIRECTORY ${CRASHRPT_SRC}/docs/ DESTINATION ${CMAKE_INSTALL_PREFIX}/docs/)
+INSTALL(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION ${CMAKE_INSTALL_PREFIX}/include/)
+INSTALL(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/demos/ DESTINATION ${CMAKE_INSTALL_PREFIX}/demos/)
+INSTALL(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lang_files/ DESTINATION ${CMAKE_INSTALL_PREFIX}/lang_files/)
+INSTALL(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/docs/ DESTINATION ${CMAKE_INSTALL_PREFIX}/docs/)
