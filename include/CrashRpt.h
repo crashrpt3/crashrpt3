@@ -19,16 +19,15 @@ be found in the Authors.txt file in the root of the source tree.
 #include <windows.h>
 #include <dbghelp.h>
 
+#define CRASHRPT_VER 3100
+
 #ifdef __cplusplus
-#define CRASHRPT_EXTERNC extern "C"
+#define CRASHRPT_EXTERN_C extern "C"
 #else
-#define CRASHRPT_EXTERNC
+#define CRASHRPT_EXTERN_C
 #endif
 
-#define CRASHRPTAPI(rettype) CRASHRPT_EXTERNC rettype WINAPI
-
-//! Current CrashRpt version
-#define CRASHRPT_VER 1500
+#define CRASHRPT_EXPORT_API(rettype) CRASHRPT_EXTERN_C rettype WINAPI
 
 // Exception types used in CR_EXCEPTION_INFO::exctype structure member.
 #define CR_SEH_EXCEPTION                0    //!< SEH exception.
@@ -45,19 +44,19 @@ be found in the Authors.txt file in the root of the source tree.
 #define CR_CPP_SIGSEGV                  11   //!< C++ SIGSEGV signal (invalid storage access).
 #define CR_CPP_SIGTERM                  12   //!< C++ SIGTERM signal (termination request).
 
-typedef struct tagCR_EXCEPTION_INFO
+typedef struct
 {
-    WORD cb;                   //!< Size of this structure in bytes; should be initialized before using.
-    PEXCEPTION_POINTERS pexcptrs; //!< Exception pointers.
-    int exctype;               //!< Exception type.
-    DWORD code;                //!< Code of SEH exception.
-    unsigned int fpe_subcode;  //!< Floating point exception subcode.
-    const wchar_t* expression; //!< Assertion expression.
-    const wchar_t* function;   //!< Function in which assertion happened.
-    const wchar_t* file;       //!< File in which assertion happened.
-    unsigned int line;         //!< Line number.
-    BOOL bManual;              //!< Flag telling if the error report is generated manually or not.
-    HANDLE hSenderProcess;     //!< Handle to the CrashSender.exe process.
+    WORD cb;                                 //!< Size of this structure in bytes; should be initialized before using.
+    PEXCEPTION_POINTERS lpExceptionPointers; //!< Exception pointers.
+    INT32 nExceptionType;                    //!< Exception type.
+    DWORD dwSEHCode;                         //!< Code of SEH exception.
+    UINT32 uFloatPointExceptionSubcode;      //!< Floating point exception subcode.
+    LPCWSTR lpAssertionExpression;           //!< Assertion expression.
+    LPCWSTR lpFunction;                      //!< Function in which assertion happened.
+    LPCWSTR file;                            //!< File in which assertion happened.
+    UINT32 uLine;                            //!< Line number.
+    BOOL bManual;                            //!< Flag telling if the error report is generated manually or not.
+    HANDLE hSenderProcess;                   //!< Handle to the CrashSender.exe process.
 } CR_EXCEPTION_INFO;
 
 typedef CR_EXCEPTION_INFO* PCR_EXCEPTION_INFO;
@@ -66,14 +65,14 @@ typedef CR_EXCEPTION_INFO* PCR_EXCEPTION_INFO;
 #define CR_CB_STAGE_PREPARE      10  //!< Stage after exception pointers've been retrieved.
 #define CR_CB_STAGE_FINISH       20  //!< Stage after the launch of CrashSender.exe process.
 
-typedef struct tagCR_CRASH_CALLBACK_INFO
+typedef struct
 {
     WORD cb;                            //!< Size of this structure in bytes.
-	int nStage;                         //!< Stage.
-	LPCWSTR pszErrorReportFolder;       //!< Directory where crash report files are located.
+    int nStage;                         //!< Stage.
+    LPCWSTR pszErrorReportFolder;       //!< Directory where crash report files are located.
     CR_EXCEPTION_INFO* pExceptionInfo;  //!< Pointer to information about the crash.
-	LPVOID pUserParam;                  //!< Pointer to user-defined data.
-	BOOL bContinueExecution;            //!< Whether to terminate the process (the default) or to continue program execution.
+    LPVOID pUserParam;                  //!< Pointer to user-defined data.
+    BOOL bContinueExecution;            //!< Whether to terminate the process (the default) or to continue program execution.
 } CR_CRASH_CALLBACK_INFO;
 
 // Constants that may be returned by the crash callback function.
@@ -81,7 +80,7 @@ typedef struct tagCR_CRASH_CALLBACK_INFO
 #define CR_CB_DODEFAULT          1 //!< Proceed to the next stages of crash report generation without calling crash callback function.
 #define CR_CB_NOTIFY_NEXT_STAGE  2 //!< Proceed and call the crash callback for the next stage.
 
-typedef int (CALLBACK *PFNCRASHCALLBACK) (CR_CRASH_CALLBACK_INFO* pInfo);
+typedef int (CALLBACK* PFN_CRASH_CALLBACK) (CR_CRASH_CALLBACK_INFO* pInfo);
 
 // Array indices for CR_INSTALL_INFO::uPriorities.
 #define CR_HTTP 0  //!< Send error report via HTTP (or HTTPS) connection.
@@ -104,10 +103,8 @@ typedef int (CALLBACK *PFNCRASHCALLBACK) (CR_CRASH_CALLBACK_INFO* pInfo);
 #define CR_INST_SIGINT_HANDLER                  0x400 //!< Install SIGINT signal handler.
 #define CR_INST_SIGSEGV_HANDLER                 0x800 //!< Install SIGSEGV signal handler.
 #define CR_INST_SIGTERM_HANDLER                0x1000 //!< Install SIGTERM signal handler.
-
-#define CR_INST_ALL_POSSIBLE_HANDLERS          0x1FFF //!< Install all possible exception handlers.
 #define CR_INST_CRT_EXCEPTION_HANDLERS         0x1FFE //!< Install exception handlers for the linked CRT module.
-
+#define CR_INST_ALL_POSSIBLE_HANDLERS          0x1FFF //!< Install all possible exception handlers.
 #define CR_INST_NO_GUI                         0x2000 //!< Do not show GUI, send report silently (use for non-GUI apps only).
 #define CR_INST_HTTP_BINARY_ENCODING           0x4000 //!< Deprecated, do not use.
 #define CR_INST_DONT_SEND_REPORT               0x8000 //!< Don't send error report immediately, just save it locally.
@@ -149,44 +146,26 @@ typedef CR_INSTALL_INFO* PCR_INSTALL_INFO;
 #define CR_AF_MISSING_FILE_OK     2 //!< Do not fail if file is missing (assume it will be created later).
 #define CR_AF_ALLOW_DELETE        4 //!< If this flag is specified, the file will be deletable from context menu of Error Report Details dialog.
 
-// Flags for crAddScreenshot function.
-#define CR_AS_VIRTUAL_SCREEN  0  //!< Take a screenshot of the virtual screen.
-#define CR_AS_MAIN_WINDOW     1  //!< Take a screenshot of application's main window.
-#define CR_AS_PROCESS_WINDOWS 2  //!< Take a screenshot of all visible process windows.
-#define CR_AS_GRAYSCALE_IMAGE 4  //!< Make a grayscale image instead of a full-color one.
-#define CR_AS_USE_JPEG_FORMAT 8  //!< Store screenshots as JPG files.
-#define CR_AS_ALLOW_DELETE   16  //!< If this flag is specified, the file will be deletable from context menu of Error Report Details dialog.
-
-// Flags for crAddVideo function.
-#define CR_AV_VIRTUAL_SCREEN  0  //!< Capture the whole virtual screen.
-#define CR_AV_MAIN_WINDOW     1  //!< Capture the area of application's main window.
-#define CR_AV_PROCESS_WINDOWS 2  //!< Capture all visible process windows.
-#define CR_AV_QUALITY_LOW     0  //!< Low quality video encoding, smaller file size.
-#define CR_AV_QUALITY_GOOD    4  //!< Good encoding quality, larger file size.
-#define CR_AV_QUALITY_BEST    8  //!< The best encoding quality, the largest file size.
-#define CR_AV_NO_GUI         16  //!< Do not display the notification dialog.
-#define CR_AV_ALLOW_DELETE   32  //!< If this flag is specified, the file will be deletable from context menu of Error Report Details dialog.
-
 // Flags used by crEmulateCrash() function
 #define CR_NONCONTINUABLE_EXCEPTION  32  //!< Non continuable sofware exception.
 #define CR_THROW                     33  //!< Throw C++ typed exception.
 #define CR_STACK_OVERFLOW			 34  //!< Stack overflow.
 
-CRASHRPTAPI(int) crInstall(PCR_INSTALL_INFO pInfo);
-CRASHRPTAPI(int) crUninstall();
+CRASHRPT_EXPORT_API(int) crInstall(PCR_INSTALL_INFO pInfo);
+CRASHRPT_EXPORT_API(int) crUninstall();
 
-CRASHRPTAPI(int) crInstallToCurrentThread2(DWORD dwFlags);
-CRASHRPTAPI(int) crUninstallFromCurrentThread();
+CRASHRPT_EXPORT_API(int) crInstallToCurrentThread2(DWORD dwFlags);
+CRASHRPT_EXPORT_API(int) crUninstallFromCurrentThread();
 
-CRASHRPTAPI(int) crSetCrashCallback(PFNCRASHCALLBACK pfnCallbackFunc, LPVOID lpParam);
+CRASHRPT_EXPORT_API(int) crSetCrashCallback(PFN_CRASH_CALLBACK pfnCallbackFunc, LPVOID lpParam);
 
-CRASHRPTAPI(int) crAddFile(LPCWSTR pszFile, LPCWSTR pszDestFile, LPCWSTR pszDesc, DWORD dwFlags);
-CRASHRPTAPI(int) crAddProperty(LPCWSTR pszPropName, LPCWSTR pszPropValue);
+CRASHRPT_EXPORT_API(int) crAddFile(LPCWSTR pszFile, LPCWSTR pszDestFile, LPCWSTR pszDesc, DWORD dwFlags);
+CRASHRPT_EXPORT_API(int) crAddProperty(LPCWSTR pszPropName, LPCWSTR pszPropValue);
 
-CRASHRPTAPI(int) crGetLastErrorMsg(LPWSTR pszBuffer, UINT uBuffSize);
+CRASHRPT_EXPORT_API(int) crGetLastErrorMsg(LPWSTR pszBuffer, UINT uBuffSize);
 
-CRASHRPTAPI(int) crGenerateErrorReport(PCR_EXCEPTION_INFO pExceptionInfo);
-CRASHRPTAPI(int) crEmulateCrash(unsigned ExceptionType) noexcept(false);
+CRASHRPT_EXPORT_API(int) crGenerateErrorReport(PCR_EXCEPTION_INFO pExceptionInfo);
+CRASHRPT_EXPORT_API(int) crEmulateCrash(unsigned ExceptionType) noexcept(false);
 
 #ifdef __cplusplus
 

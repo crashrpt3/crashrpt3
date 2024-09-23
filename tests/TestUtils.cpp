@@ -59,8 +59,8 @@ BOOL TestUtils::CreateErrorReport(CString sTmpFolder, CString& sErrorReportName,
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(ei);
-        ei.exctype = CR_SEH_EXCEPTION;
-        ei.code = 0x123;
+        ei.nExceptionType = CR_SEH_EXCEPTION;
+        ei.dwSEHCode = 0x123;
 
         // Generate error report
         int nGenResult = crGenerateErrorReport(&ei);

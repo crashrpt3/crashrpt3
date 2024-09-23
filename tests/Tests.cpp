@@ -30,7 +30,7 @@ DWORD WINAPI CrashThread(LPVOID /*lpParam*/)
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(ei));
         ei.cb = sizeof(ei);
-        ei.code = 0x1234;
+        ei.dwSEHCode = 0x1234;
 
         crGenerateErrorReport(&ei);
 
@@ -169,7 +169,7 @@ int _tmain(int argc, TCHAR** argv)
                 CR_EXCEPTION_INFO ei;
                 memset(&ei, 0, sizeof(ei));
                 ei.cb = sizeof(ei);
-                ei.code = 0x1234;
+                ei.dwSEHCode = 0x1234;
 
                 crGenerateErrorReport(&ei);
 

@@ -415,7 +415,7 @@ int CCrashHandler::Init(
     return 0;
 }
 
-int CCrashHandler::SetCrashCallbackW(PFNCRASHCALLBACK pfnCallback, LPVOID pUserParam)
+int CCrashHandler::SetCrashCallbackW(PFN_CRASH_CALLBACK pfnCallback, LPVOID pUserParam)
 {
 	m_pfnCallback2W = pfnCallback;
 	m_pCallbackParam = pUserParam;
@@ -1042,10 +1042,10 @@ int CCrashHandler::GenerateErrorReport(
     }
 
     // Get exception pointers if they were not provided by the caller.
-    if(pExceptionInfo->pexcptrs==NULL)
+    if(pExceptionInfo->lpExceptionPointers==NULL)
     {
-        GetExceptionPointers(pExceptionInfo->code, &ExceptionPointers);
-		pExceptionInfo->pexcptrs = &ExceptionPointers;
+        GetExceptionPointers(pExceptionInfo->dwSEHCode, &ExceptionPointers);
+		pExceptionInfo->lpExceptionPointers = &ExceptionPointers;
     }
 
 	// If error report is being generated manually,
@@ -1062,29 +1062,29 @@ int CCrashHandler::GenerateErrorReport(
 	// Save current process ID, thread ID and exception pointers address to shared mem.
     m_pCrashDesc->m_dwProcessId = GetCurrentProcessId();
     m_pCrashDesc->m_dwThreadId = GetCurrentThreadId();
-    m_pCrashDesc->m_pExceptionPtrs = pExceptionInfo->pexcptrs;
+    m_pCrashDesc->m_pExceptionPtrs = pExceptionInfo->lpExceptionPointers;
     m_pCrashDesc->m_bSendRecentReports = FALSE;
-    m_pCrashDesc->m_nExceptionType = pExceptionInfo->exctype;
+    m_pCrashDesc->m_nExceptionType = pExceptionInfo->nExceptionType;
 
-    if (pExceptionInfo->code == 0)
+    if (pExceptionInfo->dwSEHCode == 0)
     {
-        pExceptionInfo->code = pExceptionInfo->pexcptrs->ExceptionRecord->ExceptionCode;
+        pExceptionInfo->dwSEHCode = pExceptionInfo->lpExceptionPointers->ExceptionRecord->ExceptionCode;
     }
     
-	m_pCrashDesc->m_dwExceptionCode = pExceptionInfo->code;
+	m_pCrashDesc->m_dwExceptionCode = pExceptionInfo->dwSEHCode;
     
-	if(pExceptionInfo->exctype==CR_CPP_SIGFPE)
+	if(pExceptionInfo->nExceptionType==CR_CPP_SIGFPE)
     {
 		// Set FPE (floating point exception) subcode
-        m_pCrashDesc->m_uFPESubcode = pExceptionInfo->fpe_subcode;
+        m_pCrashDesc->m_uFPESubcode = pExceptionInfo->uFloatPointExceptionSubcode;
     }
-    else if(pExceptionInfo->exctype==CR_CPP_INVALID_PARAMETER)
+    else if(pExceptionInfo->nExceptionType==CR_CPP_INVALID_PARAMETER)
     {
 		// Set invalid parameter exception info fields
-        m_pCrashDesc->m_dwInvParamExprOffs = PackString(pExceptionInfo->expression);
-        m_pCrashDesc->m_dwInvParamFunctionOffs = PackString(pExceptionInfo->function);
+        m_pCrashDesc->m_dwInvParamExprOffs = PackString(pExceptionInfo->lpAssertionExpression);
+        m_pCrashDesc->m_dwInvParamFunctionOffs = PackString(pExceptionInfo->lpFunction);
         m_pCrashDesc->m_dwInvParamFileOffs = PackString(pExceptionInfo->file);
-        m_pCrashDesc->m_uInvParamLine = pExceptionInfo->line;
+        m_pCrashDesc->m_uInvParamLine = pExceptionInfo->uLine;
     }
 
     ATLASSERT(m_lpfnCallback == nullptr);
@@ -1389,9 +1389,9 @@ LONG WINAPI CCrashHandler::SehHandler(PEXCEPTION_POINTERS pExceptionPtrs)
 		CR_EXCEPTION_INFO ei;
 		memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
 		ei.cb = sizeof(CR_EXCEPTION_INFO);
-		ei.exctype = CR_SEH_EXCEPTION;
-		ei.pexcptrs = pExceptionPtrs;
-        ei.code = pExceptionPtrs->ExceptionRecord->ExceptionCode;
+		ei.nExceptionType = CR_SEH_EXCEPTION;
+		ei.lpExceptionPointers = pExceptionPtrs;
+        ei.dwSEHCode = pExceptionPtrs->ExceptionRecord->ExceptionCode;
 		pCrashHandler->GenerateErrorReport(&ei);
 
 		if(!pCrashHandler->m_bContinueExecutionNow)
@@ -1429,9 +1429,9 @@ DWORD WINAPI CCrashHandler::StackOverflowThreadFunction(LPVOID lpParameter)
 		CR_EXCEPTION_INFO ei;
 		memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
 		ei.cb = sizeof(CR_EXCEPTION_INFO);
-		ei.exctype = CR_SEH_EXCEPTION;
-		ei.pexcptrs = pExceptionPtrs;
-        ei.code = pExceptionPtrs->ExceptionRecord->ExceptionCode;
+		ei.nExceptionType = CR_SEH_EXCEPTION;
+		ei.lpExceptionPointers = pExceptionPtrs;
+        ei.dwSEHCode = pExceptionPtrs->ExceptionRecord->ExceptionCode;
 		pCrashHandler->GenerateErrorReport(&ei);
 
 		if(!pCrashHandler->m_bContinueExecutionNow)
@@ -1465,7 +1465,7 @@ void __cdecl CCrashHandler::TerminateHandler()
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(CR_EXCEPTION_INFO);
-        ei.exctype = CR_CPP_TERMINATE_CALL;
+        ei.nExceptionType = CR_CPP_TERMINATE_CALL;
 
 		// Generate crash report
         pCrashHandler->GenerateErrorReport(&ei);
@@ -1499,7 +1499,7 @@ void __cdecl CCrashHandler::UnexpectedHandler()
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(CR_EXCEPTION_INFO);
-        ei.exctype = CR_CPP_UNEXPECTED_CALL;
+        ei.nExceptionType = CR_CPP_UNEXPECTED_CALL;
 
 		// Generate crash report
         pCrashHandler->GenerateErrorReport(&ei);
@@ -1534,7 +1534,7 @@ void __cdecl CCrashHandler::PureCallHandler()
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(CR_EXCEPTION_INFO);
-        ei.exctype = CR_CPP_PURE_CALL;
+        ei.nExceptionType = CR_CPP_PURE_CALL;
 
 		// Generate error report.
         pCrashHandler->GenerateErrorReport(&ei);
@@ -1573,7 +1573,7 @@ void __cdecl CCrashHandler::SecurityHandler(int code, void *x)
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(CR_EXCEPTION_INFO);
-        ei.exctype = CR_CPP_SECURITY_ERROR;
+        ei.nExceptionType = CR_CPP_SECURITY_ERROR;
 
         pCrashHandler->GenerateErrorReport(&ei);
 
@@ -1590,7 +1590,7 @@ void __cdecl CCrashHandler::SecurityHandler(int code, void *x)
 #if _MSC_VER>=1400
 void __cdecl CCrashHandler::InvalidParameterHandler(
     const wchar_t* expression,
-    const wchar_t* function,
+    const wchar_t* funcName,
     const wchar_t* file,
     unsigned int line,
     uintptr_t pReserved)
@@ -1615,11 +1615,11 @@ void __cdecl CCrashHandler::InvalidParameterHandler(
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(CR_EXCEPTION_INFO);
-        ei.exctype = CR_CPP_INVALID_PARAMETER;
-        ei.expression = expression;
-        ei.function = function;
+        ei.nExceptionType = CR_CPP_INVALID_PARAMETER;
+        ei.lpAssertionExpression = expression;
+        ei.lpFunction = funcName;
         ei.file = file;
-        ei.line = line;
+        ei.uLine = line;
 
 		// Generate error report.
         pCrashHandler->GenerateErrorReport(&ei);
@@ -1655,8 +1655,8 @@ int __cdecl CCrashHandler::NewHandler(size_t)
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(CR_EXCEPTION_INFO);
-        ei.exctype = CR_CPP_NEW_OPERATOR_ERROR;
-        ei.pexcptrs = NULL;
+        ei.nExceptionType = CR_CPP_NEW_OPERATOR_ERROR;
+        ei.lpExceptionPointers = NULL;
 
 		// Generate error report.
         pCrashHandler->GenerateErrorReport(&ei);
@@ -1694,7 +1694,7 @@ void CCrashHandler::SigabrtHandler(int)
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(CR_EXCEPTION_INFO);
-        ei.exctype = CR_CPP_SIGABRT;
+        ei.nExceptionType = CR_CPP_SIGABRT;
 
         pCrashHandler->GenerateErrorReport(&ei);
 
@@ -1727,9 +1727,9 @@ void CCrashHandler::SigfpeHandler(int /*code*/, int subcode)
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(CR_EXCEPTION_INFO);
-        ei.exctype = CR_CPP_SIGFPE;
-        ei.pexcptrs = (PEXCEPTION_POINTERS)_pxcptinfoptrs;
-        ei.fpe_subcode = subcode;
+        ei.nExceptionType = CR_CPP_SIGFPE;
+        ei.lpExceptionPointers = (PEXCEPTION_POINTERS)_pxcptinfoptrs;
+        ei.uFloatPointExceptionSubcode = subcode;
 
 		//Generate crash report.
         pCrashHandler->GenerateErrorReport(&ei);
@@ -1763,7 +1763,7 @@ void CCrashHandler::SigillHandler(int)
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(CR_EXCEPTION_INFO);
-        ei.exctype = CR_CPP_SIGILL;
+        ei.nExceptionType = CR_CPP_SIGILL;
 
 		// Generate crash report
         pCrashHandler->GenerateErrorReport(&ei);
@@ -1797,7 +1797,7 @@ void CCrashHandler::SigintHandler(int)
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(CR_EXCEPTION_INFO);
-        ei.exctype = CR_CPP_SIGINT;
+        ei.nExceptionType = CR_CPP_SIGINT;
 
 		// Generate crash report.
         pCrashHandler->GenerateErrorReport(&ei);
@@ -1830,8 +1830,8 @@ void CCrashHandler::SigsegvHandler(int)
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(CR_EXCEPTION_INFO);
-        ei.exctype = CR_CPP_SIGSEGV;
-        ei.pexcptrs = (PEXCEPTION_POINTERS)_pxcptinfoptrs;
+        ei.nExceptionType = CR_CPP_SIGSEGV;
+        ei.lpExceptionPointers = (PEXCEPTION_POINTERS)_pxcptinfoptrs;
 
 		// Generate crash report
         pCrashHandler->GenerateErrorReport(&ei);
@@ -1865,7 +1865,7 @@ void CCrashHandler::SigtermHandler(int)
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(CR_EXCEPTION_INFO);
-        ei.exctype = CR_CPP_SIGTERM;
+        ei.nExceptionType = CR_CPP_SIGTERM;
 
 		// Generate crash report
         pCrashHandler->GenerateErrorReport(&ei);

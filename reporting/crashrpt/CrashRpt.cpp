@@ -26,7 +26,7 @@ std::map<DWORD, CString> g_sErrorMsg; // Last error messages for each calling th
 // Forward declaration.
 int crClearErrorMsg();
 
-CRASHRPTAPI(int) crInstall(CR_INSTALL_INFO* pInfo)
+CRASHRPT_EXPORT_API(int) crInstall(CR_INSTALL_INFO* pInfo)
 {
     int nStatus = -1;
     crSetErrorMsg(_T("Success."));
@@ -120,7 +120,7 @@ cleanup:
     return nStatus;
 }
 
-CRASHRPTAPI(int) crUninstall()
+CRASHRPT_EXPORT_API(int) crUninstall()
 {
     crSetErrorMsg(_T("Success."));
 
@@ -158,7 +158,7 @@ CRASHRPTAPI(int) crUninstall()
 }
 
 // Sets C++ exception handlers for the calling thread
-CRASHRPTAPI(int)
+CRASHRPT_EXPORT_API(int)
 crInstallToCurrentThread2(DWORD dwFlags)
 {
     crSetErrorMsg(_T("Success."));
@@ -181,7 +181,7 @@ crInstallToCurrentThread2(DWORD dwFlags)
 }
 
 // Unsets C++ exception handlers from the calling thread
-CRASHRPTAPI(int)
+CRASHRPT_EXPORT_API(int)
 crUninstallFromCurrentThread()
 {
     crSetErrorMsg(_T("Success."));
@@ -208,15 +208,15 @@ crUninstallFromCurrentThread()
 }
 
 
-CRASHRPTAPI(int)
+CRASHRPT_EXPORT_API(int)
 crInstallToCurrentThread()
 {
     return crInstallToCurrentThread2(0);
 }
 
-CRASHRPTAPI(int)
+CRASHRPT_EXPORT_API(int)
 crSetCrashCallback(
-    PFNCRASHCALLBACK pfnCallbackFunc,
+    PFN_CRASH_CALLBACK pfnCallbackFunc,
     LPVOID lpParam
 )
 {
@@ -238,7 +238,7 @@ crSetCrashCallback(
     return 0;
 }
 
-CRASHRPTAPI(int) crAddFile(PCWSTR pszFile, PCWSTR pszDestFile, PCWSTR pszDesc, DWORD dwFlags)
+CRASHRPT_EXPORT_API(int) crAddFile(PCWSTR pszFile, PCWSTR pszDestFile, PCWSTR pszDesc, DWORD dwFlags)
 {
     crSetErrorMsg(_T("Success."));
 
@@ -268,7 +268,7 @@ CRASHRPTAPI(int) crAddFile(PCWSTR pszFile, PCWSTR pszDestFile, PCWSTR pszDesc, D
     return 0;
 }
 
-CRASHRPTAPI(int)
+CRASHRPT_EXPORT_API(int)
 crAddProperty(
     LPCWSTR pszPropName,
     LPCWSTR pszPropValue
@@ -300,7 +300,7 @@ crAddProperty(
     return 0;
 }
 
-CRASHRPTAPI(int)
+CRASHRPT_EXPORT_API(int)
 crGenerateErrorReport(PCR_EXCEPTION_INFO pExceptionInfo)
 {
     crSetErrorMsg(_T("Unspecified error."));
@@ -326,7 +326,7 @@ crGenerateErrorReport(PCR_EXCEPTION_INFO pExceptionInfo)
     return pCrashHandler->GenerateErrorReport(pExceptionInfo);
 }
 
-CRASHRPTAPI(int)
+CRASHRPT_EXPORT_API(int)
 crGetLastErrorMsg(LPWSTR pszBuffer, UINT uBuffSize)
 {
     if (pszBuffer == NULL || uBuffSize == 0)
@@ -519,7 +519,7 @@ namespace
     }
 }
 
-CRASHRPTAPI(int) crEmulateCrash(unsigned ExceptionType) noexcept(false)
+CRASHRPT_EXPORT_API(int) crEmulateCrash(unsigned ExceptionType) noexcept(false)
 {
     crSetErrorMsg(_T("Unspecified error."));
 

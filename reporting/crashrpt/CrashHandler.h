@@ -110,7 +110,7 @@ public:
     int Destroy();
 
     // Sets crash callback function (wide-char version).
-    int SetCrashCallbackW(PFNCRASHCALLBACK pfnCallback, LPVOID pUserParam);
+    int SetCrashCallbackW(PFN_CRASH_CALLBACK pfnCallback, LPVOID pUserParam);
 
     // Adds a file to the crash report.
     int AddFile(__in_z LPCTSTR lpFile, __in_opt LPCTSTR lpDestFile, __in_opt LPCTSTR lpDesc, DWORD dwFlags);
@@ -161,7 +161,7 @@ public:
 #if _MSC_VER>=1400
     // C++ Invalid parameter handler.
     static void __cdecl InvalidParameterHandler(const wchar_t* expression,
-        const wchar_t* function, const wchar_t* file, unsigned int line, uintptr_t pReserved);
+        const wchar_t* funcName, const wchar_t* file, unsigned int line, uintptr_t pReserved);
 #endif
 
 #if _MSC_VER>=1300
@@ -274,7 +274,7 @@ public:
     CSharedMem* m_pTmpSharedMem;   // Used temporarily
     CRASH_DESCRIPTION* m_pTmpCrashDesc; // Used temporarily
     HANDLE m_hSenderProcess;       // Handle to CrashSender.exe process.
-    PFNCRASHCALLBACK m_pfnCallback2W; // Client crash callback.
+    PFN_CRASH_CALLBACK m_pfnCallback2W; // Client crash callback.
     LPVOID m_pCallbackParam;       // User-specified argument for callback function.
     std::string m_sErrorReportDirA;  // Error report directory name (multi-byte).
     std::wstring m_sErrorReportDirW; // Error report directory name (wide-char).
