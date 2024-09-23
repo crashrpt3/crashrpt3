@@ -32,9 +32,6 @@ class CrashRptAPITests : public CTestSuite
         REGISTER_TEST(Test_crAddScreenshot2)
         REGISTER_TEST(Test_crAddPropertyW)
         REGISTER_TEST(Test_crAddRegKeyW)
-        REGISTER_TEST(Test_crAddVideo)
-        REGISTER_TEST(Test_crAddVideo_defaults)
-        // REGISTER_TEST(Test_crAddVideo_crash)
         REGISTER_TEST(Test_crSetCrashCallbackW)
         REGISTER_TEST(Test_crSetCrashCallbackW_stage)
         REGISTER_TEST(Test_crSetCrashCallbackW_cancel)
@@ -70,9 +67,6 @@ class CrashRptAPITests : public CTestSuite
     void Test_crAddScreenshot2();
     void Test_crAddPropertyW();
     void Test_crAddRegKeyW();
-    void Test_crAddVideo();
-    void Test_crAddVideo_defaults();
-    void Test_crAddVideo_crash();
     void Test_crSetCrashCallbackW();
     void Test_crSetCrashCallbackW_stage();
     void Test_crSetCrashCallbackW_cancel();
@@ -493,171 +487,6 @@ void CrashRptAPITests::Test_crAddRegKeyW()
 
     // Uninstall
     crUninstall();
-}
-
-void CrashRptAPITests::Test_crAddVideo()
-{
-    {
-        // Should fail, because crInstall() should be called first
-        int nResult = crAddVideo(CR_AV_VIRTUAL_SCREEN, 60000, 300, NULL, NULL);
-        TEST_ASSERT(nResult!=0);
-
-        // Install crash handler
-        CR_INSTALL_INFO infoW;
-        memset(&infoW, 0, sizeof(CR_INSTALL_INFO));
-        infoW.cb = sizeof(CR_INSTALL_INFO);
-        infoW.pszAppVersion = L"1.0.0"; // Specify app version, otherwise it will fail.
-
-        int nInstallResult = crInstall(&infoW);
-        TEST_ASSERT(nInstallResult==0);
-
-        // Should succeed
-        int nResult2 = crAddVideo(CR_AV_VIRTUAL_SCREEN|CR_AV_NO_GUI, 60000, 300, NULL, NULL);
-        TEST_ASSERT(nResult2==0);
-
-        // Call twice - should fail
-        int nResult3 = crAddVideo(CR_AV_VIRTUAL_SCREEN|CR_AV_NO_GUI, 60000, 300, NULL, NULL);
-        TEST_ASSERT(nResult3!=0);
-    }
-
-    __TEST_CLEANUP__;
-
-    // Uninstall
-    crUninstall();
-}
-
-void CrashRptAPITests::Test_crAddVideo_defaults()
-{
-    {
-        // Should fail, because crInstall() should be called first
-        int nResult = crAddVideo(CR_AV_VIRTUAL_SCREEN, 60000, 300, NULL, NULL);
-        TEST_ASSERT(nResult!=0);
-
-        // Install crash handler
-        CR_INSTALL_INFO infoW;
-        memset(&infoW, 0, sizeof(CR_INSTALL_INFO));
-        infoW.cb = sizeof(CR_INSTALL_INFO);
-        infoW.pszAppVersion = L"1.0.0"; // Specify app version, otherwise it will fail.
-
-        int nInstallResult = crInstall(&infoW);
-        TEST_ASSERT(nInstallResult==0);
-
-        // Call with zero params - should succeed
-        int nResult2 = crAddVideo(CR_AV_VIRTUAL_SCREEN|CR_AV_NO_GUI, 0, 0, NULL, NULL);
-        TEST_ASSERT(nResult2==0);
-
-        // Wait some time
-        Sleep(500);
-    }
-
-    __TEST_CLEANUP__;
-
-    // Uninstall
-    crUninstall();
-}
-
-void CrashRptAPITests::Test_crAddVideo_crash()
-{
-    // This test will install CrashRpt and start recording video.
-    // Then it will generate error report manually and check if
-    // the OGG file presents in the generated report.
-
-    CString sErrorReportName;
-    CString sMD5Hash;
-    CString sAppDataFolder;
-    CString sTmpFolder;
-    strconv_t strconv;
-    CString sFileName;
-    int i;
-    CString sDirName;
-
-    {
-        // Create a temporary folder for test
-        Utility::GetSpecialFolder(CSIDL_APPDATA, sAppDataFolder);
-        sTmpFolder = sAppDataFolder+_T("\\CrashRpt");
-        BOOL bCreate = Utility::CreateFolder(sTmpFolder);
-        TEST_ASSERT(bCreate);
-
-        // Install crash handler
-        CR_INSTALL_INFO infoW;
-        memset(&infoW, 0, sizeof(CR_INSTALL_INFO));
-        infoW.cb = sizeof(CR_INSTALL_INFO);
-        infoW.pszAppVersion = L"1.0.0"; // Specify app version, otherwise it will fail.
-        infoW.pszErrorReportSaveDir = sTmpFolder;
-        infoW.dwFlags = CR_INST_NO_GUI|CR_INST_DONT_SEND_REPORT;
-
-        int nInstallResult = crInstall(&infoW);
-        TEST_ASSERT(nInstallResult==0);
-
-        for(i=0; i<2; i++)
-        {
-            CFindFile ff;
-
-            // Add video - Should succeed
-            int nResult2 = crAddVideo(CR_AV_VIRTUAL_SCREEN|CR_AV_NO_GUI, 60000, 300, NULL, NULL);
-            if(i==0)
-            {
-                TEST_ASSERT(nResult2==0);
-            }
-            else
-            {
-                TEST_ASSERT(nResult2!=0); // Should fail second time
-            }
-
-            // Wait for a while to let it record some video frames
-            Sleep(1000);
-
-            // Create error report files
-            CR_EXCEPTION_INFO ei;
-            memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
-            ei.cb = sizeof(ei);
-            ei.exctype = CR_SEH_EXCEPTION;
-            ei.code = 0x123;
-            int nCreateReport = crGenerateErrorReport(&ei);
-            TEST_ASSERT(nCreateReport==0);
-
-            // Ensure handle to CrashSender.exe process is valid
-            TEST_ASSERT(ei.hSenderProcess!=NULL);
-
-            // Wait until report is created
-            WaitForSingleObject(ei.hSenderProcess, INFINITE);
-
-            // Check if video.ogg file presents
-            BOOL bFind = ff.FindFile(sTmpFolder+_T("\\*"));
-            for(;;)
-            {
-                CFindFile ff2;
-
-                while(bFind && ff.IsDots())
-                    bFind=ff.FindNextFile();
-                TEST_ASSERT(bFind)
-                TEST_ASSERT(ff.IsDirectory());
-                sDirName = ff.GetFilePath();
-                sFileName = sDirName +_T("\\~temp_video");
-                BOOL bFind2 = ff2.FindFile(sFileName);
-                if(bFind2)
-                {
-                    bFind = ff.FindNextFile();
-                    continue;
-                }
-
-                sFileName = sDirName +_T("\\video.ogg");
-                bFind2 = ff2.FindFile(sFileName);
-                TEST_ASSERT(bFind2);
-                break;
-            }
-
-            int nDelete = Utility::RecycleFile(sDirName, TRUE);
-            TEST_ASSERT(nDelete==0);
-        }
-    }
-
-    __TEST_CLEANUP__;
-
-    // Uninstall
-    crUninstall();
-
-    Utility::RecycleFile(sTmpFolder, TRUE);
 }
 
 void CrashRptAPITests::Test_crGetLastErrorMsgW()

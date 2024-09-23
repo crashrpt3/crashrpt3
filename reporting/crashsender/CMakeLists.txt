@@ -32,8 +32,6 @@ include_directories(
   ${REPOSITORY_DIR}/thirdparty/libpng
   ${REPOSITORY_DIR}/thirdparty/tinyxml
   ${DBGHELP_INCLUDE_DIR}
-  ${REPOSITORY_DIR}/thirdparty/libogg/include
-  ${REPOSITORY_DIR}/thirdparty/libtheora/include
 )
 
 if(NOT CMAKE_CL_64)
@@ -52,8 +50,6 @@ target_link_libraries(CrashSender
   libjpeg
   libpng
   tinyxml
-  libogg
-  libtheora
   WS2_32.lib
   Dnsapi.lib
   wininet.lib

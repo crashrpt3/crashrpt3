@@ -303,8 +303,6 @@ LRESULT CDetailDlg::OnPreviewRClick(int /*idCtrl*/, LPNMHDR /*pnmh*/, BOOL& /*bH
         uItem = ID_PREVIEW_TEXT;
     else if(m_previewMode==PREVIEW_IMAGE)
         uItem = ID_PREVIEW_IMAGE;
-    else if(m_previewMode==PREVIEW_VIDEO)
-        uItem = ID_PREVIEW_VIDEO;
 
     submenu.CheckMenuRadioItem(ID_PREVIEW_AUTO, ID_PREVIEW_VIDEO, uItem, MF_BYCOMMAND);
 
@@ -352,8 +350,6 @@ LRESULT CDetailDlg::OnPreviewModeChanged(WORD /*wNotifyCode*/, WORD wID, HWND /*
         mode = PREVIEW_HEX;
     else if(wID==ID_PREVIEW_IMAGE)
         mode = PREVIEW_IMAGE;
-    else if(wID==ID_PREVIEW_VIDEO)
-        mode = PREVIEW_VIDEO;
     m_previewMode = mode;
     m_textEncoding = ENC_AUTO;
     m_filePreview.SetPreviewMode(mode);

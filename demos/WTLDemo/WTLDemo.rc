@@ -13,7 +13,7 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// English (United States) resources
+// 英语(美国) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
@@ -85,7 +85,6 @@ BEGIN
     LTEXT           "Exception type:",IDC_STATIC,7,83,50,8
     DEFPUSHBUTTON   "Crash!",IDOK,77,169,60,14
     LTEXT           "Select a thread and exception type and press the ""Crash"" button.",IDC_STATIC,7,14,284,21
-    PUSHBUTTON      "Capture Screen",IDC_SCREENCAP,7,124,102,15
 END
 
 IDD_DOCUMENT DIALOGEX 0, 0, 299, 162
@@ -217,6 +216,17 @@ END
 
 /////////////////////////////////////////////////////////////////////////////
 //
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_MAINDLG AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
 // String Table
 //
 
@@ -303,7 +313,7 @@ BEGIN
     ATL_IDS_MRU_FILE        "Open this document"
 END
 
-#endif    // English (United States) resources
+#endif    // 英语(美国) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

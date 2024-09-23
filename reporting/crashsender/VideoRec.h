@@ -16,7 +16,6 @@ be found in the Authors.txt file in the root of the source tree.
 #pragma once
 #include "stdafx.h"
 #include "ScreenCap.h"
-#include "theora/theoraenc.h"
 
 // class CVideoRecorder
 // Captures desktop and writes the video frames as raw uncompressed BMP files
@@ -50,9 +49,6 @@ public:
 	// Records a single video frame
 	BOOL RecordVideoFrame();
 
-	// Encodes the video with VP8 codec and writes .webm file.
-	BOOL EncodeVideo();
-
 	// Returns the output file name
 	CString GetOutFile();
 
@@ -60,9 +56,6 @@ private:
 
 	// Sets video frame parameters.
 	void SetVideoFrameInfo(int nFrameId, ScreenshotInfo& ssi);
-
-	// Composes video frame from one or several bitmaps.
-	BOOL ComposeFrame(int nFrameId, th_ycbcr_buffer* raw);
 
 	// Creates a device-independent bitmap (DIB) used as video frame
 	BOOL CreateFrameDIB(DWORD dwWidth, DWORD dwHeight,int nBits);

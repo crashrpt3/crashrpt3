@@ -109,8 +109,6 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
 
     m_cboExcType.SetCurSel(0);
 
-	m_btnScreenCap = GetDlgItem(IDC_SCREENCAP);
-
     m_dlgAbout.Create(m_hWnd);
 
     m_nDocNum = 0;
@@ -206,18 +204,4 @@ LRESULT CMainDlg::OnHelpAbout(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl
 {    
     m_dlgAbout.ShowWindow(SW_SHOW);
     return 0;
-}
-
-LRESULT CMainDlg::OnScreenCapClicked(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
-{
-	// Disable the button
-	m_btnScreenCap.EnableWindow(0);
-	
-	// Start capturing user's desktop
-	SIZE DesiredFrameSize = {0, 600};
-	int nResult = crAddVideo(CR_AS_PROCESS_WINDOWS|CR_AV_QUALITY_LOW|CR_AV_ALLOW_DELETE, 6000, 300, &DesiredFrameSize, m_hWnd);    
-    ATLASSERT(nResult==0);
-	nResult;
-
-	return 0;
 }

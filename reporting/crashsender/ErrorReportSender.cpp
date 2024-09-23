@@ -382,9 +382,6 @@ BOOL CErrorReportSender::DoWork(int Action)
             return FALSE;
         }
 
-        // Encode recorded video to an .OGG file
-        EncodeVideo();
-
         if(m_Assync.IsCancelled()) // Check if user-cancelled
         {
             // Add a message to log
@@ -2858,50 +2855,3 @@ BOOL CErrorReportSender::RecordVideo()
     // Return TRUE to indicate video recording completed successfully.
     return TRUE;
 }
-
-BOOL CErrorReportSender::EncodeVideo()
-{
-    // Kaneva - Added
-    auto pReport = GetReport();
-    if (!pReport) return FALSE;
-
-    // Add a message to log
-    m_Assync.SetProgress(_T("[encoding_video]"), 0);
-
-    // Check if video capture is allowed
-    if(!m_VideoRec.IsInitialized())
-    {
-        // Add a message to log
-        m_Assync.SetProgress(_T("Desktop video recording disabled; skipping."), 0);
-        // Exit, nothing to do here
-        return TRUE;
-    }
-
-     // Add a message to log
-    m_Assync.SetProgress(_T("Encoding recorded video, please wait..."), 1);
-
-    // Encode recorded video to a webm file
-    if(!m_VideoRec.EncodeVideo())
-    {
-        // Add a message to log
-        m_Assync.SetProgress(_T("Error encoding video."), 100, false);
-        return FALSE;
-    }
-
-    bool bAllowDelete = (m_CrashInfo.m_dwVideoFlags&CR_AV_ALLOW_DELETE)!=0;
-
-    // Add file to crash report
-    ERIFileItem fi;
-    fi.m_sSrcFile = m_VideoRec.GetOutFile();
-    fi.m_sDestFile = Utility::GetFileName(fi.m_sSrcFile);
-    fi.m_sDesc = Utility::GetINIString(m_CrashInfo.m_sLangFileName, _T("DetailDlg"), _T("DescVideo"));
-    fi.m_bAllowDelete = bAllowDelete;
-    pReport->AddFileItem(&fi);
-
-    // Add a message to log
-    m_Assync.SetProgress(_T("Finished encoding video."), 100, false);
-
-    return TRUE;
-}
-
-

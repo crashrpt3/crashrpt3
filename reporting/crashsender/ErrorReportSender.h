@@ -150,9 +150,6 @@ private:
 	// This method enters the video recording loop.
 	BOOL RecordVideo();
 
-	// Writes video to a webm file
-	BOOL EncodeVideo();
-
     // Creates crash dump file.
     BOOL CreateMiniDump();
 

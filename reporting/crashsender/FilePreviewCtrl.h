@@ -11,7 +11,6 @@ be found in the Authors.txt file in the root of the source tree.
 #pragma once
 #include "stdafx.h"
 #include "CritSec.h"
-#include "theora/theoradec.h"
 
 // Preview mode
 enum PreviewMode
@@ -20,7 +19,6 @@ enum PreviewMode
     PREVIEW_HEX  = 0,   // Hex
     PREVIEW_TEXT = 1,   // Text
     PREVIEW_IMAGE = 2,  // Image
-	PREVIEW_VIDEO = 3   // OGG Theora-encoded video
 };
 
 // Text encoding
@@ -110,78 +108,6 @@ private:
     HBITMAP m_hBitmap;      // Handle to the bitmap.
     HPALETTE m_hPalette;    // Palette
     BOOL m_bLoadCancelled;  // Load cancel flag
-};
-
-class CVideo
-{
-public:
-
-	// Construction/destruction.
-	CVideo();
-	virtual ~CVideo();
-
-	// Detects if the file is a video file.
-	static BOOL IsVideoFile(LPCTSTR szFileName);
-
-	// Checks if the file is an OGG container file
-	static BOOL IsOGG(FILE* f);
-
-	// Loads video from file.
-	BOOL Load(LPCTSTR szFileName);
-
-	// Frees resources
-	void Destroy();
-
-	// Returns TRUE if video is valid, otherwise returns FALSE
-    BOOL IsValid();
-
-	// Sets position to zero-th frame.
-	void Reset();
-
-	// Decodes next video frame and returns pointer to bitmap.
-	HBITMAP DecodeFrame(BOOL bFirstFrame, CSize& FrameSize, int& nDuration);
-
-	void DrawFrame(HDC hDC, LPRECT prcDraw);
-
-private:
-
-	// Loads an OGG video
-	BOOL LoadOggFile(LPCTSTR szFileName);
-
-	BOOL ReadOGGPage();
-
-	// Reads a page from OGG file
-	BOOL ReadOGGPacket();
-
-	// Creates a DIB bitmap
-	BOOL CreateFrameDIB(DWORD dwWidth, DWORD dwHeight, int nBits);
-
-	// Converts an YV12 image to RGB24 image.
-	void YV12_To_RGB(unsigned char *pRGBData, int nFrameWidth,
-				int nFrameHeight, int nRGBStride, th_ycbcr_buffer raw );
-
-	CCritSec m_csLock;      // Critical section
-	CString m_sFileName;    // File currently loaded.
-	FILE* m_pf;             // File handle.
-	HBITMAP m_hbmpFrame;    // Video frame bitmap.
-	LPVOID m_pFrameBits;    // Frame buffer.
-	LPBITMAPINFO m_pDIB;    // Bitmap info.
-	HDC m_hDC;              // Device context.
-	HBITMAP m_hOldBitmap;   //
-	ogg_sync_state m_state;
-	char* m_buf;
-	ogg_page m_page;
-	ogg_stream_state m_stream;
-	ogg_packet m_packet;
-	th_info m_info;
-	th_comment m_comment;
-	th_setup_info* m_psetup;
-	th_dec_ctx* m_pctx;
-	ogg_int64_t m_pos;
-	th_ycbcr_buffer m_raw;
-	int m_nFrameWidth;
-	int m_nFrameHeight;
-	int m_nFrameInterval;
 };
 
 // This message is sent by file preview control when file loading is complete
@@ -275,7 +201,6 @@ public:
     void DoPaintEmpty(HDC hDC);
     void DoPaintText(HDC hDC);
     void DoPaintBitmap(HDC hDC);
-	void DoPaintVideo(HDC hDC);
     void DoPaint(HDC hDC);
 
     // Used internally to performs some work assynchronously
@@ -287,9 +212,6 @@ public:
 
     // Loads bitmap assynchronously
     void LoadBitmap();
-
-	// Laods video assynchronously
-	void LoadVideo();
 
     CString m_sFileName;         // File name.
     PreviewMode m_PreviewMode;   // File preview mode.
@@ -315,7 +237,6 @@ public:
     HANDLE m_hWorkerThread;      // Handle to the worker thread.
     BOOL m_bCancelled;           // Is worker thread cancelled?
     CImage m_bmp;                // Stores the bitmap.
-	CVideo m_video;              // Stores the decoded video.
 };
 
 
