@@ -837,12 +837,6 @@ void CrashRptAPITests::Test_undecorated_func_names()
             (PFNCRADDSCREENSHOT2)GetProcAddress(hCrashRpt, "crAddScreenshot2");
         TEST_ASSERT(pfncrAddScreenshot2!=NULL);
 
-        // Test crAddVideo() function name presents in the DLL export table
-        typedef int (WINAPI *PFNCRADDVIDEO)(DWORD, int, int, SIZE*, HWND);
-        PFNCRADDVIDEO pfncrAddVideo =
-            (PFNCRADDVIDEO)GetProcAddress(hCrashRpt, "crAddVideo");
-        TEST_ASSERT(pfncrAddVideo!=NULL);
-
         // Test crExceptionFilter() function name presents in the DLL export table
         typedef int (WINAPI *PFNCREXCEPTIONFILTER)(int, struct _EXCEPTION_POINTERS*);
         PFNCREXCEPTIONFILTER pfncrExceptionFilter =

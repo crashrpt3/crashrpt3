@@ -332,29 +332,6 @@ crAddScreenshot2(
 }
 
 CRASHRPTAPI(int)
-crAddVideo(
-            DWORD dwFlags,
-            int nDuration,
-            int nFrameInterval,
-            SIZE* pDesiredFrameSize,
-            HWND hWndParent
-            )
-{
-    crSetErrorMsg(_T("Unspecified error."));
-
-    CCrashHandler *pCrashHandler =
-        CCrashHandler::GetCurrentProcessCrashHandler();
-
-    if(pCrashHandler==NULL)
-    {
-        crSetErrorMsg(_T("Crash handler wasn't previously installed for current process."));
-        return 1; // Invalid parameter?
-    }
-
-    return pCrashHandler->AddVideo(dwFlags, nDuration, nFrameInterval, pDesiredFrameSize, hWndParent);
-}
-
-CRASHRPTAPI(int)
 crAddProperty(
                LPCWSTR pszPropName,
                LPCWSTR pszPropValue

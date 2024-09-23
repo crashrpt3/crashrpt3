@@ -13,6 +13,5 @@ crEmulateCrash
 crGetLastErrorMsg
 crAddRegKey
 crAddScreenshot2
-crAddVideo
 crSetCrashCallback
 crSetEmailSubject
