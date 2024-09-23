@@ -18,7 +18,6 @@ enum PreviewMode
     PREVIEW_AUTO = -1,  // Auto
     PREVIEW_HEX  = 0,   // Hex
     PREVIEW_TEXT = 1,   // Text
-    PREVIEW_IMAGE = 2,  // Image
 };
 
 // Text encoding
@@ -66,48 +65,6 @@ struct LineInfo
 {
     DWORD m_dwOffsetInFile; // Line offset in file
     DWORD m_cchLineLength;  // Line length in symbols
-};
-
-// Image class - encapsulates image reading functionality
-class CImage
-{
-public:
-
-    // Construction/destruction
-    CImage();
-    ~CImage();
-
-    // Destroys the object
-    void Destroy();
-
-    // Returns TRUE if the file is a BMP image, otherwise returns FALSE
-    static BOOL IsBitmap(FILE* f);
-    // Returns TRUE if the file is a PNG image, otherwise returns FALSE
-    static BOOL IsPNG(FILE* f);
-    // Returns TRUE if the file is a JPEG image, otherwise returns FALSE
-    static BOOL IsJPEG(FILE* f);
-    // Returns TRUE if the file is an image file, otherwise returns FALSE
-    static BOOL IsImageFile(CString sFileName);
-
-    // Loads the image from file
-    BOOL Load(CString sFileName);
-    // Cancels loading
-    void Cancel();
-    // Returns TRUE if image is valid, otherwise returns FALSE
-    BOOL IsValid();
-    // Draws the image on the device context
-    void Draw(HDC hDC, LPRECT prcDraw);
-
-private:
-
-    BOOL LoadBitmapFromBMPFile(LPTSTR szFileName);
-    BOOL LoadBitmapFromPNGFile(LPTSTR szFileName);
-    BOOL LoadBitmapFromJPEGFile(LPTSTR szFileName);
-
-    CCritSec m_csLock;      // Critical section
-    HBITMAP m_hBitmap;      // Handle to the bitmap.
-    HPALETTE m_hPalette;    // Palette
-    BOOL m_bLoadCancelled;  // Load cancel flag
 };
 
 // This message is sent by file preview control when file loading is complete
@@ -200,7 +157,6 @@ public:
     void DrawTextLine(HDC hdc, DWORD nLineNo);
     void DoPaintEmpty(HDC hDC);
     void DoPaintText(HDC hDC);
-    void DoPaintBitmap(HDC hDC);
     void DoPaint(HDC hDC);
 
     // Used internally to performs some work assynchronously
@@ -209,9 +165,6 @@ public:
 
     // Parses text file assynchronously
     void ParseText();
-
-    // Loads bitmap assynchronously
-    void LoadBitmap();
 
     CString m_sFileName;         // File name.
     PreviewMode m_PreviewMode;   // File preview mode.
@@ -236,7 +189,6 @@ public:
     std::vector<DWORD> m_aTextLines; // The array of lines of text file.
     HANDLE m_hWorkerThread;      // Handle to the worker thread.
     BOOL m_bCancelled;           // Is worker thread cancelled?
-    CImage m_bmp;                // Stores the bitmap.
 };
 
 

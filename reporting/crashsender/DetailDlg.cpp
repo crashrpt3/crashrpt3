@@ -297,8 +297,6 @@ LRESULT CDetailDlg::OnPreviewRClick(int /*idCtrl*/, LPNMHDR /*pnmh*/, BOOL& /*bH
         uItem = ID_PREVIEW_HEX;
     else if(m_previewMode==PREVIEW_TEXT)
         uItem = ID_PREVIEW_TEXT;
-    else if(m_previewMode==PREVIEW_IMAGE)
-        uItem = ID_PREVIEW_IMAGE;
 
     if(m_filePreview.GetPreviewMode()!=PREVIEW_TEXT)
     {
@@ -342,8 +340,6 @@ LRESULT CDetailDlg::OnPreviewModeChanged(WORD /*wNotifyCode*/, WORD wID, HWND /*
         mode = PREVIEW_TEXT;
     else if(wID==ID_PREVIEW_HEX)
         mode = PREVIEW_HEX;
-    else if(wID==ID_PREVIEW_IMAGE)
-        mode = PREVIEW_IMAGE;
     m_previewMode = mode;
     m_textEncoding = ENC_AUTO;
     m_filePreview.SetPreviewMode(mode);

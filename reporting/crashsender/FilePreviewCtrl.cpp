@@ -10,9 +10,6 @@ be found in the Authors.txt file in the root of the source tree.
 
 #include "stdafx.h"
 #include "FilePreviewCtrl.h"
-#include "png.h"
-#include "pngstruct.h"
-#include "pnginfo.h"
 #include "jpeglib.h"
 #include "strconv.h"
 
@@ -137,497 +134,6 @@ LPBYTE CFileMemoryMapping::CreateView(DWORD dwOffset, DWORD dwLength)
     return (pPtr+dwDiff);
 }
 
-CImage::CImage()
-{
-    m_hBitmap = NULL;
-    m_hPalette = NULL;
-    m_bLoadCancelled = FALSE;
-}
-
-CImage::~CImage()
-{
-    Destroy();
-}
-
-BOOL CImage::IsBitmap(FILE* f)
-{
-    rewind(f);
-
-    BITMAPFILEHEADER bfh;
-    size_t n = fread(&bfh, sizeof(bfh), 1, f);
-    if(n!=1)
-        return FALSE;
-
-    if(memcmp(&bfh.bfType, "BM", 2)!=0)
-        return FALSE;
-
-    return TRUE;
-}
-
-BOOL CImage::IsPNG(FILE* f)
-{
-    png_byte header[8];
-    rewind(f);
-
-    fread(header, 1, 8, f);
-    if(png_sig_cmp(header, 0, 8))
-        return FALSE;
-
-    return TRUE;
-}
-
-BOOL CImage::IsJPEG(FILE* f)
-{
-    rewind(f);
-
-    // Read first two bytes (SOI marker).
-    // Each JPEG file begins with SOI marker (0xD8FF).
-
-    WORD wSOIMarker;
-    int n = (int)fread(&wSOIMarker, 1, 2, f);
-    if(n!=2)
-        return FALSE;
-
-    if(wSOIMarker==0xD8FF)
-        return TRUE; // This is a JPEG file
-
-    return FALSE;
-}
-
-BOOL CImage::IsImageFile(CString sFileName)
-{
-    FILE* f = NULL;
-    _TFOPEN_S(f, sFileName.GetBuffer(0), _T("rb"));
-    if(f==NULL)
-        return FALSE;
-
-    if(IsBitmap(f) || IsPNG(f) || IsJPEG(f))
-    {
-        fclose(f);
-        return TRUE;
-    }
-
-    fclose(f);
-    return FALSE;
-}
-
-void CImage::Destroy()
-{
-    CAutoLock lock(&m_csLock);
-
-    if(m_hBitmap)
-    {
-        DeleteObject(m_hBitmap);
-        m_hBitmap = NULL;
-    }
-
-    if(m_hPalette)
-    {
-        DeleteObject(m_hPalette);
-        m_hPalette = NULL;
-    }
-
-    m_bLoadCancelled = FALSE;
-}
-
-BOOL CImage::IsValid()
-{
-    CAutoLock lock(&m_csLock);
-    return m_hBitmap!=NULL;
-}
-
-BOOL CImage::Load(CString sFileName)
-{
-    Destroy();
-
-    FILE* f = NULL;
-    _TFOPEN_S(f, sFileName.GetBuffer(0), _T("rb"));
-    if(f==NULL)
-        return FALSE;
-    if(IsBitmap(f))
-    {
-        fclose(f);
-        return LoadBitmapFromBMPFile(sFileName.GetBuffer(0));
-    }
-    else if(IsPNG(f))
-    {
-        fclose(f);
-        return LoadBitmapFromPNGFile(sFileName.GetBuffer(0));
-    }
-    else if(IsJPEG(f))
-    {
-        fclose(f);
-        return LoadBitmapFromJPEGFile(sFileName.GetBuffer(0));
-    }
-
-    fclose(f);
-    return FALSE;
-}
-
-void CImage::Cancel()
-{
-    CAutoLock lock(&m_csLock);
-    m_bLoadCancelled = TRUE;
-}
-
-// The following code was taken from http://support.microsoft.com/kb/158898
-BOOL CImage::LoadBitmapFromBMPFile(LPTSTR szFileName)
-{
-    CAutoLock lock(&m_csLock);
-
-    BITMAP  bm;
-
-    // Use LoadImage() to get the image loaded into a DIBSection
-    m_hBitmap = (HBITMAP)LoadImage( NULL, szFileName, IMAGE_BITMAP, 0, 0,
-        LR_CREATEDIBSECTION | LR_DEFAULTSIZE | LR_LOADFROMFILE );
-    if( m_hBitmap == NULL )
-        return FALSE;
-
-    // Get the color depth of the DIBSection
-    GetObject(m_hBitmap, sizeof(BITMAP), &bm );
-    // If the DIBSection is 256 color or less, it has a color table
-    if( ( bm.bmBitsPixel * bm.bmPlanes ) <= 8 )
-    {
-        HDC           hMemDC = NULL;
-        HBITMAP       hOldBitmap = NULL;
-        RGBQUAD       rgb[256];
-        LPLOGPALETTE  pLogPal = NULL;
-        WORD          i = 0;
-
-        // Create a memory DC and select the DIBSection into it
-        hMemDC = CreateCompatibleDC( NULL );
-        hOldBitmap = (HBITMAP)SelectObject( hMemDC, m_hBitmap );
-
-        // Get the DIBSection's color table
-        GetDIBColorTable( hMemDC, 0, 256, rgb );
-
-        // Create a palette from the color tabl
-        pLogPal = (LOGPALETTE *)malloc( sizeof(LOGPALETTE) + (256*sizeof(PALETTEENTRY)) );
-        pLogPal->palVersion = 0x300;
-        pLogPal->palNumEntries = 256;
-
-        for(i=0;i<256;i++)
-        {
-            pLogPal->palPalEntry[i].peRed = rgb[i].rgbRed;
-            pLogPal->palPalEntry[i].peGreen = rgb[i].rgbGreen;
-            pLogPal->palPalEntry[i].peBlue = rgb[i].rgbBlue;
-            pLogPal->palPalEntry[i].peFlags = 0;
-        }
-
-        m_hPalette = CreatePalette( pLogPal );
-
-        // Clean up
-        free( pLogPal );
-        SelectObject( hMemDC, hOldBitmap );
-        DeleteDC( hMemDC );
-    }
-    else   // It has no color table, so use a halftone palette
-    {
-        HDC    hRefDC = NULL;
-
-        hRefDC = GetDC( NULL );
-        m_hPalette = CreateHalftonePalette( hRefDC );
-        ReleaseDC( NULL, hRefDC );
-    }
-    return TRUE;
-}
-
-BOOL CImage::LoadBitmapFromPNGFile(LPTSTR szFileName)
-{
-    BOOL bStatus = FALSE;
-
-    FILE *fp = NULL;
-    const int number = 8;
-    png_byte header[number];
-    png_structp png_ptr = NULL;
-    png_infop info_ptr = NULL;
-    png_infop end_info = NULL;
-    size_t rowbytes = 0;
-    png_uint_32 width = 0;
-    png_uint_32 height = 0;
-    png_bytep row = NULL;
-    int y = 0;
-    BITMAPINFO* pBMI = NULL;
-    HDC hDC = NULL;
-
-    _TFOPEN_S(fp, szFileName, _T("rb"));
-    if (!fp)
-    {
-        return FALSE;
-    }
-
-    fread(header, 1, number, fp);
-    if(png_sig_cmp(header, 0, number))
-    {
-        goto cleanup;
-    }
-
-    png_ptr = png_create_read_struct
-        (PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-    if (!png_ptr)
-        goto cleanup;
-
-    if (setjmp(png_jmpbuf(png_ptr)))
-        goto cleanup;
-
-    info_ptr = png_create_info_struct(png_ptr);
-    if (!info_ptr)
-        goto cleanup;
-
-    end_info = png_create_info_struct(png_ptr);
-    if (!end_info)
-        goto cleanup;
-
-    png_init_io(png_ptr, fp);
-    png_set_sig_bytes(png_ptr, number);
-
-    // Read PNG information
-    png_read_info(png_ptr, info_ptr);
-
-    // Get count of bytes per row
-    rowbytes = png_get_rowbytes(png_ptr, info_ptr);
-    row = new png_byte[rowbytes];
-
-    width = png_get_image_width(png_ptr, info_ptr);
-    height = png_get_image_height(png_ptr, info_ptr);
-
-    if(info_ptr->channels==3)
-    {
-        png_set_strip_16(png_ptr);
-        png_set_packing(png_ptr);
-        png_set_bgr(png_ptr);
-    }
-
-    hDC = GetDC(NULL);
-
-    {
-        CAutoLock lock(&m_csLock);
-        if(m_bLoadCancelled)
-            goto cleanup;
-        m_hBitmap = CreateCompatibleBitmap(hDC, width, height);
-    }
-
-    pBMI = (BITMAPINFO*)new BYTE[sizeof(BITMAPINFO)+256*4];
-    memset(pBMI, 0, sizeof(BITMAPINFO)+256*4);
-    pBMI->bmiHeader.biSize = sizeof(BITMAPINFO);
-    pBMI->bmiHeader.biBitCount = 8*info_ptr->channels;
-    pBMI->bmiHeader.biWidth = width;
-    pBMI->bmiHeader.biHeight = height;
-    pBMI->bmiHeader.biPlanes = 1;
-    pBMI->bmiHeader.biCompression = BI_RGB;
-    pBMI->bmiHeader.biSizeImage = (DWORD)(rowbytes * height);
-
-    if( info_ptr->channels == 1 )
-    {
-        RGBQUAD* palette = pBMI->bmiColors;
-
-        int i;
-        for( i = 0; i < 256; i++ )
-        {
-            palette[i].rgbBlue = palette[i].rgbGreen = palette[i].rgbRed = (BYTE)i;
-            palette[i].rgbReserved = 0;
-        }
-
-        palette[256].rgbBlue = palette[256].rgbGreen = palette[256].rgbRed = 255;
-    }
-
-    for(y=height-1; y>=0; y--)
-    {
-        png_read_rows(png_ptr, &row, NULL, 1);
-
-        {
-            CAutoLock lock(&m_csLock);
-            int n = SetDIBits(hDC, m_hBitmap, y, 1, row, pBMI, DIB_RGB_COLORS);
-            if(n==0)
-                goto cleanup;
-        }
-    }
-
-    /* Read rest of file, and get additional chunks in info_ptr - REQUIRED */
-    png_read_end(png_ptr, info_ptr);
-
-    bStatus = TRUE;
-
-cleanup:
-
-    if(fp!=NULL)
-    {
-        fclose(fp);
-    }
-
-    if(png_ptr)
-    {
-        png_destroy_read_struct(&png_ptr,
-            (png_infopp)&info_ptr, (png_infopp)&end_info);
-    }
-
-    if(row)
-    {
-        delete [] row;
-    }
-
-    if(pBMI)
-    {
-        delete [] pBMI;
-    }
-
-    if(!bStatus)
-    {
-        Destroy();
-    }
-
-    return bStatus;
-}
-
-BOOL CImage::LoadBitmapFromJPEGFile(LPTSTR szFileName)
-{
-    BOOL bStatus = false;
-    struct jpeg_decompress_struct cinfo;
-    struct jpeg_error_mgr jerr;
-    FILE* fp = NULL;
-    JSAMPROW row = NULL;
-    BITMAPINFO bmi;
-    HDC hDC = NULL;
-
-    cinfo.err = jpeg_std_error(&jerr);
-    jpeg_create_decompress(&cinfo);
-
-    _TFOPEN_S(fp, szFileName, _T("rb"));
-    if (!fp)
-    {
-        goto cleanup;
-    }
-
-    jpeg_stdio_src(&cinfo, fp);
-
-    jpeg_read_header(&cinfo, TRUE);
-
-    jpeg_start_decompress(&cinfo);
-
-    row = new BYTE[cinfo.output_width*3+10];
-
-    hDC = GetDC(NULL);
-
-    {
-        CAutoLock lock(&m_csLock);
-        if(m_bLoadCancelled)
-            goto cleanup;
-        m_hBitmap = CreateCompatibleBitmap(hDC, cinfo.output_width, cinfo.output_height);
-    }
-
-    memset(&bmi, 0, sizeof(bmi));
-    bmi.bmiHeader.biSize = sizeof(bmi);
-    bmi.bmiHeader.biBitCount = 24;
-    bmi.bmiHeader.biWidth = cinfo.output_width;
-    bmi.bmiHeader.biHeight = cinfo.output_height;
-    bmi.bmiHeader.biPlanes = 1;
-    bmi.bmiHeader.biCompression = BI_RGB;
-    bmi.bmiHeader.biSizeImage = cinfo.output_width*cinfo.output_height*3;
-
-    while (cinfo.output_scanline < cinfo.output_height)
-    {
-        jpeg_read_scanlines(&cinfo, &row, 1);
-
-        if(cinfo.out_color_components==3)
-        {
-            // Convert RGB to BGR
-            UINT i;
-            for(i=0; i<cinfo.output_width; i++)
-            {
-                BYTE tmp = row[i*3+0];
-                row[i*3+0] = row[i*3+2];
-                row[i*3+2] = tmp;
-            }
-        }
-        else
-        {
-            // Convert grayscale to BGR
-            int i;
-            for(i=cinfo.output_width-1; i>=0; i--)
-            {
-                row[i*3+0] = row[i];
-                row[i*3+1] = row[i];
-                row[i*3+2] = row[i];
-            }
-        }
-
-        {
-            CAutoLock lock(&m_csLock);
-            int n = SetDIBits(hDC, m_hBitmap, cinfo.output_height-cinfo.output_scanline, 1, row, &bmi, DIB_RGB_COLORS);
-            if(n==0)
-                goto cleanup;
-        }
-    }
-
-    jpeg_finish_decompress(&cinfo);
-    jpeg_destroy_decompress(&cinfo);
-
-    bStatus = true;
-
-cleanup:
-
-    if(row)
-        delete [] row;
-
-    if(!bStatus)
-    {
-        Destroy();
-    }
-
-    if(fp!=NULL)
-    {
-        fclose(fp);
-        fp = NULL;
-    }
-
-    return bStatus;
-}
-
-void CImage::Draw(HDC hDC, LPRECT prcDraw)
-{
-    CAutoLock lock(&m_csLock);
-    HPALETTE hOldPalette = NULL;
-
-    CRect rcDraw = prcDraw;
-    BITMAP        bm;
-    GetObject( m_hBitmap, sizeof(BITMAP), &bm );
-
-    HDC hMemDC = CreateCompatibleDC( hDC );
-    HBITMAP hOldBitmap = (HBITMAP)SelectObject(hMemDC, m_hBitmap );
-    if(m_hPalette)
-    {
-        hOldPalette = SelectPalette(hDC, m_hPalette, FALSE );
-        RealizePalette( hDC );
-    }
-
-    if((float)rcDraw.Width()/(float)bm.bmWidth <
-        (float)rcDraw.Height()/(float)bm.bmHeight)
-    {
-        int nDstMid = rcDraw.top + rcDraw.Height()/2;
-        int nDstHeight = (int)( rcDraw.Width()*(float)bm.bmHeight/bm.bmWidth );
-        rcDraw.top = nDstMid - nDstHeight/2;
-        rcDraw.bottom = nDstMid + nDstHeight/2;
-    }
-    else
-    {
-        int nDstMid = rcDraw.left + rcDraw.Width()/2;
-        int nDstWidth = (int)( rcDraw.Height()*(float)bm.bmWidth/bm.bmHeight );
-        rcDraw.left = nDstMid - nDstWidth/2;
-        rcDraw.right = nDstMid + nDstWidth/2;
-    }
-
-    int nOldMode = SetStretchBltMode(hDC, HALFTONE);
-    StretchBlt(hDC, rcDraw.left, rcDraw.top, rcDraw.Width(), rcDraw.Height(),
-        hMemDC, 0, 0, bm.bmWidth, bm.bmHeight, SRCCOPY );
-
-    SetStretchBltMode(hDC, nOldMode);
-    SelectObject( hMemDC, hOldBitmap );
-    if(m_hPalette)
-    {
-        SelectPalette( hDC, hOldPalette, FALSE );
-    }
-}
-
 //-----------------------------------------------------------------------------
 // CFilePreviewCtrl implementation
 //-----------------------------------------------------------------------------
@@ -659,7 +165,6 @@ CFilePreviewCtrl::CFilePreviewCtrl()
 
 CFilePreviewCtrl::~CFilePreviewCtrl()
 {
-    m_bmp.Destroy();
     m_fm.Destroy();
 
     DeleteObject(m_hFont);
@@ -679,7 +184,6 @@ BOOL CFilePreviewCtrl::SetFile(LPCTSTR szFileName, PreviewMode mode, TextEncodin
     if(m_hWorkerThread!=NULL)
     {
         m_bCancelled = TRUE;
-        m_bmp.Cancel();
         WaitForSingleObject(m_hWorkerThread, INFINITE);
         m_hWorkerThread = NULL;
     }
@@ -727,7 +231,6 @@ BOOL CFilePreviewCtrl::SetFile(LPCTSTR szFileName, PreviewMode mode, TextEncodin
     m_aTextLines.clear();
     m_uNumLines = 0;
     m_nMaxDisplayWidth = 0;
-    m_bmp.Destroy();
 
     if(m_PreviewMode==PREVIEW_HEX)
     {
@@ -760,12 +263,6 @@ BOOL CFilePreviewCtrl::SetFile(LPCTSTR szFileName, PreviewMode mode, TextEncodin
                 m_nEncSignatureLen = nSignatureLen;
         }
 
-        m_bCancelled = FALSE;
-        m_hWorkerThread = CreateThread(NULL, 0, WorkerThread, this, 0, NULL);
-        ::SetTimer(m_hWnd, 0, 250, NULL);
-    }
-    else if(m_PreviewMode==PREVIEW_IMAGE)
-    {
         m_bCancelled = FALSE;
         m_hWorkerThread = CreateThread(NULL, 0, WorkerThread, this, 0, NULL);
         ::SetTimer(m_hWnd, 0, 250, NULL);
@@ -809,12 +306,6 @@ PreviewMode CFilePreviewCtrl::DetectPreviewMode(LPCTSTR szFileName)
     {
         sFileName = szFileName;
 
-        if(CImage::IsImageFile(sFileName))
-        {
-            mode = PREVIEW_IMAGE;
-            goto cleanup;
-        }
-
         int backslash_pos = sFileName.ReverseFind('\\');
         if(backslash_pos>=0)
             sFileName = sFileName.Mid(backslash_pos+1);
@@ -841,8 +332,6 @@ PreviewMode CFilePreviewCtrl::DetectPreviewMode(LPCTSTR szFileName)
             mode = PREVIEW_TEXT;
         }
     }
-
-cleanup:
 
     return mode;
 }
@@ -926,8 +415,6 @@ void CFilePreviewCtrl::DoInWorkerThread()
 {
     if(m_PreviewMode==PREVIEW_TEXT)
         ParseText();
-    else if(m_PreviewMode==PREVIEW_IMAGE)
-        LoadBitmap();
 }
 
 WCHAR swap_bytes(WCHAR src_char)
@@ -1039,12 +526,6 @@ void CFilePreviewCtrl::ParseText()
         dwOffset += dwLength;
     }
 
-    PostMessage(WM_FPC_COMPLETE);
-}
-
-void CFilePreviewCtrl::LoadBitmap()
-{
-    m_bmp.Load(m_sFileName);
     PostMessage(WM_FPC_COMPLETE);
 }
 
@@ -1282,36 +763,12 @@ void CFilePreviewCtrl::DoPaintText(HDC hDC)
     SelectObject(hDC, hOldFont);
 }
 
-void CFilePreviewCtrl::DoPaintBitmap(HDC hDC)
-{
-    RECT rcClient;
-    GetClientRect(&rcClient);
-
-    HRGN hRgn = CreateRectRgn(0, 0, rcClient.right, rcClient.bottom);
-    SelectClipRgn(hDC, hRgn);
-
-    FillRect(hDC, &rcClient, (HBRUSH)GetStockObject(WHITE_BRUSH));
-
-    if(m_bmp.IsValid())
-    {
-        m_bmp.Draw(hDC, &rcClient);
-    }
-    else
-    {
-        DoPaintEmpty(hDC);
-    }
-}
-
 void CFilePreviewCtrl::DoPaint(HDC hDC)
 {
     if(m_PreviewMode==PREVIEW_TEXT ||
         m_PreviewMode==PREVIEW_HEX)
     {
         DoPaintText(hDC);
-    }
-    else if(m_PreviewMode==PREVIEW_IMAGE)
-    {
-        DoPaintBitmap(hDC);
     }
 }
 

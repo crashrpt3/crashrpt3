@@ -119,7 +119,6 @@ ENDIF()
 
 add_subdirectory("thirdparty/tinyxml")
 add_subdirectory("thirdparty/jpeg")
-add_subdirectory("thirdparty/libpng")
 add_subdirectory("thirdparty/minizip")
 add_subdirectory("thirdparty/zlib")
 

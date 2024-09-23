@@ -29,7 +29,6 @@ include_directories(
   ${REPOSITORY_DIR}/thirdparty/zlib
   ${REPOSITORY_DIR}/thirdparty/minizip
   ${REPOSITORY_DIR}/thirdparty/jpeg
-  ${REPOSITORY_DIR}/thirdparty/libpng
   ${REPOSITORY_DIR}/thirdparty/tinyxml
   ${DBGHELP_INCLUDE_DIR}
 )
@@ -48,7 +47,6 @@ target_link_libraries(CrashSender
   zlib
   minizip
   libjpeg
-  libpng
   tinyxml
   WS2_32.lib
   Dnsapi.lib

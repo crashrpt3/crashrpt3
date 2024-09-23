@@ -306,9 +306,6 @@ BOOL CErrorReportSender::DoWork(int Action)
         // Add a message to log
         m_Assync.SetProgress(_T("Start collecting information about the crash..."), 0, false);
 
-        // First take a screenshot of user's desktop (if needed).
-        TakeDesktopScreenshot();
-
         if(m_Assync.IsCancelled()) // Check if user-cancelled
         {
             // Parent process can now terminate
@@ -467,93 +464,6 @@ BOOL CErrorReportSender::Finalize()
     }
 
     // Done OK
-    return TRUE;
-}
-
-// This method takes the desktop screenshot (screenshot of entire virtual screen
-// or screenshot of the main window).
-BOOL CErrorReportSender::TakeDesktopScreenshot()
-{
-    CScreenCapture sc; // Screen capture object
-    ScreenshotInfo ssi; // Screenshot params
-
-    // Add a message to log
-    m_Assync.SetProgress(_T("[taking_screenshot]"), 0);
-
-    // Check if screenshot capture is allowed
-    if(!m_CrashInfo.m_bAddScreenshot)
-    {
-        // Add a message to log
-        m_Assync.SetProgress(_T("Desktop screenshot generation disabled; skipping."), 0);
-        // Exit, nothing to do here
-        return TRUE;
-    }
-
-    // Add a message to log
-    m_Assync.SetProgress(_T("Taking desktop screenshot"), 0);
-
-    // Get screenshot flags passed by the parent process
-    DWORD dwFlags = m_CrashInfo.m_dwScreenshotFlags;
-
-    BOOL bAllowDelete = (dwFlags&CR_AS_ALLOW_DELETE)!=0;
-
-    // Determine what image format to use (JPG or PNG)
-    SCREENSHOT_IMAGE_FORMAT fmt = SCREENSHOT_FORMAT_PNG; // PNG by default
-
-    if((dwFlags&CR_AS_USE_JPEG_FORMAT)!=0)
-        fmt = SCREENSHOT_FORMAT_JPG; // Use JPEG format
-
-    // Determine what to use - color or grayscale image
-    BOOL bGrayscale = (dwFlags&CR_AS_GRAYSCALE_IMAGE)!=0;
-
-    SCREENSHOT_TYPE type = SCREENSHOT_TYPE_VIRTUAL_SCREEN;
-    if((dwFlags&CR_AS_MAIN_WINDOW)!=0) // We need to capture the main window
-        type = SCREENSHOT_TYPE_MAIN_WINDOW;
-    else if((dwFlags&CR_AS_PROCESS_WINDOWS)!=0) // Capture all process windows
-        type = SCREENSHOT_TYPE_ALL_PROCESS_WINDOWS;
-    else // (dwFlags&CR_AS_VIRTUAL_SCREEN)!=0 // Capture the virtual screen
-        type = SCREENSHOT_TYPE_VIRTUAL_SCREEN;
-
-    // Kaneva - Added
-    auto pReport = GetReport();
-    if (!pReport) return FALSE;
-
-    // Take the screen shot
-    BOOL bTakeScreenshot = sc.TakeDesktopScreenshot(
-        pReport->GetErrorReportDirName(),
-        ssi,
-        type,
-        m_CrashInfo.m_dwProcessId,
-        fmt,
-        m_CrashInfo.m_nJpegQuality,
-        bGrayscale
-    );
-    if(bTakeScreenshot==FALSE)
-    {
-        return FALSE;
-    }
-
-    // Save screenshot info
-    pReport->SetScreenshotInfo(ssi);
-
-    // Prepare the list of screenshot files we will add to the error report
-    std::vector<ERIFileItem> FilesToAdd;
-    size_t i;
-    for(i=0; i<ssi.m_aMonitors.size(); i++)
-    {
-        CString sFileName = ssi.m_aMonitors[i].m_sFileName;
-        CString sDestFile;
-        int nSlashPos = sFileName.ReverseFind('\\');
-        sDestFile = sFileName.Mid(nSlashPos+1);
-        ERIFileItem fi;
-        fi.m_sSrcFile = sFileName;
-        fi.m_sDestFile = sDestFile;
-        fi.m_sDesc = Utility::GetINIString(m_CrashInfo.m_sLangFileName, _T("DetailDlg"), _T("DescScreenshot"));
-        fi.m_bAllowDelete = bAllowDelete;
-        pReport->AddFileItem(&fi);
-    }
-
-    // Done
     return TRUE;
 }
 

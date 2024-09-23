@@ -143,9 +143,6 @@ private:
     // Calculates MD5 hash for a file.
     int CalcFileMD5Hash(CString sFileName, CString& sMD5Hash);
 
-    // Takes desktop screenshot.
-    BOOL TakeDesktopScreenshot();
-
     // Creates crash dump file.
     BOOL CreateMiniDump();
 
