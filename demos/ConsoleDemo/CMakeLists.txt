@@ -18,4 +18,4 @@ add_compile_definitions(UNICODE _UNICODE)
 target_link_libraries(ConsoleDemo CrashRpt)
 
 # add "d" postfix to output file name in debug
-set_target_properties(ConsoleDemo PROPERTIES DEBUG_POSTFIX d )
+set_target_properties(ConsoleDemo PROPERTIES DEBUG_POSTFIX d)

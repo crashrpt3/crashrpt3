@@ -28,8 +28,6 @@ class CrashRptAPITests : public CTestSuite
         REGISTER_TEST(Test_crInstallToCurrentThread2)
         REGISTER_TEST(Test_crInstallToCurrentThread2_concurrent)
         REGISTER_TEST(Test_crAddFile2W)
-        REGISTER_TEST(Test_crAddScreenshot)
-        REGISTER_TEST(Test_crAddScreenshot2)
         REGISTER_TEST(Test_crAddPropertyW)
         REGISTER_TEST(Test_crAddRegKeyW)
         REGISTER_TEST(Test_crSetCrashCallbackW)
@@ -63,8 +61,6 @@ class CrashRptAPITests : public CTestSuite
     void Test_crInstallToCurrentThread2();
     void Test_crInstallToCurrentThread2_concurrent();
     void Test_crAddFile2W();
-    void Test_crAddScreenshot();
-    void Test_crAddScreenshot2();
     void Test_crAddPropertyW();
     void Test_crAddRegKeyW();
     void Test_crSetCrashCallbackW();
@@ -374,76 +370,6 @@ void CrashRptAPITests::Test_crAddPropertyW()
     // Uninstall
     crUninstall();
 
-}
-
-void CrashRptAPITests::Test_crAddScreenshot()
-{
-    {
-        // Should fail, because crInstall() should be called first
-        int nResult = crAddScreenshot(CR_AS_VIRTUAL_SCREEN);
-        TEST_ASSERT(nResult!=0);
-
-        // Install crash handler
-        CR_INSTALL_INFO infoW;
-        memset(&infoW, 0, sizeof(CR_INSTALL_INFO));
-        infoW.cb = sizeof(CR_INSTALL_INFO);
-        infoW.pszAppVersion = L"1.0.0"; // Specify app version, otherwise it will fail.
-
-        int nInstallResult = crInstall(&infoW);
-        TEST_ASSERT(nInstallResult==0);
-
-        // Should succeed
-        int nResult2 = crAddScreenshot(CR_AS_VIRTUAL_SCREEN);
-        TEST_ASSERT(nResult2==0);
-
-        // Call twice - should succeed
-        int nResult3 = crAddScreenshot(CR_AS_MAIN_WINDOW);
-        TEST_ASSERT(nResult3==0);
-    }
-
-    __TEST_CLEANUP__;
-
-    // Uninstall
-    crUninstall();
-}
-
-void CrashRptAPITests::Test_crAddScreenshot2()
-{
-    {
-        // Should fail, because crInstall() should be called first
-        int nResult = crAddScreenshot2(CR_AS_VIRTUAL_SCREEN, 95);
-        TEST_ASSERT(nResult!=0);
-
-        // Install crash handler
-        CR_INSTALL_INFO infoW;
-        memset(&infoW, 0, sizeof(CR_INSTALL_INFO));
-        infoW.cb = sizeof(CR_INSTALL_INFO);
-        infoW.pszAppVersion = L"1.0.0"; // Specify app version, otherwise it will fail.
-
-        int nInstallResult = crInstall(&infoW);
-        TEST_ASSERT(nInstallResult==0);
-
-        // Should succeed
-        int nResult2 = crAddScreenshot2(CR_AS_VIRTUAL_SCREEN, 50);
-        TEST_ASSERT(nResult2==0);
-
-        // Call twice - should succeed
-        int nResult3 = crAddScreenshot2(CR_AS_MAIN_WINDOW, 60);
-        TEST_ASSERT(nResult3==0);
-
-        // Call with invalid JPEG quality - should fail
-        int nResult4 = crAddScreenshot2(CR_AS_MAIN_WINDOW, -60);
-        TEST_ASSERT(nResult4!=0);
-
-        // Call with invalid JPEG quality - should fail
-        int nResult5 = crAddScreenshot2(CR_AS_MAIN_WINDOW, 160);
-        TEST_ASSERT(nResult5!=0);
-    }
-
-    __TEST_CLEANUP__;
-
-    // Uninstall
-    crUninstall();
 }
 
 void CrashRptAPITests::Test_crAddRegKeyW()
@@ -824,18 +750,6 @@ void CrashRptAPITests::Test_undecorated_func_names()
         PFNCRADDFILE2W pfncrAddFile2W =
             (PFNCRADDFILE2W)GetProcAddress(hCrashRpt, "crAddFile2");
         TEST_ASSERT(pfncrAddFile2W!=NULL);
-
-        // Test crAddScreenshot() function name presents in the DLL export table
-        typedef int (WINAPI *PFNCRADDSCREENSHOT)(DWORD);
-        PFNCRADDSCREENSHOT pfncrAddScreenshot =
-            (PFNCRADDSCREENSHOT)GetProcAddress(hCrashRpt, "crAddScreenshot");
-        TEST_ASSERT(pfncrAddScreenshot!=NULL);
-
-        // Test crAddScreenshot2() function name presents in the DLL export table
-        typedef int (WINAPI *PFNCRADDSCREENSHOT2)(DWORD, int);
-        PFNCRADDSCREENSHOT2 pfncrAddScreenshot2 =
-            (PFNCRADDSCREENSHOT2)GetProcAddress(hCrashRpt, "crAddScreenshot2");
-        TEST_ASSERT(pfncrAddScreenshot2!=NULL);
     }
 
     __TEST_CLEANUP__

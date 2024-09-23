@@ -5,12 +5,10 @@ crUninstall
 crInstallToCurrentThread2
 crUninstallFromCurrentThread
 crAddFile2
-crAddScreenshot
 crAddProperty
 crGenerateErrorReport
 crEmulateCrash
 crGetLastErrorMsg
 crAddRegKey
-crAddScreenshot2
 crSetCrashCallback
 crSetEmailSubject

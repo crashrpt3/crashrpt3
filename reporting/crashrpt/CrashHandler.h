@@ -106,28 +106,27 @@ public:
 
     // Initializes the crash handler object.
     int Init(
-        __in_opt LPCTSTR lpcszAppName = NULL,
-        __in_opt LPCTSTR lpcszAppVersion = NULL,
-        __in_opt LPCTSTR lpcszCrashSenderPath = NULL,
-        __in_opt LPGETLOGFILE lpfnCallback = NULL,
-        __in_opt LPCTSTR lpcszTo = NULL,
-        __in_opt LPCTSTR lpcszSubject = NULL,
-        __in_opt LPCTSTR lpcszUrl = NULL,
-        __in_opt UINT (*puPriorities)[5] = NULL,
+        LPCTSTR lpcszAppName = NULL,
+        LPCTSTR lpcszAppVersion = NULL,
+        LPCTSTR lpcszCrashSenderPath = NULL,
+        LPCTSTR lpcszTo = NULL,
+        LPCTSTR lpcszSubject = NULL,
+        LPCTSTR lpcszUrl = NULL,
+        UINT (*puPriorities)[5] = NULL,
         DWORD dwFlags = 0,
-        __in_opt LPCTSTR lpcszPrivacyPolicyURL = NULL,
-        __in_opt LPCTSTR lpcszDebugHelpDLLPath = NULL,
+        LPCTSTR lpcszPrivacyPolicyURL = NULL,
+        LPCTSTR lpcszDebugHelpDLLPath = NULL,
         MINIDUMP_TYPE MiniDumpType = MiniDumpNormal,
-        __in_opt LPCTSTR lpcszErrorReportSaveDir = NULL,
-        __in_opt LPCTSTR lpcszRestartCmdLine = NULL,
-        __in_opt LPCTSTR lpcszLangFilePath = NULL,
-        __in_opt LPCTSTR lpcszEmailText = NULL,
-        __in_opt LPCTSTR lpcszSmtpProxy = NULL,
-        __in_opt LPCTSTR lpcszCustomSenderIcon = NULL,
-        __in_opt LPCTSTR lpcszSmtpLogin = NULL,
-        __in_opt LPCTSTR lpcszSmtpPassword = NULL,
-        __in_opt int nRestartTimeout = 0,
-        __in_opt int nMaxReportsPerDay = 0);
+        LPCTSTR lpcszErrorReportSaveDir = NULL,
+        LPCTSTR lpcszRestartCmdLine = NULL,
+        LPCTSTR lpcszLangFilePath = NULL,
+        LPCTSTR lpcszEmailText = NULL,
+        LPCTSTR lpcszSmtpProxy = NULL,
+        LPCTSTR lpcszCustomSenderIcon = NULL,
+        LPCTSTR lpcszSmtpLogin = NULL,
+        LPCTSTR lpcszSmtpPassword = NULL,
+        int nRestartTimeout = 0,
+        int nMaxReportsPerDay = 0);
 
     // Returns TRUE if object was initialized.
     BOOL IsInitialized();
@@ -139,14 +138,10 @@ public:
     int SetCrashCallbackW(PFNCRASHCALLBACK pfnCallback, LPVOID pUserParam);
 
     // Adds a file to the crash report.
-    int AddFile(__in_z LPCTSTR lpFile, __in_opt LPCTSTR lpDestFile,
-                __in_opt LPCTSTR lpDesc, DWORD dwFlags);
+    int AddFile(__in_z LPCTSTR lpFile, __in_opt LPCTSTR lpDestFile, __in_opt LPCTSTR lpDesc, DWORD dwFlags);
 
     // Adds a named text property to the report.
     int AddProperty(CString sPropName, CString sPropValue);
-
-    // Adds desktop screenshot of crash into error report.
-    int AddScreenshot(DWORD dwFlags, int nJpegQuality);
 
     // Adds a registry key to crash report.
     int AddRegKey(__in_z LPCTSTR szRegKey, __in_z LPCTSTR szDstFileName, DWORD dwFlags);
@@ -306,9 +301,6 @@ public:
     CString m_sLangFileName;       // Language file.
     CString m_sPathToDebugHelpDll; // Path to dbghelp.dll.
     CString m_sUnsentCrashReportsFolder; // Path to the folder where to save error reports.
-    LPGETLOGFILE m_lpfnCallback;   // Client crash callback (deprecated).
-    BOOL m_bAddScreenshot;         // Should we add screenshot?
-    DWORD m_dwScreenshotFlags;     // Screenshot flags.
     int m_nJpegQuality;            // Quality of JPEG screenshot images.
     CString m_sCustomSenderIcon;   // Resource name that can be used as custom Error Report dialog icon.
     std::map<CString, FileItem> m_files; // File items to include.

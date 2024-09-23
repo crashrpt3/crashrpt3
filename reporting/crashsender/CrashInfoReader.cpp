@@ -150,16 +150,6 @@ void CErrorReportInfo::SetDeliveryStatus(DELIVERY_STATUS status)
 	m_DeliveryStatus = status;
 }
 
-ScreenshotInfo& CErrorReportInfo::GetScreenshotInfo()
-{
-	return m_ScreenshotInfo;
-}
-
-void CErrorReportInfo::SetScreenshotInfo(ScreenshotInfo &si)
-{
-	m_ScreenshotInfo = si;
-}
-
 ULONG64 CErrorReportInfo::GetExceptionAddress()
 {
 	return m_dwExceptionAddress;
@@ -387,9 +377,6 @@ CCrashInfoReader::CCrashInfoReader()
 	m_uPriorities[CR_SMAPI] = 1;
 	m_bGenerateMinidump = TRUE;
 	m_MinidumpType = MiniDumpNormal;
-	m_bAddScreenshot = FALSE;
-	m_dwScreenshotFlags = 0;
-	m_nJpegQuality = 0;
 	m_ptCursorPos = CPoint(0, 0);
 	m_rcAppWnd = CRect(0, 0, 0, 0);
 	m_bClientAppCrashed = FALSE;
@@ -554,9 +541,6 @@ int CCrashInfoReader::UnpackCrashDescription(CErrorReportInfo& eri)
     UnpackString(m_pCrashDesc->m_dwLangFileNameOffs, m_sLangFileName);
     UnpackString(m_pCrashDesc->m_dwPathToDebugHelpDllOffs, m_sDbgHelpPath);
     UnpackString(m_pCrashDesc->m_dwUnsentCrashReportsFolderOffs, m_sUnsentCrashReportsFolder);
-    m_bAddScreenshot = m_pCrashDesc->m_bAddScreenshot;
-    m_dwScreenshotFlags = m_pCrashDesc->m_dwScreenshotFlags;
-    m_nJpegQuality = m_pCrashDesc->m_nJpegQuality;
     UnpackString(m_pCrashDesc->m_dwCustomSenderIconOffs, m_sCustomSenderIcon);
 	UnpackString(m_pCrashDesc->m_dwSmtpLoginOffs, m_sSmtpLogin);
 	UnpackString(m_pCrashDesc->m_dwSmtpPasswordOffs, m_sSmtpPassword);

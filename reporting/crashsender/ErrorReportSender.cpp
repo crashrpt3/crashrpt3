@@ -19,7 +19,6 @@ be found in the Authors.txt file in the root of the source tree.
 #include "zip.h"
 #include "CrashInfoReader.h"
 #include "strconv.h"
-#include "ScreenCap.h"
 #include "base64.h"
 #include <sys/stat.h>
 #include "dbghelp.h"
@@ -882,79 +881,6 @@ BOOL CErrorReportSender::CreateCrashDescriptionXML(CErrorReportInfo& eri)
     AddElemToXML(_T("OpenHandleCount"), sProcessHandleCount, root);
 
     AddElemToXML(_T("MemoryUsageKbytes"), eri.GetMemUsage(), root);
-
-    if(eri.GetScreenshotInfo().m_bValid)
-    {
-        TiXmlHandle hScreenshotInfo = new TiXmlElement("ScreenshotInfo");
-        root->LinkEndChild(hScreenshotInfo.ToNode());
-
-        TiXmlHandle hVirtualScreen = new TiXmlElement("VirtualScreen");
-
-        sNum.Format(_T("%d"), eri.GetScreenshotInfo().m_rcVirtualScreen.left);
-        hVirtualScreen.ToElement()->SetAttribute("left", strconv.t2utf8(sNum));
-
-        sNum.Format(_T("%d"), eri.GetScreenshotInfo().m_rcVirtualScreen.top);
-        hVirtualScreen.ToElement()->SetAttribute("top", strconv.t2utf8(sNum));
-
-        sNum.Format(_T("%d"), eri.GetScreenshotInfo().m_rcVirtualScreen.Width());
-        hVirtualScreen.ToElement()->SetAttribute("width", strconv.t2utf8(sNum));
-
-        sNum.Format(_T("%d"), eri.GetScreenshotInfo().m_rcVirtualScreen.Height());
-        hVirtualScreen.ToElement()->SetAttribute("height", strconv.t2utf8(sNum));
-
-        hScreenshotInfo.ToNode()->LinkEndChild(hVirtualScreen.ToNode());
-
-        TiXmlHandle hMonitors = new TiXmlElement("Monitors");
-        hScreenshotInfo.ToElement()->LinkEndChild(hMonitors.ToNode());
-
-        size_t i;
-        for(i=0; i<eri.GetScreenshotInfo().m_aMonitors.size(); i++)
-        {
-            MonitorInfo& mi = eri.GetScreenshotInfo().m_aMonitors[i];
-            TiXmlHandle hMonitor = new TiXmlElement("Monitor");
-
-            sNum.Format(_T("%d"), mi.m_rcMonitor.left);
-            hMonitor.ToElement()->SetAttribute("left", strconv.t2utf8(sNum));
-
-            sNum.Format(_T("%d"), mi.m_rcMonitor.top);
-            hMonitor.ToElement()->SetAttribute("top", strconv.t2utf8(sNum));
-
-            sNum.Format(_T("%d"), mi.m_rcMonitor.Width());
-            hMonitor.ToElement()->SetAttribute("width", strconv.t2utf8(sNum));
-
-            sNum.Format(_T("%d"), mi.m_rcMonitor.Height());
-            hMonitor.ToElement()->SetAttribute("height", strconv.t2utf8(sNum));
-
-            hMonitor.ToElement()->SetAttribute("file", strconv.t2utf8(Utility::GetFileName(mi.m_sFileName)));
-
-            hMonitors.ToElement()->LinkEndChild(hMonitor.ToNode());
-        }
-
-        TiXmlHandle hWindows = new TiXmlElement("Windows");
-        hScreenshotInfo.ToElement()->LinkEndChild(hWindows.ToNode());
-
-        for(i=0; i<eri.GetScreenshotInfo().m_aWindows.size(); i++)
-        {
-            WindowInfo& wi = eri.GetScreenshotInfo().m_aWindows[i];
-            TiXmlHandle hWindow = new TiXmlElement("Window");
-
-            sNum.Format(_T("%d"), wi.m_rcWnd.left);
-            hWindow.ToElement()->SetAttribute("left", strconv.t2utf8(sNum));
-
-            sNum.Format(_T("%d"), wi.m_rcWnd.top);
-            hWindow.ToElement()->SetAttribute("top", strconv.t2utf8(sNum));
-
-            sNum.Format(_T("%d"), wi.m_rcWnd.Width());
-            hWindow.ToElement()->SetAttribute("width", strconv.t2utf8(sNum));
-
-            sNum.Format(_T("%d"), wi.m_rcWnd.Height());
-            hWindow.ToElement()->SetAttribute("height", strconv.t2utf8(sNum));
-
-            hWindow.ToElement()->SetAttribute("title", strconv.t2utf8(wi.m_sTitle));
-
-            hWindows.ToElement()->LinkEndChild(hWindow.ToNode());
-        }
-    }
 
     TiXmlHandle hCustomProps = new TiXmlElement("CustomProps");
     root->LinkEndChild(hCustomProps.ToNode());

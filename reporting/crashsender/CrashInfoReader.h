@@ -17,7 +17,6 @@ be found in the Authors.txt file in the root of the source tree.
 #include "stdafx.h"
 #include "tinyxml.h"
 #include "SharedMem.h"
-#include "ScreenCap.h"
 
 // The structure describing a file item contained in crash report.
 struct ERIFileItem
@@ -186,12 +185,6 @@ public:
 	// Sets delivery status.
 	void SetDeliveryStatus(DELIVERY_STATUS status);
 
-	// Returns desktop screenshot parameters
-	ScreenshotInfo& GetScreenshotInfo();
-
-	// Sets desktop screenshot parameters.
-	void SetScreenshotInfo(ScreenshotInfo &si);
-
 private:
 
 	// Calculates total size of files included into error report.
@@ -217,7 +210,6 @@ private:
     CString         m_sOSName;             // Operating system friendly name.
     BOOL            m_bOSIs64Bit;          // Is operating system 64-bit?
     CString         m_sGeoLocation;        // Geographic location.
-    ScreenshotInfo  m_ScreenshotInfo;      // Screenshot info.
 	ULONG64         m_uTotalSize;          // Summary size of this (uncompressed) report.
     BOOL            m_bSelected;           // Is this report selected for delivery or not?
     DELIVERY_STATUS m_DeliveryStatus;      // Error report delivery status.
@@ -273,9 +265,6 @@ public:
     CString     m_sPrivacyPolicyURL;    // Privacy policy URL.
     BOOL        m_bGenerateMinidump;    // Should we generate crash minidump file?
     MINIDUMP_TYPE m_MinidumpType;       // Minidump type.
-    BOOL        m_bAddScreenshot;       // Should we add a desktop screenshot to error report?
-    DWORD       m_dwScreenshotFlags;    // Screenshot taking options.
-    int         m_nJpegQuality;         // Jpeg image quality (used when taking screenshot).
     CPoint      m_ptCursorPos;          // Mouse cursor position on crash.
     CRect       m_rcAppWnd;             // Rectangle of the application's main window.
 	BOOL        m_bClientAppCrashed;    // If TRUE, the client app has crashed; otherwise the client app exited successfully.

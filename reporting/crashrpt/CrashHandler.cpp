@@ -46,9 +46,6 @@ CCrashHandler::CCrashHandler()
     m_nSmtpPort = 25;
     m_nSmtpProxyPort = 2525;
     memset(&m_uPriorities, 0, 3*sizeof(UINT));
-    m_lpfnCallback = NULL;
-	m_bAddScreenshot = FALSE;
-    m_dwScreenshotFlags = 0;
     m_nJpegQuality = 95;
     m_hEvent = NULL;
 	m_hEvent2 = NULL;
@@ -73,7 +70,6 @@ int CCrashHandler::Init(
         LPCTSTR lpcszAppName,
         LPCTSTR lpcszAppVersion,
         LPCTSTR lpcszCrashSenderPath,
-        LPGETLOGFILE lpfnCallback,
         LPCTSTR lpcszTo,
         LPCTSTR lpcszSubject,
         LPCTSTR lpcszUrl,
@@ -104,9 +100,6 @@ int CCrashHandler::Init(
 
     // Save minidump type
     m_MinidumpType = MiniDumpType;
-
-    // Save user supplied callback (obsolete)
-    m_lpfnCallback = lpfnCallback;
 
     // Save application name
     m_sAppName = lpcszAppName;
@@ -534,8 +527,6 @@ CRASH_DESCRIPTION* CCrashHandler::PackCrashInfoIntoSharedMem(CSharedMem* pShared
     m_pTmpCrashDesc->m_MinidumpType = m_MinidumpType;
     m_pTmpCrashDesc->m_nSmtpPort = m_nSmtpPort;
     m_pTmpCrashDesc->m_nSmtpProxyPort = m_nSmtpProxyPort;
-    m_pTmpCrashDesc->m_bAddScreenshot = m_bAddScreenshot;
-    m_pTmpCrashDesc->m_dwScreenshotFlags = m_dwScreenshotFlags;
 	m_pTmpCrashDesc->m_nJpegQuality = m_nJpegQuality;
     memcpy(m_pTmpCrashDesc->m_uPriorities, m_uPriorities, sizeof(UINT)*3);
 	m_pTmpCrashDesc->m_dwProcessId = GetCurrentProcessId();
@@ -1129,30 +1120,6 @@ int CCrashHandler::AddProperty(CString sPropName, CString sPropValue)
     return 0;
 }
 
-// Adds a screen shot to the error report
-int CCrashHandler::AddScreenshot(DWORD dwFlags, int nJpegQuality)
-{
-    crSetErrorMsg(_T("Unspecified error."));
-
-    if(nJpegQuality<0 || nJpegQuality>100)
-    {
-        crSetErrorMsg(_T("Invalid Jpeg quality."));
-        return 1;
-    }
-
-    m_bAddScreenshot = TRUE;
-    m_dwScreenshotFlags = dwFlags;
-    m_nJpegQuality = nJpegQuality;
-
-    // Pack this info into shared memory
-    m_pCrashDesc->m_bAddScreenshot = TRUE;
-    m_pCrashDesc->m_dwScreenshotFlags = dwFlags;
-    m_pCrashDesc->m_nJpegQuality = nJpegQuality;
-
-    crSetErrorMsg(_T("Success."));
-    return 0;
-}
-
 // Generates error report
 int CCrashHandler::GenerateErrorReport(
         PCR_EXCEPTION_INFO pExceptionInfo)
@@ -1230,11 +1197,6 @@ int CCrashHandler::GenerateErrorReport(
 		crSetErrorMsg(_T("The operation was cancelled by client."));
         return 2;
     }
-
-    // Start the CrashSender.exe process which will take the dekstop screenshot,
-    // copy user-specified files to the error report folder, create minidump,
-    // notify user about crash, compress the report into ZIP archive and send
-    // the error report.
 
     int result = LaunchCrashSender(m_sCrashGUID, TRUE, &pExceptionInfo->hSenderProcess);
 

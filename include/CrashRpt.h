@@ -30,8 +30,6 @@ be found in the Authors.txt file in the root of the source tree.
 //! Current CrashRpt version
 #define CRASHRPT_VER 1500
 
-typedef BOOL (CALLBACK *LPGETLOGFILE) (__reserved LPVOID lpvState);
-
 // Exception types used in CR_EXCEPTION_INFO::exctype structure member.
 #define CR_SEH_EXCEPTION                0    //!< SEH exception.
 #define CR_CPP_TERMINATE_CALL           1    //!< C++ terminate() call.
@@ -85,9 +83,6 @@ typedef struct tagCR_CRASH_CALLBACK_INFO
 
 typedef int (CALLBACK *PFNCRASHCALLBACK) (CR_CRASH_CALLBACK_INFO* pInfo);
 
-CRASHRPTAPI(int) crSetCrashCallback(PFNCRASHCALLBACK pfnCallbackFunc, LPVOID lpParam);
-CRASHRPTAPI(int) crSetEmailSubject(LPCWSTR pszSubject);
-
 // Array indices for CR_INSTALL_INFO::uPriorities.
 #define CR_HTTP 0  //!< Send error report via HTTP (or HTTPS) connection.
 #define CR_SMTP 1  //!< Send error report via SMTP connection.
@@ -136,7 +131,6 @@ typedef struct tagCR_INSTALL_INFO
     LPCWSTR pszEmailSubject;        //!< Subject of crash report e-mail.
     LPCWSTR pszUrl;                 //!< URL of server-side script (used in HTTP connection).
     LPCWSTR pszCrashSenderPath;     //!< Directory name where CrashSender.exe is located.
-    LPGETLOGFILE pfnCrashCallback;  //!< Deprecated, do not use.
     UINT uPriorities[5];            //!< Array of error sending transport priorities.
     DWORD dwFlags;                  //!< Flags.
     LPCWSTR pszPrivacyPolicyURL;    //!< URL of privacy policy agreement.
@@ -195,8 +189,10 @@ CRASHRPTAPI(int) crUninstall();
 CRASHRPTAPI(int) crInstallToCurrentThread2(DWORD dwFlags);
 CRASHRPTAPI(int) crUninstallFromCurrentThread();
 
+CRASHRPTAPI(int) crSetCrashCallback(PFNCRASHCALLBACK pfnCallbackFunc, LPVOID lpParam);
+CRASHRPTAPI(int) crSetEmailSubject(LPCWSTR pszSubject);
+
 CRASHRPTAPI(int) crAddFile2(LPCWSTR pszFile, LPCWSTR pszDestFile, LPCWSTR pszDesc, DWORD dwFlags);
-CRASHRPTAPI(int) crAddScreenshot(DWORD dwFlags);
 CRASHRPTAPI(int) crAddScreenshot2(DWORD dwFlags, int nJpegQuality);
 CRASHRPTAPI(int) crAddProperty(LPCWSTR pszPropName, LPCWSTR pszPropValue);
 CRASHRPTAPI(int) crAddRegKey(LPCWSTR pszRegKey, LPCWSTR pszDstFileName, DWORD dwFlags);

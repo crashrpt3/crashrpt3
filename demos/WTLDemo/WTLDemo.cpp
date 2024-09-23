@@ -80,9 +80,6 @@ int Run(LPTSTR /*lpstrCmdLine*/ = NULL, int nCmdShow = SW_SHOWDEFAULT)
 BOOL WINAPI CrashCallback(LPVOID lpvState)
 {
     UNREFERENCED_PARAMETER(lpvState);
-
-    // Crash happened!
-
     return TRUE;
 }
 
@@ -107,7 +104,6 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 	//info.pszSmtpLogin = _T("test");      // SMTP Login
 	//info.pszSmtpPassword = _T("test");       // SMTP Password
     info.pszUrl = _T("http://localhost:80/crashrpt.php"); // URL for sending reports over HTTP.				
-    info.pfnCrashCallback = CrashCallback; // Define crash callback function.   
     // Define delivery methods priorities. 
     info.uPriorities[CR_HTTP] = 3;         // Use HTTP the first.
     info.uPriorities[CR_SMTP] = 2;         // Use SMTP the second.
@@ -145,10 +141,6 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
     nResult = crAddFile2(sIniFile, NULL, _T("Dummy INI File"), 0);
     ATLASSERT(nResult==0);
 
-    nResult = crAddScreenshot2(CR_AS_PROCESS_WINDOWS|CR_AS_USE_JPEG_FORMAT|CR_AS_ALLOW_DELETE, 10);
-    //nResult = crAddScreenshot(CR_AS_MAIN_WINDOW);
-    ATLASSERT(nResult==0);
-	
 	nResult = crAddProperty(_T("AnExampleProperty"),_T("Property value"));
     ATLASSERT(nResult==0);
 

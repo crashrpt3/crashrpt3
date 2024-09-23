@@ -87,7 +87,6 @@ CRASHRPTAPI(int) crInstall(CR_INSTALL_INFO* pInfo)
             ptszAppName,
             ptszAppVersion,
             ptszCrashSenderPath,
-            pInfo->pfnCrashCallback,
             ptszEmailTo,
             ptszEmailSubject,
             ptszUrl,
@@ -301,34 +300,6 @@ crAddFile2(PCWSTR pszFile, PCWSTR pszDestFile, PCWSTR pszDesc, DWORD dwFlags)
 
     // OK.
     return 0;
-}
-
-CRASHRPTAPI(int)
-crAddScreenshot(
-                DWORD dwFlags
-                )
-{
-    return crAddScreenshot2(dwFlags, 95);
-}
-
-CRASHRPTAPI(int)
-crAddScreenshot2(
-                 DWORD dwFlags,
-                 int nJpegQuality
-                 )
-{
-    crSetErrorMsg(_T("Unspecified error."));
-
-    CCrashHandler *pCrashHandler =
-        CCrashHandler::GetCurrentProcessCrashHandler();
-
-    if(pCrashHandler==NULL)
-    {
-        crSetErrorMsg(_T("Crash handler wasn't previously installed for current process."));
-        return 1; // Invalid parameter?
-    }
-
-    return pCrashHandler->AddScreenshot(dwFlags, nJpegQuality);
 }
 
 CRASHRPTAPI(int)
@@ -615,12 +586,7 @@ namespace
     }
 }
 
-CRASHRPTAPI(int)
-#if _MSC_VER >= 1900
-crEmulateCrash(unsigned ExceptionType) noexcept(false)
-#else
-crEmulateCrash(unsigned ExceptionType) throw(...)
-#endif
+CRASHRPTAPI(int) crEmulateCrash(unsigned ExceptionType) noexcept(false)
 {
     crSetErrorMsg(_T("Unspecified error."));
 

@@ -54,7 +54,6 @@ BOOL TestUtils::CreateErrorReport(CString sTmpFolder, CString& sErrorReportName,
         if(nInstallResult!=0)
             goto cleanup;
 
-        crAddScreenshot(CR_AS_MAIN_WINDOW);
         crAddProperty(L"CustomProp", L"Property Value");
         crAddRegKey(sKeyName2, L"regkey.xml", 0);
 
