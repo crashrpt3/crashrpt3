@@ -23,6 +23,7 @@ be found in the Authors.txt file in the root of the source tree.
 #include "Utility.h"
 #include "strconv.h"
 #include "unzip.h"
+#include "iowin32.h"
 
 CComAutoCriticalSection g_crp_cs; // Critical section for thread-safe accessing error messages
 std::map<DWORD, CString> g_crp_sErrorMsg; // Last error messages for each calling thread.
@@ -196,6 +197,7 @@ crpOpenErrorReportW(
     CString sCalculatedMD5Hash;
     CString sAppName;
     strconv_t strconv;
+    zlib_filefunc64_def zlibFileFuncW = { 0 };
 
     crpSetErrorMsg(_T("Unspecified error."));
     *pHandle = 0;
@@ -226,7 +228,8 @@ crpOpenErrorReportW(
     }
 
     // Open ZIP archive
-    report_data.m_hZip = unzOpen((const char*)pszFileName);
+    fill_win32_filefunc64W(&zlibFileFuncW);
+    report_data.m_hZip = unzOpen2_64(pszFileName, &zlibFileFuncW);
     if(report_data.m_hZip==NULL)
     {
         crpSetErrorMsg(_T("Error opening ZIP archive."));

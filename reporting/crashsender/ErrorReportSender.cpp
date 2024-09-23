@@ -25,6 +25,7 @@ be found in the Authors.txt file in the root of the source tree.
 #include "dbghelp.h"
 #include "VideoRec.h"
 #include "VideoRecDlg.h"
+#include "iowin32.h"
 
 CErrorReportSender* CErrorReportSender::m_pInstance = NULL;
 
@@ -1886,6 +1887,7 @@ BOOL CErrorReportSender::CompressReportFiles(CErrorReportInfo* eri)
     std::map<CString, ERIFileItem>::iterator it;
     FILE* f = NULL;
     CString sMD5Hash;
+    zlib_filefunc64_def zlibFileFuncW = { 0 };
 
     // Add a different log message depending on the current mode.
     if(m_bExport)
@@ -1911,7 +1913,8 @@ BOOL CErrorReportSender::CompressReportFiles(CErrorReportInfo* eri)
     m_Assync.SetProgress(sMsg, 1, false);
 
     // Create ZIP archive
-    hZip = zipOpen((const char*)m_sZipName.GetBuffer(0), APPEND_STATUS_CREATE);
+    fill_win32_filefunc64W(&zlibFileFuncW);
+    hZip = zipOpen2_64(m_sZipName.GetString(), APPEND_STATUS_CREATE, NULL, &zlibFileFuncW);
     if(hZip==NULL)
     {
         m_Assync.SetProgress(_T("Failed to create ZIP file."), 100, true);
