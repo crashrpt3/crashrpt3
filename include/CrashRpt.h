@@ -191,17 +191,21 @@ typedef CR_INSTALL_INFO* PCR_INSTALL_INFO;
 
 CRASHRPTAPI(int) crInstall(PCR_INSTALL_INFO pInfo);
 CRASHRPTAPI(int) crUninstall();
+
 CRASHRPTAPI(int) crInstallToCurrentThread2(DWORD dwFlags);
 CRASHRPTAPI(int) crUninstallFromCurrentThread();
+
 CRASHRPTAPI(int) crAddFile2(LPCWSTR pszFile, LPCWSTR pszDestFile, LPCWSTR pszDesc, DWORD dwFlags);
 CRASHRPTAPI(int) crAddScreenshot(DWORD dwFlags);
 CRASHRPTAPI(int) crAddScreenshot2(DWORD dwFlags, int nJpegQuality);
 CRASHRPTAPI(int) crAddProperty(LPCWSTR pszPropName, LPCWSTR pszPropValue);
 CRASHRPTAPI(int) crAddRegKey(LPCWSTR pszRegKey, LPCWSTR pszDstFileName, DWORD dwFlags);
-CRASHRPTAPI(int) crGenerateErrorReport(CR_EXCEPTION_INFO* pExceptionInfo);
-CRASHRPTAPI(int) crExceptionFilter(unsigned int code, struct _EXCEPTION_POINTERS* ep);
-CRASHRPTAPI(int) crEmulateCrash(unsigned ExceptionType) noexcept(false);
+
 CRASHRPTAPI(int) crGetLastErrorMsg(LPWSTR pszBuffer, UINT uBuffSize);
+
+CRASHRPTAPI(int) crGenerateErrorReport(PCR_EXCEPTION_INFO pExceptionInfo);
+
+CRASHRPTAPI(int) crEmulateCrash(unsigned ExceptionType) noexcept(false);
 
 #ifdef __cplusplus
 

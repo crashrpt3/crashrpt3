@@ -8,7 +8,6 @@ crAddFile2
 crAddScreenshot
 crAddProperty
 crGenerateErrorReport
-crExceptionFilter
 crEmulateCrash
 crGetLastErrorMsg
 crAddRegKey
