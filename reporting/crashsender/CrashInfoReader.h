@@ -98,15 +98,6 @@ public:
 	// Adds/replaces a property in crash report.
 	void AddProp(LPCTSTR szName, LPCTSTR szVal);
 
-	// Returns count of registry keys in error report.
-	int GetRegKeyCount();
-
-	// Method that retrieves a registry key by zero-based index.
-	BOOL GetRegKeyByIndex(int nItem, CString& sKeyName, ERIRegKey& rki);
-
-	// Adds/replaces a reg key in crash report.
-	void AddRegKey(LPCTSTR szKeyName, ERIRegKey& rki);
-
 	// Returns the name of the directory where error report files are located.
 	CString GetErrorReportDirName();
 
@@ -216,8 +207,6 @@ private:
 
     // Kaneva - Bug Fix - Now Using Full SrcPath Instead of DestFileName Only
 	std::map<CString, ERIFileItem>  m_FileItems; // The list of files that are included into this error report.
-
-	std::map<CString, ERIRegKey> m_RegKeys; // The list of registry keys included into this error report.
     std::map<CString, CString> m_Props;   // The list of custom properties included into this error report.
 };
 
@@ -241,14 +230,6 @@ public:
     CString     m_sDbgHelpPath;         // Path to dbghelp.dll.
     CString     m_sAppName;             // Application name.
     CString     m_sCustomSenderIcon;    // Custom icon resource for Error Report dialog.
-    CString     m_sEmailTo;             // E-mail recipient address.
-    CString     m_sEmailSubject;        // E-mail subject.
-    CString     m_sEmailText;           // E-mail text.
-    int         m_nSmtpPort;            // SMTP port.
-    CString     m_sSmtpProxyServer;     // SMTP proxy server.
-    int         m_nSmtpProxyPort;       // SMTP proxy port.
-	CString     m_sSmtpLogin;           // SMTP login.
-	CString     m_sSmtpPassword;        // SMTP password.
     CString     m_sUrl;                 // URL (used for HTTP connection).
     BOOL        m_bSilentMode;          // Should we show GUI?
     BOOL        m_bSendErrorReport;     // Should we send error report now?
@@ -363,9 +344,6 @@ private:
 
     // Gets the list of file items.
     int ParseFileList(TiXmlHandle& hRoot, CErrorReportInfo& eri);
-
-    // Gets the list of registry keys.
-    int ParseRegKeyList(TiXmlHandle& hRoot, CErrorReportInfo& eri);
 
     // Calculates size of an uncompressed error report.
     LONG64 GetUncompressedReportSize(CErrorReportInfo& eri);

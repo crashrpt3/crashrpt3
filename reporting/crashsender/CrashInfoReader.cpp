@@ -282,32 +282,6 @@ void CErrorReportInfo::AddProp(LPCTSTR szName, LPCTSTR szVal)
 	m_Props[szName] = szVal;
 }
 
-int CErrorReportInfo::GetRegKeyCount()
-{
-	return (int)m_RegKeys.size();
-}
-
-// Method that retrieves a property by zero-based index.
-BOOL CErrorReportInfo::GetRegKeyByIndex(int nItem, CString& sKeyName, ERIRegKey& rki)
-{
-	sKeyName.Empty();
-
-	if(nItem<0 || nItem>=(int)m_RegKeys.size())
-		return FALSE; // No such item
-
-	// Look for n-th item
-	std::map<CString, ERIRegKey>::iterator p = m_RegKeys.begin();
-	for (int i = 0; i < nItem; i++, p++);
-	sKeyName = p->first;
-	rki = p->second;
-	return TRUE;
-}
-
-void CErrorReportInfo::AddRegKey(LPCTSTR szKeyName, ERIRegKey& rki)
-{
-	m_RegKeys[szKeyName] = rki;
-}
-
 // This method calculates the total size of files included into error report
 LONG64 CErrorReportInfo::CalcUncompressedReportSize()
 {
@@ -362,8 +336,6 @@ CCrashInfoReader::CCrashInfoReader()
 {
 	// Init internal variables.
 	m_nCrashRptVersion = 0;
-	m_nSmtpPort = 25;
-	m_nSmtpProxyPort = 25;
 	m_bSilentMode = FALSE;
 	m_bSendErrorReport = TRUE;
 	m_bSendMandatory = FALSE;
@@ -373,8 +345,6 @@ CCrashInfoReader::CCrashInfoReader()
 	m_bSendRecentReports = FALSE;
 	m_bAppRestart = FALSE;
 	m_uPriorities[CR_HTTP] = 3;
-	m_uPriorities[CR_SMTP] = 2;
-	m_uPriorities[CR_SMAPI] = 1;
 	m_bGenerateMinidump = TRUE;
 	m_MinidumpType = MiniDumpNormal;
 	m_ptCursorPos = CPoint(0, 0);
@@ -530,20 +500,12 @@ int CCrashInfoReader::UnpackCrashDescription(CErrorReportInfo& eri)
 	m_nRestartTimeout = m_pCrashDesc->m_nRestartTimeout;
     m_nMaxReportsPerDay = m_pCrashDesc->m_nMaxReportsPerDay;
     UnpackString(m_pCrashDesc->m_dwUrlOffs, m_sUrl);
-    UnpackString(m_pCrashDesc->m_dwEmailToOffs, m_sEmailTo);
-    m_nSmtpPort = m_pCrashDesc->m_nSmtpPort;
-    UnpackString(m_pCrashDesc->m_dwSmtpProxyServerOffs, m_sSmtpProxyServer);
-    m_nSmtpProxyPort = m_pCrashDesc->m_nSmtpProxyPort;
-    UnpackString(m_pCrashDesc->m_dwEmailSubjectOffs, m_sEmailSubject);
-    UnpackString(m_pCrashDesc->m_dwEmailTextOffs, m_sEmailText);
     memcpy(m_uPriorities, m_pCrashDesc->m_uPriorities, sizeof(UINT)*3);
     UnpackString(m_pCrashDesc->m_dwPrivacyPolicyURLOffs, m_sPrivacyPolicyURL);
     UnpackString(m_pCrashDesc->m_dwLangFileNameOffs, m_sLangFileName);
     UnpackString(m_pCrashDesc->m_dwPathToDebugHelpDllOffs, m_sDbgHelpPath);
     UnpackString(m_pCrashDesc->m_dwUnsentCrashReportsFolderOffs, m_sUnsentCrashReportsFolder);
     UnpackString(m_pCrashDesc->m_dwCustomSenderIconOffs, m_sCustomSenderIcon);
-	UnpackString(m_pCrashDesc->m_dwSmtpLoginOffs, m_sSmtpLogin);
-	UnpackString(m_pCrashDesc->m_dwSmtpPasswordOffs, m_sSmtpPassword);
 	m_bClientAppCrashed = m_pCrashDesc->m_bClientAppCrashed;
 
     DWORD dwOffs = m_pCrashDesc->m_wSize;
@@ -582,21 +544,6 @@ int CCrashInfoReader::UnpackCrashDescription(CErrorReportInfo& eri)
             eri.m_Props[sName] = sValue;
 
             m_SharedMem.DestroyView((LPBYTE)pProp);
-        }
-        else if(memcmp(pHeader->m_uchMagic, "REG", 3)==0)
-        {
-            // Reg key entry
-            REG_KEY* pKey = (REG_KEY*)m_SharedMem.CreateView(dwOffs, pHeader->m_wSize);
-
-            CString sKeyName;
-            ERIRegKey rki;
-			rki.m_bAllowDelete = pKey->m_bAllowDelete!=0;
-            UnpackString(pKey->m_dwRegKeyNameOffs, sKeyName);
-			UnpackString(pKey->m_dwDstFileNameOffs, rki.m_sDstFileName);
-
-            eri.m_RegKeys[sKeyName] = rki;
-
-            m_SharedMem.DestroyView((LPBYTE)pKey);
         }
         else if(memcmp(pHeader->m_uchMagic, "STR", 3)==0)
         {
@@ -829,37 +776,6 @@ int CCrashInfoReader::ParseFileList(TiXmlHandle& hRoot, CErrorReportInfo& eri)
         }
 
         fi = fi.ToElement()->NextSibling("FileItem");
-    }
-
-    return 0;
-}
-
-int CCrashInfoReader::ParseRegKeyList(TiXmlHandle& hRoot, CErrorReportInfo& eri)
-{
-    strconv_t strconv;
-
-    TiXmlHandle fl = hRoot.FirstChild("RegKeyList");
-    if(fl.ToElement()==0)
-    {
-        return 1;
-    }
-
-    TiXmlHandle fi = fl.FirstChild("RegKey");
-    while(fi.ToElement()!=0)
-    {
-        const char* pszDestFile = fi.ToElement()->Attribute("destfile");
-        const char* pszRegKey = fi.ToElement()->Attribute("name");
-
-        if(pszDestFile!=NULL && pszRegKey!=NULL)
-        {
-			ERIRegKey rki;
-			rki.m_sDstFileName = strconv.utf82t(pszDestFile);
-            CString sRegKey = strconv.utf82t(pszRegKey);
-
-            eri.m_RegKeys[sRegKey] = rki;
-        }
-
-        fi = fi.ToElement()->NextSibling("RegKey");
     }
 
     return 0;

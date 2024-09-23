@@ -85,8 +85,6 @@ typedef int (CALLBACK *PFNCRASHCALLBACK) (CR_CRASH_CALLBACK_INFO* pInfo);
 
 // Array indices for CR_INSTALL_INFO::uPriorities.
 #define CR_HTTP 0  //!< Send error report via HTTP (or HTTPS) connection.
-#define CR_SMTP 1  //!< Send error report via SMTP connection.
-#define CR_SMAPI 2 //!< Send error report via simple MAPI (using default mail client).
 
 //! Special priority constant that allows to skip certain delivery method.
 #define CR_NEGATIVE_PRIORITY ((UINT)-1)
@@ -127,8 +125,6 @@ typedef struct tagCR_INSTALL_INFO
     WORD cb;                        //!< Size of this structure in bytes; must be initialized before using!
     LPCWSTR pszAppName;             //!< Name of application.
     LPCWSTR pszAppVersion;          //!< Application version.
-    LPCWSTR pszEmailTo;             //!< E-mail address of crash reports recipient.
-    LPCWSTR pszEmailSubject;        //!< Subject of crash report e-mail.
     LPCWSTR pszUrl;                 //!< URL of server-side script (used in HTTP connection).
     LPCWSTR pszCrashSenderPath;     //!< Directory name where CrashSender.exe is located.
     UINT uPriorities[5];            //!< Array of error sending transport priorities.
@@ -139,18 +135,14 @@ typedef struct tagCR_INSTALL_INFO
     LPCWSTR pszErrorReportSaveDir;  //!< Directory where to save error reports.
     LPCWSTR pszRestartCmdLine;      //!< Command line for application restart (without executable name).
     LPCWSTR pszLangFilePath;        //!< Path to the language file (including file name).
-    LPCWSTR pszEmailText;           //!< Custom E-mail text (used when deliverying report as E-mail).
-    LPCWSTR pszSmtpProxy;           //!< Network address and port to be used as SMTP proxy.
     LPCWSTR pszCustomSenderIcon;    //!< Custom icon used for Error Report dialog.
-	LPCWSTR pszSmtpLogin;           //!< Login name used for SMTP authentication when sending error report as E-mail.
-	LPCWSTR pszSmtpPassword;        //!< Password used for SMTP authentication when sending error report as E-mail.
-	int nRestartTimeout;            //!< Timeout for application restart.
-	int nMaxReportsPerDay;          //!< Maximum number of crash reports that will be sent per calendar day.
+    int nRestartTimeout;            //!< Timeout for application restart.
+    int nMaxReportsPerDay;          //!< Maximum number of crash reports that will be sent per calendar day.
 } CR_INSTALL_INFO;
 
 typedef CR_INSTALL_INFO* PCR_INSTALL_INFO;
 
-// Flags for crAddFile2() function.
+// Flags for crAddFile() function.
 #define CR_AF_TAKE_ORIGINAL_FILE  0 //!< Take the original file (do not copy it to the error report folder).
 #define CR_AF_MAKE_FILE_COPY      1 //!< Copy the file to the error report folder.
 #define CR_AF_FILE_MUST_EXIST     0 //!< Function will fail if file doesn't exist at the moment of function call.
@@ -187,27 +179,29 @@ CRASHRPTAPI(int) crInstallToCurrentThread2(DWORD dwFlags);
 CRASHRPTAPI(int) crUninstallFromCurrentThread();
 
 CRASHRPTAPI(int) crSetCrashCallback(PFNCRASHCALLBACK pfnCallbackFunc, LPVOID lpParam);
-CRASHRPTAPI(int) crSetEmailSubject(LPCWSTR pszSubject);
 
-CRASHRPTAPI(int) crAddFile2(LPCWSTR pszFile, LPCWSTR pszDestFile, LPCWSTR pszDesc, DWORD dwFlags);
+CRASHRPTAPI(int) crAddFile(LPCWSTR pszFile, LPCWSTR pszDestFile, LPCWSTR pszDesc, DWORD dwFlags);
 CRASHRPTAPI(int) crAddProperty(LPCWSTR pszPropName, LPCWSTR pszPropValue);
 
 CRASHRPTAPI(int) crGetLastErrorMsg(LPWSTR pszBuffer, UINT uBuffSize);
 
 CRASHRPTAPI(int) crGenerateErrorReport(PCR_EXCEPTION_INFO pExceptionInfo);
-
 CRASHRPTAPI(int) crEmulateCrash(unsigned ExceptionType) noexcept(false);
 
 #ifdef __cplusplus
 
-class CrAutoInstallHelper {
+class CrAutoInstallHelper
+{
 public:
-    CrAutoInstallHelper(__in PCR_INSTALL_INFO pInfo) {
+    CrAutoInstallHelper(__in PCR_INSTALL_INFO pInfo)
+    {
         m_ret = crInstall(pInfo);
     }
 
-    ~CrAutoInstallHelper() {
-        if (m_ret == 0) {
+    ~CrAutoInstallHelper()
+    {
+        if (m_ret == 0)
+        {
             crUninstall();
         }
     }
@@ -216,14 +210,18 @@ private:
     int m_ret;
 };
 
-class CrThreadAutoInstallHelper {
+class CrThreadAutoInstallHelper
+{
 public:
-    CrThreadAutoInstallHelper(DWORD dwFlags = 0) {
+    CrThreadAutoInstallHelper(DWORD dwFlags = 0)
+    {
         m_ret = crInstallToCurrentThread2(dwFlags);
     }
 
-    ~CrThreadAutoInstallHelper() {
-        if (m_ret == 0) {
+    ~CrThreadAutoInstallHelper()
+    {
+        if (m_ret == 0)
+        {
             crUninstallFromCurrentThread();
         }
     }

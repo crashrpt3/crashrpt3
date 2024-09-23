@@ -65,8 +65,6 @@ void DeliveryTests::Test_HttpDelivery()
         info.dwFlags = CR_INST_NO_GUI;
         info.pszUrl = _T("localhost/crashrpt.php"); // Use HTTP address for delivery
         info.uPriorities[CR_HTTP] = 0;
-        info.uPriorities[CR_SMTP] = CR_NEGATIVE_PRIORITY;
-        info.uPriorities[CR_SMAPI] = CR_NEGATIVE_PRIORITY;
         info.pszErrorReportSaveDir = sTmpFolder;
         int nInstResult = crInstall(&info);
         TEST_ASSERT(nInstResult==0);
@@ -115,12 +113,7 @@ void DeliveryTests::Test_SmtpDelivery()
         info.cb = sizeof(CR_INSTALL_INFO);
         info.pszAppVersion = _T("1.0.0"); // Specify app version, otherwise it will fail.
         info.dwFlags = CR_INST_NO_GUI;
-        info.pszEmailTo = _T("test@localhost");
-        info.pszEmailSubject = _T("Crash Report Whooaaa!!!");
-        info.pszEmailText = _T("And some text in the email body...");
         info.uPriorities[CR_HTTP] = CR_NEGATIVE_PRIORITY;
-        info.uPriorities[CR_SMTP] = 0;
-        info.uPriorities[CR_SMAPI] = CR_NEGATIVE_PRIORITY;
         info.pszErrorReportSaveDir = sTmpFolder;
         int nInstResult = crInstall(&info);
         TEST_ASSERT(nInstResult==0);
@@ -169,13 +162,7 @@ void DeliveryTests::Test_SmtpDelivery_proxy()
         info.cb = sizeof(CR_INSTALL_INFO);
         info.pszAppVersion = _T("1.0.0"); // Specify app version, otherwise it will fail.
         info.dwFlags = CR_INST_NO_GUI;
-        info.pszEmailTo = _T("test@localhost");
-        info.pszSmtpProxy = _T("127.0.0.1:25");
-        info.pszEmailSubject = _T("Crash Report Whooaaa!!!");
-        info.pszEmailText = _T("And some text in the email body...");
         info.uPriorities[CR_HTTP] = CR_NEGATIVE_PRIORITY;
-        info.uPriorities[CR_SMTP] = 0;
-        info.uPriorities[CR_SMAPI] = CR_NEGATIVE_PRIORITY;
         info.pszErrorReportSaveDir = sTmpFolder;
         int nInstResult = crInstall(&info);
         TEST_ASSERT(nInstResult==0);
@@ -227,12 +214,7 @@ void DeliveryTests::Test_SMAPI_Delivery()
         info.cb = sizeof(CR_INSTALL_INFO);
         info.pszAppVersion = _T("1.0.0"); // Specify app version, otherwise it will fail.
         info.dwFlags = CR_INST_NO_GUI;
-        info.pszEmailTo = _T("test@gmail.com");
-        info.pszEmailSubject = _T("Crash Report Whooaaa!!!");
-        info.pszEmailText = _T("And some text in the email body...");
         info.uPriorities[CR_HTTP] = CR_NEGATIVE_PRIORITY;
-        info.uPriorities[CR_SMTP] = CR_NEGATIVE_PRIORITY;
-        info.uPriorities[CR_SMAPI] = 0;
         info.pszErrorReportSaveDir = sTmpFolder;
         int nInstResult = crInstall(&info);
         TEST_ASSERT(nInstResult==0);

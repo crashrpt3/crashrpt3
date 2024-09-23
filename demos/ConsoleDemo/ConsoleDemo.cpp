@@ -32,8 +32,6 @@ int main(int argc, char* argv[])
     info.cb = sizeof(CR_INSTALL_INFO);             // Size of the structure
     info.pszAppName = _T("CrashRpt Console Test"); // App name
     info.pszAppVersion = _T("1.0.0");              // App version
-    info.pszEmailSubject = _T("CrashRpt Console Test 1.0.0 Error Report"); // Email subject
-    info.pszEmailTo = _T("test@hotmail.com");      // Email recipient address
 
     // Install crash handlers
     int nInstResult = crInstall(&info);            

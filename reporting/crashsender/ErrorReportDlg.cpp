@@ -459,27 +459,6 @@ LRESULT CErrorReportDlg::OnRestartClick(WORD /*wNotifyCode*/, WORD /*wID*/, HWND
     return 0;
 }
 
-LRESULT CErrorReportDlg::OnEmailKillFocus(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
-{
-    // This method is called when user removes focus from "Your E-mail" field.
-
-    TCHAR szBuffer[1024] = _T("");
-    CString sEmail;
-    CString sDesc;
-    // Get E-mail field's text
-    m_editEmail.GetWindowText(szBuffer, 1024);
-    sEmail = szBuffer;
-    // Get description field's text
-    m_editDesc.GetWindowText(szBuffer, 1024);
-    sDesc = szBuffer;
-
-    // Update those fields in crash report data
-    CErrorReportSender* pSender = CErrorReportSender::GetInstance();
-    pSender->GetCrashInfo()->UpdateUserInfo(sEmail, sDesc);
-
-    return 0;
-}
-
 LRESULT CErrorReportDlg::OnSendClick(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
     // This method is called when user clicks the "Send Report" button

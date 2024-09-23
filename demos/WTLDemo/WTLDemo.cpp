@@ -98,16 +98,12 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
     info.cb = sizeof(CR_INSTALL_INFO);  
     info.pszAppName = _T("WTLDemo"); // Define application name.
     //info.pszAppVersion = _T("1.3.1");     // Define application version.
-    info.pszEmailSubject = _T("WTLDemo Error Report"); // Define subject for email.
-    info.pszEmailTo = _T("test@hotmail.com");   // Define E-mail recipient address.  
 	//info.pszSmtpProxy = _T("127.0.0.1");  // Use SMTP proxy.
 	//info.pszSmtpLogin = _T("test");      // SMTP Login
 	//info.pszSmtpPassword = _T("test");       // SMTP Password
     info.pszUrl = _T("http://localhost:80/crashrpt.php"); // URL for sending reports over HTTP.				
     // Define delivery methods priorities. 
     info.uPriorities[CR_HTTP] = 3;         // Use HTTP the first.
-    info.uPriorities[CR_SMTP] = 2;         // Use SMTP the second.
-    info.uPriorities[CR_SMAPI] = 1;        // Use Simple MAPI the last.  
     info.dwFlags = 0;                    
     info.dwFlags |= CR_INST_ALL_POSSIBLE_HANDLERS; // Install all available exception handlers.    
     //info.dwFlags |= CR_INST_APP_RESTART;            // Restart the application on crash.  
@@ -135,10 +131,10 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
     CString sLogFile = GetAppDir() + _T("\\*.log");
     CString sIniFile = _T("\\\\?\\") + GetAppDir() + _T("\\dummy.ini");
 
-    int nResult = crAddFile2(sLogFile, NULL, _T("Dummy Log File"), CR_AF_MAKE_FILE_COPY|CR_AF_ALLOW_DELETE);
+    int nResult = crAddFile(sLogFile, NULL, _T("Dummy Log File"), CR_AF_MAKE_FILE_COPY|CR_AF_ALLOW_DELETE);
     ATLASSERT(nResult==0);
     
-    nResult = crAddFile2(sIniFile, NULL, _T("Dummy INI File"), 0);
+    nResult = crAddFile(sIniFile, NULL, _T("Dummy INI File"), 0);
     ATLASSERT(nResult==0);
 
 	nResult = crAddProperty(_T("AnExampleProperty"),_T("Property value"));

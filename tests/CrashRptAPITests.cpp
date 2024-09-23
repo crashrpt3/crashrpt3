@@ -27,7 +27,7 @@ class CrashRptAPITests : public CTestSuite
         REGISTER_TEST(Test_crInstallW_short_path_name)
         REGISTER_TEST(Test_crInstallToCurrentThread2)
         REGISTER_TEST(Test_crInstallToCurrentThread2_concurrent)
-        REGISTER_TEST(Test_crAddFile2W)
+        REGISTER_TEST(Test_crAddFile)
         REGISTER_TEST(Test_crAddPropertyW)
         REGISTER_TEST(Test_crSetCrashCallbackW)
         REGISTER_TEST(Test_crSetCrashCallbackW_stage)
@@ -59,7 +59,7 @@ class CrashRptAPITests : public CTestSuite
     void Test_crInstallW_short_path_name();
     void Test_crInstallToCurrentThread2();
     void Test_crInstallToCurrentThread2_concurrent();
-    void Test_crAddFile2W();
+    void Test_crAddFile();
     void Test_crAddPropertyW();
     void Test_crSetCrashCallbackW();
     void Test_crSetCrashCallbackW_stage();
@@ -291,14 +291,14 @@ void CrashRptAPITests::Test_crUninstall()
     __TEST_CLEANUP__;
 }
 
-void CrashRptAPITests::Test_crAddFile2W()
+void CrashRptAPITests::Test_crAddFile()
 {
     strconv_t strconv;
     CString sFileName;
 
     {
         // Should fail, because crInstall() should be called first
-        int nResult = crAddFile2(L"a.txt", NULL,  L"invalid file", 0);
+        int nResult = crAddFile(L"a.txt", NULL,  L"invalid file", 0);
         TEST_ASSERT(nResult!=0);
 
         // Install crash handler
@@ -311,24 +311,24 @@ void CrashRptAPITests::Test_crAddFile2W()
         TEST_ASSERT(nInstallResult==0);
 
         // Add not existing file, crAddFile2W should fail
-        int nResult2 = crAddFile2(L"a.txt", NULL, L"invalid file", 0);
+        int nResult2 = crAddFile(L"a.txt", NULL, L"invalid file", 0);
         TEST_ASSERT(nResult2!=0);
 
         // Add existing file, crAddFile2W should succeed
 
         sFileName = Utility::GetModulePath(NULL)+_T("\\dummy.ini");
         LPCWSTR szFileName = strconv.t2w(sFileName);
-        int nResult3 = crAddFile2(szFileName, NULL, L"Dummy INI File", 0);
+        int nResult3 = crAddFile(szFileName, NULL, L"Dummy INI File", 0);
         TEST_ASSERT(nResult3==0);
 
         // Add existing file with the same dest name - should fail
-        int nResult4 = crAddFile2(szFileName, NULL, L"Dummy INI File", 0);
+        int nResult4 = crAddFile(szFileName, NULL, L"Dummy INI File", 0);
         TEST_ASSERT(nResult4!=0);
 
         // Add existing file with "" dest name - should fail
         sFileName = Utility::GetModulePath(NULL)+_T("\\dummy.log");
         szFileName = strconv.t2w(sFileName);
-        int nResult5 = crAddFile2(szFileName, L"", L"Dummy INI File", 0);
+        int nResult5 = crAddFile(szFileName, L"", L"Dummy INI File", 0);
         TEST_ASSERT(nResult5!=0);
     }
 
@@ -702,9 +702,9 @@ void CrashRptAPITests::Test_undecorated_func_names()
         TEST_ASSERT(pfncrUninstallFromCurrentThread!=NULL);
 
         typedef int (WINAPI *PFNCRADDFILE2W)(LPCWSTR, LPCWSTR);
-        PFNCRADDFILE2W pfncrAddFile2W =
-            (PFNCRADDFILE2W)GetProcAddress(hCrashRpt, "crAddFile2");
-        TEST_ASSERT(pfncrAddFile2W!=NULL);
+        PFNCRADDFILE2W pfncrAddFile =
+            (PFNCRADDFILE2W)GetProcAddress(hCrashRpt, "crAddFile");
+        TEST_ASSERT(pfncrAddFile!=NULL);
     }
 
     __TEST_CLEANUP__

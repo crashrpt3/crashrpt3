@@ -17,8 +17,6 @@ be found in the Authors.txt file in the root of the source tree.
 #ifndef _CRITSEC_H
 #define _CRITSEC_H
 
-#include "Prefastdef.h"
-
 // wrapper for whatever critical section we have
 class CCritSec
 {

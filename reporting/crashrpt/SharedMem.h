@@ -44,16 +44,6 @@ struct FILE_ITEM
 	BOOL  m_bAllowDelete;      // Should allow user to delete the file from crash report?
 };
 
-// Registry key entry.
-struct REG_KEY
-{
-    BYTE m_uchMagic[3];        // Magic sequence "REG"
-    WORD m_wSize;              // Total bytes occupied by this block.
-	BOOL m_bAllowDelete;       // Should allow user to delete the file from crash report?
-    DWORD m_dwRegKeyNameOffs;  // Registry key name.
-    DWORD m_dwDstFileNameOffs; // Destination file name.
-};
-
 // User-defined property.
 struct CUSTOM_PROP
 {
@@ -71,11 +61,8 @@ struct CRASH_DESCRIPTION
     DWORD m_dwTotalSize; // Total size of the whole used shared mem.
     DWORD m_dwCrashRptVer;         // Version of CrashRpt.
     UINT m_uFileItems;             // Count of file item records.
-    UINT m_uRegKeyEntries;         // Count of registry key entries.
     UINT m_uCustomProps;           // Count of user-defined properties.
     DWORD m_dwInstallFlags;        // Flags passed to crInstall() function.
-    int m_nSmtpPort;               // Smtp port.
-    int m_nSmtpProxyPort;          // Smtp proxy port.
     UINT m_uPriorities[3];         // Delivery priorities.
     MINIDUMP_TYPE m_MinidumpType;  // Minidump type.
     DWORD m_dwUrlOffs;             // Offset of recipient URL.
@@ -85,13 +72,9 @@ struct CRASH_DESCRIPTION
     DWORD m_dwRestartCmdLineOffs;  // Offset of app restart command line.
 	int m_nRestartTimeout;         // Restart timeout
     int m_nMaxReportsPerDay;       // Maximum number of crash reports that will be sent per calendar day.
-    DWORD m_dwEmailToOffs;         // Offset to E-mail recipient.
     DWORD m_dwCrashGUIDOffs;       // Offset to crash GUID.
     DWORD m_dwUnsentCrashReportsFolderOffs;  // Offset of folder name where error reports are stored.
     DWORD m_dwPrivacyPolicyURLOffs; // Offset of privacy policy URL.
-    DWORD m_dwEmailSubjectOffs;    // Offset of E-mail subject.
-    DWORD m_dwEmailTextOffs;       // Offset of E-mail text.
-    DWORD m_dwSmtpProxyServerOffs; // Offset of SMTP proxy server name.
     DWORD m_dwPathToDebugHelpDllOffs; // Offset of dbghelp path.
     DWORD m_dwCustomSenderIconOffs; // Offset of custom Error Report dialog icon resource name.
     DWORD m_dwImageNameOffs;       // Offset to image name.
@@ -107,8 +90,6 @@ struct CRASH_DESCRIPTION
     PEXCEPTION_POINTERS m_pExceptionPtrs; // Exception pointers.
     BOOL m_bSendRecentReports;     // If TRUE, CrashSender.exe needs to send queued error reports.
 								   // If FALSE, CrashSender.exe needs to send single report.
-	DWORD m_dwSmtpLoginOffs;       // Offset of SMTP login name.
-	DWORD m_dwSmtpPasswordOffs;    // Offset of SMTP login name.
 	BOOL m_bClientAppCrashed;      // If TRUE, the client app has crashed; otherwise the client has exited without crash.
 };
 

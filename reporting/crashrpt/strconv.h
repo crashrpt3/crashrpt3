@@ -16,7 +16,6 @@ be found in the Authors.txt file in the root of the source tree.
 #ifndef _STRCONV_H
 #define _STRCONV_H
 
-#include "Prefastdef.h"
 #include <vector>
 
 class strconv_t

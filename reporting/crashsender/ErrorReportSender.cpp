@@ -11,7 +11,6 @@ be found in the Authors.txt file in the root of the source tree.
 #include "stdafx.h"
 #include "ErrorReportSender.h"
 #include "MailMsg.h"
-#include "smtpclient.h"
 #include "HttpRequestSender.h"
 #include "CrashRpt.h"
 #include "md5.h"
@@ -34,7 +33,6 @@ CErrorReportSender::CErrorReportSender() :
     m_SendAttempt(0),
     m_Action(COLLECT_CRASH_INFO),
     m_bExport(FALSE),
-    m_MailClientConfirm(NOT_CONFIRMED_YET),
     m_bSendingNow(FALSE),
     m_bErrors(FALSE)
 {
@@ -1030,43 +1028,6 @@ BOOL CErrorReportSender::CollectCrashFiles()
             str.Format(_T("File %d - '%s'"), i + 1, (LPCTSTR)pfi->m_sSrcFile);
             m_Assync.SetProgress(str, 0, false);
         }
-
-        // Create dump of registry keys
-        if(pReport->GetRegKeyCount()!=0)
-        {
-            m_Assync.SetProgress(_T("Dumping registry keys..."), 0, false);
-        }
-
-        // Walk through our registry key list
-        for(i=0; i<pReport->GetRegKeyCount(); i++)
-        {
-            CString sKeyName;
-            ERIRegKey rki;
-            pReport->GetRegKeyByIndex(i, sKeyName, rki);
-
-            if(m_Assync.IsCancelled())
-                goto cleanup;
-
-            CString sFilePath = pReport->GetErrorReportDirName() + _T("\\") + rki.m_sDstFileName;
-
-            str.Format(_T("Dumping registry key '%s' to file '%s' "), (LPCTSTR) sKeyName, (LPCTSTR) sFilePath);
-            m_Assync.SetProgress(str, 0, false);
-
-            // Create registry key dump
-            CString sErrorMsg;
-            DumpRegKey(sKeyName, sFilePath, sErrorMsg);
-            ERIFileItem fi;
-            fi.m_sSrcFile = sFilePath;
-            fi.m_sDestFile = rki.m_sDstFileName;
-            fi.m_sDesc = Utility::GetINIString(m_CrashInfo.m_sLangFileName, _T("DetailDlg"), _T("DescRegKey"));
-            fi.m_bMakeCopy = FALSE;
-            fi.m_bAllowDelete = rki.m_bAllowDelete;
-            fi.m_sErrorStatus = sErrorMsg;
-            std::vector<ERIFileItem> file_list;
-            file_list.push_back(fi);
-            // Add file to the list of file items
-            pReport->AddFileItem(&fi);
-        }
     }
 
     // Success
@@ -1253,285 +1214,6 @@ BOOL CErrorReportSender::CollectFilesBySearchTemplate(ERIFileItem* pfi, std::vec
 
     // Done
     return TRUE;
-}
-
-// This method dumps a registry key contents to an XML file
-int CErrorReportSender::DumpRegKey(CString sRegKey, CString sDestFile, CString& sErrorMsg)
-{
-    strconv_t strconv;
-    TiXmlDocument document;
-
-    // Load document if file already exists
-    // otherwise create new document.
-
-    FILE* f = NULL;
-#if _MSC_VER<1400
-    f = _tfopen(sDestFile, _T("rb"));
-#else
-    _tfopen_s(&f, sDestFile, _T("rb"));
-#endif
-    if(f!=NULL)
-    {
-        document.LoadFile(f);
-        fclose(f);
-        f = NULL;
-    }
-
-    TiXmlHandle hdoc(&document);
-
-    TiXmlElement* registry = document.RootElement();
-
-    if(registry==NULL)
-    {
-        registry = new TiXmlElement("registry");
-        document.LinkEndChild(registry);
-    }
-
-    TiXmlNode* declaration = hdoc.Child(0).ToNode();
-    if(declaration==NULL || declaration->Type()!=TiXmlNode::TINYXML_DECLARATION)
-    {
-        TiXmlDeclaration * decl = new TiXmlDeclaration( "1.0", "UTF-8", "" );
-        document.InsertBeforeChild(registry, *decl);
-    }
-
-    DumpRegKey(NULL, sRegKey, registry);
-
-#if _MSC_VER<1400
-    f = _tfopen(sDestFile, _T("wb"));
-#else
-    _tfopen_s(&f, sDestFile, _T("wb"));
-#endif
-    if(f==NULL)
-    {
-        sErrorMsg = _T("Error opening file for writing.");
-        return 1;
-    }
-
-    bool bSave = document.SaveFile(f);
-
-    fclose(f);
-
-    if(!bSave)
-    {
-        sErrorMsg = _T("Error saving XML document to file: ");
-        sErrorMsg += document.ErrorDesc();
-    }
-
-    return (bSave==true)?0:1;
-}
-
-int CErrorReportSender::DumpRegKey(HKEY hParentKey, CString sSubKey, TiXmlElement* elem)
-{
-    strconv_t strconv;
-    HKEY hKey = NULL;
-
-    if(hParentKey==NULL)
-    {
-        int nSkip = 0;
-        if(sSubKey.Left(19).Compare(_T("HKEY_LOCAL_MACHINE\\"))==0)
-        {
-            hKey = HKEY_LOCAL_MACHINE;
-            nSkip = 18;
-        }
-        else if(sSubKey.Left(18).Compare(_T("HKEY_CURRENT_USER\\"))==0)
-        {
-            hKey = HKEY_CURRENT_USER;
-            nSkip = 17;
-        }
-        else
-        {
-            return 1; // Invalid key.
-        }
-
-        CString sKey = sSubKey.Mid(0, nSkip);
-        LPCSTR szKey = strconv.t2utf8(sKey);
-        sSubKey = sSubKey.Mid(nSkip+1);
-
-        TiXmlHandle key_node = elem->FirstChild(szKey);
-        if(key_node.ToElement()==NULL)
-        {
-            key_node = new TiXmlElement("k");
-            elem->LinkEndChild(key_node.ToNode());
-            key_node.ToElement()->SetAttribute("name", szKey);
-        }
-
-        DumpRegKey(hKey, sSubKey, key_node.ToElement());
-    }
-    else
-    {
-        int pos = sSubKey.Find('\\');
-        CString sKey = sSubKey;
-        if(pos>0)
-            sKey = sSubKey.Mid(0, pos);
-        LPCSTR szKey = strconv.t2utf8(sKey);
-
-        TiXmlHandle key_node = elem->FirstChild(szKey);
-        if(key_node.ToElement()==NULL)
-        {
-            key_node = new TiXmlElement("k");
-            elem->LinkEndChild(key_node.ToNode());
-            key_node.ToElement()->SetAttribute("name", szKey);
-        }
-
-        if(ERROR_SUCCESS==RegOpenKeyEx(hParentKey, sKey, 0, GENERIC_READ, &hKey))
-        {
-            if(pos>0)
-            {
-                sSubKey = sSubKey.Mid(pos+1);
-                DumpRegKey(hKey, sSubKey, key_node.ToElement());
-            }
-            else
-            {
-                DWORD dwSubKeys = 0;
-                DWORD dwMaxSubKey = 0;
-                DWORD dwValues = 0;
-                DWORD dwMaxValueNameLen = 0;
-                DWORD dwMaxValueLen = 0;
-                LONG lResult = RegQueryInfoKey(hKey, NULL, 0, 0, &dwSubKeys, &dwMaxSubKey,
-                    0, &dwValues, &dwMaxValueNameLen, &dwMaxValueLen, NULL, NULL);
-                if(lResult==ERROR_SUCCESS)
-                {
-                    // Enumerate and dump subkeys
-                    int i;
-                    for(i=0; i<(int)dwSubKeys; i++)
-                    {
-                        LPWSTR szName = new WCHAR[dwMaxSubKey + 1];
-                        DWORD dwLen = dwMaxSubKey + 1;
-                        lResult = RegEnumKeyEx(hKey, i, szName, &dwLen, 0, NULL, 0, NULL);
-                        if(lResult==ERROR_SUCCESS)
-                        {
-                            DumpRegKey(hKey, CString(szName), key_node.ToElement());
-                        }
-
-                        delete [] szName;
-                    }
-
-                    // Dump key values
-                    for(i=0; i<(int)dwValues; i++)
-                    {
-                        LPWSTR szName = new WCHAR[dwMaxValueNameLen + 1];
-                        LPBYTE pData = new BYTE[dwMaxValueLen];
-                        DWORD dwNameLen = dwMaxValueNameLen + 1;
-                        DWORD dwValueLen = dwMaxValueLen;
-                        DWORD dwType = 0;
-
-                        lResult = RegEnumValue(hKey, i, szName, &dwNameLen, 0, &dwType, pData, &dwValueLen);
-                        if(lResult==ERROR_SUCCESS)
-                        {
-                            TiXmlHandle val_node = key_node.ToElement()->FirstChild(strconv.w2utf8(szName));
-                            if(val_node.ToElement()==NULL)
-                            {
-                                val_node = new TiXmlElement("v");
-                                key_node.ToElement()->LinkEndChild(val_node.ToNode());
-                            }
-
-                            val_node.ToElement()->SetAttribute("name", strconv.w2utf8(szName));
-
-                            char str[128] = "";
-                            LPCSTR szType = NULL;
-                            if(dwType==REG_BINARY)
-                                szType = "REG_BINARY";
-                            else if(dwType==REG_DWORD)
-                                szType = "REG_DWORD";
-                            else if(dwType==REG_EXPAND_SZ)
-                                szType = "REG_EXPAND_SZ";
-                            else if(dwType==REG_MULTI_SZ)
-                                szType = "REG_MULTI_SZ";
-                            else if(dwType==REG_QWORD)
-                                szType = "REG_QWORD";
-                            else if(dwType==REG_SZ)
-                                szType = "REG_SZ";
-                            else
-                            {
-#if _MSC_VER<1400
-                                sprintf(str, "Unknown type (0x%08x)", dwType);
-#else
-                                sprintf_s(str, 128, "Unknown type (0x%08x)", dwType);
-#endif
-                                szType = str;
-                            }
-
-                            val_node.ToElement()->SetAttribute("type", szType);
-
-                            if(dwType==REG_BINARY)
-                            {
-                                std::string str2;
-                                int j;
-                                for(j=0; j<(int)dwValueLen; j++)
-                                {
-                                    char num[10];
-#if _MSC_VER<1400
-                                    sprintf(num, "%02X", pData[j]);
-#else
-                                    sprintf_s(num, 10, "%02X", pData[j]);
-#endif
-                                    str2 += num;
-                                    if(j<(int)dwValueLen)
-                                        str2 += " ";
-                                }
-
-                                val_node.ToElement()->SetAttribute("value", str2.c_str());
-                            }
-                            else if(dwType==REG_DWORD)
-                            {
-                                LPDWORD pdwValue = (LPDWORD)pData;
-                                char str3[64]="";
-#if _MSC_VER<1400
-                                sprintf(str3, "0x%08x (%lu)", *pdwValue, *pdwValue);
-#else
-                                sprintf_s(str3, 64, "0x%08x (%lu)", *pdwValue, *pdwValue);
-#endif
-                                val_node.ToElement()->SetAttribute("value", str3);
-                            }
-                            else if(dwType==REG_SZ || dwType==REG_EXPAND_SZ)
-                            {
-                                LPCSTR szValue = strconv.t2utf8((LPCTSTR)pData);
-                                val_node.ToElement()->SetAttribute("value", szValue);
-                            }
-                            else if(dwType==REG_MULTI_SZ)
-                            {
-                                LPCTSTR szValues = (LPCTSTR)pData;
-                                int prev = 0;
-                                int pos2 = 0;
-                                for(;;)
-                                {
-                                    if(szValues[pos2]==0)
-                                    {
-                                        CString sValue = CString(szValues+prev, pos2-prev);
-                                        LPCSTR szValue = strconv.t2utf8(sValue);
-
-                                        TiXmlHandle str_node = new TiXmlElement("str");
-                                        val_node.ToElement()->LinkEndChild(str_node.ToNode());
-                                        str_node.ToElement()->SetAttribute("value", szValue);
-
-                                        prev = pos2+1;
-                                    }
-
-                                    if(szValues[pos2]==0 && szValues[pos2+1]==0)
-                                        break; // Double-null
-
-                                    pos2++;
-                                }
-                            }
-                        }
-
-                        delete [] szName;
-                        delete [] pData;
-                    }
-                }
-            }
-
-            RegCloseKey(hKey);
-        }
-        else
-        {
-            CString sErrMsg = Utility::FormatErrorMsg(GetLastError());
-            LPCSTR szErrMsg = strconv.t2utf8(sErrMsg);
-            key_node.ToElement()->SetAttribute("error", szErrMsg);
-        }
-    }
-
-    return 0;
 }
 
 // This method calculates an MD5 hash for the file
@@ -1907,12 +1589,6 @@ BOOL CErrorReportSender::SendReport()
     // Arrange priorities in reverse order
     std::multimap<int, int> order;
 
-    std::pair<int, int> pair3(m_CrashInfo.m_uPriorities[CR_SMAPI], CR_SMAPI);
-    order.insert(pair3);
-
-    std::pair<int, int> pair2(m_CrashInfo.m_uPriorities[CR_SMTP], CR_SMTP);
-    order.insert(pair2);
-
     std::pair<int, int> pair1(m_CrashInfo.m_uPriorities[CR_HTTP], CR_HTTP);
     order.insert(pair1);
 
@@ -1934,38 +1610,15 @@ BOOL CErrorReportSender::SendReport()
         // Send the report
         if(id==CR_HTTP)
             bResult = SendOverHTTP();
-        else if(id==CR_SMTP)
-            bResult = SendOverSMTP();
-        else if(id==CR_SMAPI)
-            bResult = SendOverSMAPI();
 
         // Check if this attempt has failed
         if(bResult==FALSE)
             continue;
 
-        // If currently sending through Simple MAPI, do not wait for completion
-        if(id==CR_SMAPI && bResult==TRUE)
-        {
-            status = 0;
-            break;
-        }
-
         // else wait for completion
         if(0==m_Assync.WaitForCompletion())
         {
             status = 0;
-
-            // If the report was sent through SMTP
-            if (id == CR_SMTP)
-            {
-                // Remove the ZIP and MD5 files from the attachment list
-                m_EmailMsg.RemoveAttachment(0);
-                m_EmailMsg.RemoveAttachment(0);
-
-                // Remove the recipient so that there will be no copies
-                m_EmailMsg.RemoveRecipient(0);
-            }
-
             break;
         }
     }
@@ -2041,8 +1694,6 @@ BOOL CErrorReportSender::SendOverHTTP()
     request.m_aTextFields[_T("appname")] = strconv.t2utf8(pReport->GetAppName());
     request.m_aTextFields[_T("appversion")] = strconv.t2utf8(pReport->GetAppVersion());
     request.m_aTextFields[_T("crashguid")] = strconv.t2utf8(pReport->GetCrashGUID());
-    request.m_aTextFields[_T("emailfrom")] = strconv.t2utf8(pReport->GetEmailFrom());
-    request.m_aTextFields[_T("emailsubject")] = strconv.t2utf8(m_CrashInfo.m_sEmailSubject);
     request.m_aTextFields[_T("description")] = strconv.t2utf8(pReport->GetProblemDescription());
     request.m_aTextFields[_T("exceptionmodule")] = strconv.t2utf8(pReport->GetExceptionModule());
     request.m_aTextFields[_T("exceptionmoduleversion")] = strconv.t2utf8(pReport->GetExceptionModuleVersion());
@@ -2133,12 +1784,6 @@ CString CErrorReportSender::FormatEmailText()
     sText += _T("This is the error report from ") + m_CrashInfo.m_sAppName +
         _T(" ") + pReport->GetAppVersion()+_T(".\n\n");
 
-    if(!pReport->GetEmailFrom().IsEmpty())
-    {
-        sText += _T("This error report was sent by ") + pReport->GetEmailFrom() + _T(".\n");
-        sText += _T("If you need additional info about the problem, you may want to contact this user again.\n\n");
-    }
-
     if(!pReport->GetProblemDescription().IsEmpty())
     {
         sText += _T("The user has provided the following problem description:\n<<< ") +
@@ -2154,216 +1799,6 @@ CString CErrorReportSender::FormatEmailText()
     sText += _T("For additional information, see FAQ http://code.google.com/p/crashrpt/wiki/FAQ\n");
 
     return sText;
-}
-
-// This method sends the report over SMTP
-BOOL CErrorReportSender::SendOverSMTP()
-{
-    // Kaneva - Added
-    auto pReport = GetReport();
-    if (!pReport) return FALSE;
-
-    strconv_t strconv;
-
-    // Check our config - should we send the report over SMTP or not?
-    if(m_CrashInfo.m_uPriorities[CR_SMTP]==CR_NEGATIVE_PRIORITY)
-    {
-        m_Assync.SetProgress(_T("Sending error report over SMTP is disabled (negative priority); skipping."), 0);
-        return FALSE;
-    }
-
-    // Check recipient's email
-    if(m_CrashInfo.m_sEmailTo.IsEmpty())
-    {
-        m_Assync.SetProgress(_T("No E-mail address is specified for sending error report over SMTP; skipping."), 0);
-        return FALSE;
-    }
-
-    // Fill in email fields
-    // If the sender is not defined, use the first e-mail address from the recipient list.
-    if (pReport->GetEmailFrom().IsEmpty())
-    {
-        // Force a copy of the string. Simple assignment just references the data of g_CrashInfo.m_sEmailTo.
-        // The copy string will be modified by strtok.
-        CString copy((LPCTSTR)m_CrashInfo.m_sEmailTo, m_CrashInfo.m_sEmailTo.GetLength());
-        TCHAR   separators[] = _T(";, ");
-        TCHAR  *context		 = 0;
-        TCHAR  *to			 = _tcstok_s(const_cast<LPTSTR>((LPCTSTR)copy), separators, &context);
-        m_EmailMsg.SetSenderAddress((to == 0 || *to == 0) ? m_CrashInfo.m_sEmailTo : to);
-    }
-    else
-        m_EmailMsg.SetSenderAddress(pReport->GetEmailFrom());
-    m_EmailMsg.AddRecipients(m_CrashInfo.m_sEmailTo);
-    m_EmailMsg.SetSubject(m_CrashInfo.m_sEmailSubject);
-
-    if(m_CrashInfo.m_sEmailText.IsEmpty())
-        m_EmailMsg.SetText(FormatEmailText());
-    else
-        m_EmailMsg.SetText(m_CrashInfo.m_sEmailText);
-
-    m_EmailMsg.AddAttachment(m_sZipName);
-
-    // Create and attach MD5 hash file
-    CString sErrorRptHash;
-    CalcFileMD5Hash(m_sZipName, sErrorRptHash);
-    CString sFileTitle = m_sZipName;
-    sFileTitle.Replace('/', '\\');
-    int pos = sFileTitle.ReverseFind('\\');
-    if(pos>=0)
-        sFileTitle = sFileTitle.Mid(pos+1);
-    sFileTitle += _T(".md5");
-    CString sTempDir;
-    Utility::getTempDirectory(sTempDir);
-    CString sTmpFileName = sTempDir +_T("\\")+ sFileTitle;
-    FILE* f = NULL;
-    _TFOPEN_S(f, sTmpFileName, _T("wt"));
-    if(f!=NULL)
-    {
-        LPCSTR szErrorRptHash = strconv.t2a(sErrorRptHash.GetBuffer(0));
-        fwrite(szErrorRptHash, strlen(szErrorRptHash), 1, f);
-        fclose(f);
-        m_EmailMsg.AddAttachment(sTmpFileName);
-    }
-
-    // Set SMTP proxy server (if specified)
-    if ( !m_CrashInfo.m_sSmtpProxyServer.IsEmpty())
-        m_SmtpClient.SetSmtpServer( m_CrashInfo.m_sSmtpProxyServer, m_CrashInfo.m_nSmtpProxyPort);
-
-    // Set SMTP login and password
-    m_SmtpClient.SetAuthParams(m_CrashInfo.m_sSmtpLogin, m_CrashInfo.m_sSmtpPassword);
-
-    // Send mail assynchronously
-    int res = m_SmtpClient.SendEmailAssync(&m_EmailMsg, &m_Assync);
-
-    return (res==0);
-}
-
-// This method sends the report over Simple MAPI
-BOOL CErrorReportSender::SendOverSMAPI()
-{
-    // Kaneva - Added
-    auto pReport = GetReport();
-    if (!pReport) return FALSE;
-
-    strconv_t strconv;
-
-    // Check our config - should we send the report over Simple MAPI or not?
-    if(m_CrashInfo.m_uPriorities[CR_SMAPI]==CR_NEGATIVE_PRIORITY)
-    {
-        m_Assync.SetProgress(_T("Sending error report over SMAPI is disabled (negative priority); skipping."), 0);
-        return FALSE;
-    }
-
-    // Check recipient's email address
-    if(m_CrashInfo.m_sEmailTo.IsEmpty())
-    {
-        m_Assync.SetProgress(_T("No E-mail address is specified for sending error report over Simple MAPI; skipping."), 0);
-        return FALSE;
-    }
-
-    // Do not send if we are in silent mode
-    if(m_CrashInfo.m_bSilentMode)
-    {
-        m_Assync.SetProgress(_T("Simple MAPI may require user interaction (not acceptable for non-GUI mode); skipping."), 0);
-        return FALSE;
-    }
-
-    // Update progress
-    m_Assync.SetProgress(_T("Sending error report using Simple MAPI"), 0, false);
-    m_Assync.SetProgress(_T("Initializing MAPI"), 1);
-
-    // Initialize MAPI
-    BOOL bMAPIInit = m_MapiSender.MAPIInitialize();
-    if(!bMAPIInit)
-    {
-        m_Assync.SetProgress(m_MapiSender.GetLastErrorMsg(), 100, false);
-        return FALSE;
-    }
-
-    // Request user confirmation
-    if(m_SendAttempt!=0 && m_MailClientConfirm==NOT_CONFIRMED_YET)
-    {
-        m_Assync.SetProgress(_T("[confirm_launch_email_client]"), 0);
-        int confirm = 1;
-        m_Assync.WaitForFeedback(confirm);
-        if(confirm!=0)
-        {
-            m_MailClientConfirm = NOT_ALLOWED;
-            m_Assync.SetProgress(_T("Cancelled by user"), 100, false);
-            return FALSE;
-        }
-        else
-        {
-            m_MailClientConfirm = ALLOWED;
-        }
-    }
-
-    if(m_MailClientConfirm != ALLOWED)
-    {
-        m_Assync.SetProgress(_T("Not allowed to launch E-mail client."), 100, false);
-        return FALSE;
-    }
-
-    // Detect mail client (Microsoft Outlook, Mozilla Thunderbird and so on)
-    CString msg;
-    CString sMailClientName;
-    m_MapiSender.DetectMailClient(sMailClientName);
-
-    msg.Format(_T("Launching the default email client (%s)"), (LPCTSTR) sMailClientName);
-    m_Assync.SetProgress(msg, 10);
-
-    // Fill in email fields
-    m_MapiSender.SetFrom(pReport->GetEmailFrom());
-
-    // The copy string will be modified by strtok.
-    CString copy		 = m_CrashInfo.m_sEmailTo;
-    TCHAR   separators[] = _T(";, ");
-    TCHAR  *context		 = 0;
-    TCHAR  *to			 = _tcstok_s(const_cast<LPTSTR>((LPCTSTR)copy), separators, &context);
-    while (to != 0)
-    {
-        m_MapiSender.AddRecipient(_T("SMTP:")+CString(to));
-        to=_tcstok_s(NULL, separators, &context);
-    };
-
-    m_MapiSender.SetSubject(m_CrashInfo.m_sEmailSubject);
-    CString sFileTitle = m_sZipName;
-    sFileTitle.Replace('/', '\\');
-    int pos = sFileTitle.ReverseFind('\\');
-    if(pos>=0)
-        sFileTitle = sFileTitle.Mid(pos+1);
-
-    if(m_CrashInfo.m_sEmailText.IsEmpty())
-        m_MapiSender.SetMessage(FormatEmailText());
-    else
-        m_MapiSender.SetMessage(m_CrashInfo.m_sEmailText);
-    m_MapiSender.AddAttachment(m_sZipName, sFileTitle);
-
-    // Create and attach MD5 hash file
-    CString sErrorRptHash;
-    CalcFileMD5Hash(m_sZipName, sErrorRptHash);
-    sFileTitle += _T(".md5");
-    CString sTempDir;
-    Utility::getTempDirectory(sTempDir);
-    CString sTmpFileName = sTempDir +_T("\\")+ sFileTitle;
-    FILE* f = NULL;
-    _TFOPEN_S(f, sTmpFileName, _T("wt"));
-    if(f!=NULL)
-    {
-        LPCSTR szErrorRptHash = strconv.t2a(sErrorRptHash.GetBuffer(0));
-        fwrite(szErrorRptHash, strlen(szErrorRptHash), 1, f);
-        fclose(f);
-        m_MapiSender.AddAttachment(sTmpFileName, sFileTitle);
-    }
-
-    // Send email
-    BOOL bSend = m_MapiSender.Send();
-    if(!bSend)
-        m_Assync.SetProgress(m_MapiSender.GetLastErrorMsg(), 100, false);
-    else
-        m_Assync.SetProgress(_T("Sent OK"), 100, false);
-
-    return bSend;
 }
 
 CString CErrorReportSender::GetLangStr(LPCTSTR szSection, LPCTSTR szName)

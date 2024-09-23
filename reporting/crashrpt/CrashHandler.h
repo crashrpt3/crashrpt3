@@ -19,25 +19,24 @@ be found in the Authors.txt file in the root of the source tree.
 #include "Utility.h"
 #include "CritSec.h"
 #include "SharedMem.h"
-#include "Prefastdef.h"
 
-/* This structure contains pointer to the exception handlers for a thread.*/
+/* This structure contains pointer to the exception handlers for a thread. */
 struct ThreadExceptionHandlers
 {
+    terminate_handler pfnTerminateHandlerPrev;   // Previous terminate handler
+    unexpected_handler pfnUnexceptedHandlerPrev; // Previous unexpected handler
+    void(__cdecl* pfnSigFPEHandlerPrev)(int);    // Previous FPE handler
+    void(__cdecl* pfnSigILLHandlerPrev)(int);    // Previous SIGILL handler
+    void(__cdecl* pfnSigSEGVHandlerPrev)(int);   // Previous illegal storage access handler
+
     ThreadExceptionHandlers()
     {
-        m_prevTerm = NULL;
-        m_prevUnexp = NULL;
-        m_prevSigFPE = NULL;
-        m_prevSigILL = NULL;
-        m_prevSigSEGV = NULL;
+        pfnTerminateHandlerPrev = NULL;
+        pfnUnexceptedHandlerPrev = NULL;
+        pfnSigFPEHandlerPrev = NULL;
+        pfnSigILLHandlerPrev = NULL;
+        pfnSigSEGVHandlerPrev = NULL;
     }
-
-    terminate_handler m_prevTerm;        // Previous terminate handler
-    unexpected_handler m_prevUnexp;      // Previous unexpected handler
-    void (__cdecl *m_prevSigFPE)(int);   // Previous FPE handler
-    void (__cdecl *m_prevSigILL)(int);   // Previous SIGILL handler
-    void (__cdecl *m_prevSigSEGV)(int);  // Previous illegal storage access handler
 };
 
 // Sets the last error message (for the caller thread).
@@ -46,32 +45,14 @@ int crSetErrorMsg(LPCTSTR pszErrorMsg);
 // This structure describes a file item (a file included into crash report).
 struct FileItem
 {
-    FileItem()
-    {
-        m_bMakeCopy = FALSE;
-        m_bAllowDelete = FALSE;
-    }
-
-    CString m_sSrcFilePath; // Path to the original file.
-    CString m_sDstFileName; // Destination file name (as seen in ZIP archive).
-    CString m_sDescription; // Description.
-    BOOL m_bMakeCopy;       // Should we make a copy of this file on crash?
-                            // If set, the file will be copied to crash report folder and that copy will be included into crash report,
-                            // otherwise the file will be included from its original location (not guaranteing that file is the same it was
-                            // at the moment of crash).
-    BOOL m_bAllowDelete;    // Whether to allow user deleting the file from context menu of Error Report Details dialog.
-};
-
-// Contains information about a registry key included into a crash report.
-struct RegKeyInfo
-{
-    RegKeyInfo()
-    {
-        m_bAllowDelete = false;
-    }
-
-    CString m_sDstFileName; // Destination file name (as seen in ZIP archive).
-    bool m_bAllowDelete;    // Whether to allow user deleting the file from context menu of Error Report Details dialog.
+    CString srcFilePath;      // Path to the original file.
+    CString dstFileName;      // Destination file name (as seen in ZIP archive).
+    CString description;      // Description.
+    BOOL isMakeCopy = FALSE;    // Should we make a copy of this file on crash?
+                                 // If set, the file will be copied to crash report folder and that copy will be included into crash report,
+                                 // otherwise the file will be included from its original location (not guaranteing that file is the same it was
+                                 // at the moment of crash).
+    BOOL isAllowDelete = FALSE; // Whether to allow user deleting the file from context menu of Error Report Details dialog.
 };
 
 // This class is used to set exception handlers, catch exceptions
@@ -80,21 +61,21 @@ class CCrashHandler
 {
     struct Locker
     {
-        Locker( CCrashHandler & self ) : self_( self ) { self_.CrashLock( TRUE ) ; }
-        ~Locker() { self_.CrashLock( FALSE ) ; }
+        Locker(CCrashHandler& self) : self_(self) { self_.CrashLock(TRUE); }
+        ~Locker() { self_.CrashLock(FALSE); }
 
     private:
-        CCrashHandler & self_ ;
-    } ;
+        CCrashHandler& self_;
+    };
 
     struct ReInitializer
     {
-        ReInitializer( CCrashHandler & self ) : self_( self ) {}
-        ~ReInitializer() { self_.PerCrashInit() ; }
+        ReInitializer(CCrashHandler& self) : self_(self) {}
+        ~ReInitializer() { self_.PerCrashInit(); }
 
     private:
-        CCrashHandler & self_ ;
-    } ;
+        CCrashHandler& self_;
+    };
 
 public:
 
@@ -109,10 +90,8 @@ public:
         LPCTSTR lpcszAppName = NULL,
         LPCTSTR lpcszAppVersion = NULL,
         LPCTSTR lpcszCrashSenderPath = NULL,
-        LPCTSTR lpcszTo = NULL,
-        LPCTSTR lpcszSubject = NULL,
         LPCTSTR lpcszUrl = NULL,
-        UINT (*puPriorities)[5] = NULL,
+        UINT(*puPriorities)[5] = NULL,
         DWORD dwFlags = 0,
         LPCTSTR lpcszPrivacyPolicyURL = NULL,
         LPCTSTR lpcszDebugHelpDLLPath = NULL,
@@ -120,11 +99,7 @@ public:
         LPCTSTR lpcszErrorReportSaveDir = NULL,
         LPCTSTR lpcszRestartCmdLine = NULL,
         LPCTSTR lpcszLangFilePath = NULL,
-        LPCTSTR lpcszEmailText = NULL,
-        LPCTSTR lpcszSmtpProxy = NULL,
         LPCTSTR lpcszCustomSenderIcon = NULL,
-        LPCTSTR lpcszSmtpLogin = NULL,
-        LPCTSTR lpcszSmtpPassword = NULL,
         int nRestartTimeout = 0,
         int nMaxReportsPerDay = 0);
 
@@ -180,7 +155,7 @@ public:
 
 #if _MSC_VER>=1300 && _MSC_VER<1400
     // Buffer overrun handler (deprecated in newest versions of Visual C++).
-    static void __cdecl SecurityHandler(int code, void *x);
+    static void __cdecl SecurityHandler(int code, void* x);
 #endif
 
 #if _MSC_VER>=1400
@@ -217,8 +192,6 @@ public:
     DWORD PackFileItem(FileItem& fi);
     // Packs a custom user property.
     DWORD PackProperty(CString sName, CString sValue);
-    // Packs a registry key.
-    DWORD PackRegKey(CString sKeyName, RegKeyInfo& rki);
 
     // Launches the CrashSender.exe process.
     int LaunchCrashSender(
@@ -265,9 +238,9 @@ public:
     _secerr_handler_func m_prevSec; // Previous security exception filter.
 #endif
 
-    void (__cdecl *m_prevSigABRT)(int); // Previous SIGABRT handler.
-    void (__cdecl *m_prevSigINT)(int);  // Previous SIGINT handler.
-    void (__cdecl *m_prevSigTERM)(int); // Previous SIGTERM handler.
+    void(__cdecl* m_prevSigABRT)(int); // Previous SIGABRT handler.
+    void(__cdecl* m_prevSigINT)(int);  // Previous SIGINT handler.
+    void(__cdecl* m_prevSigTERM)(int); // Previous SIGTERM handler.
 
     // List of exception handlers installed for worker threads of this process.
     std::map<DWORD, ThreadExceptionHandlers> m_ThreadExceptionHandlers;
@@ -284,14 +257,6 @@ public:
     int m_nRestartTimeout;         // Restart timeout.
     int m_nMaxReportsPerDay;       // Maximum number of crash reports that will be sent per calendar day.
     CString m_sUrl;                // Url to use when sending error report over HTTP.
-    CString m_sEmailTo;            // E-mail recipient.
-    int m_nSmtpPort;               // SMTP port.
-    CString m_sSmtpProxyServer;    // SMTP proxy.
-    int m_nSmtpProxyPort;          // SMTP proxy port.
-    CString m_sSmtpLogin;           // SMTP login.
-    CString m_sSmtpPassword;        // SMTP password.
-    CString m_sEmailSubject;       // E-mail subject.
-    CString m_sEmailText;          // E-mail text.
     UINT m_uPriorities[3];         // Delivery priorities.
     CString m_sPrivacyPolicyURL;   // Privacy policy URL.
     CString m_sPathToCrashSender;  // Path to CrashSender.exe
@@ -301,7 +266,6 @@ public:
     CString m_sCustomSenderIcon;   // Resource name that can be used as custom Error Report dialog icon.
     std::map<CString, FileItem> m_files; // File items to include.
     std::map<CString, CString> m_props;  // User-defined properties to include.
-    std::map<CString, RegKeyInfo> m_RegKeys; // Registry keys to dump.
     CCritSec m_csCrashLock;        // Critical section used to synchronize thread access to this object.
     HANDLE m_hEvent;               // Event used to synchronize CrashRpt.dll with CrashSender.exe.
     HANDLE m_hEvent2;              // Another event used to synchronize CrashRpt.dll with CrashSender.exe.
@@ -318,5 +282,3 @@ public:
     BOOL m_bContinueExecution;      // Whether to terminate process (the default) or to continue execution after crash.
     BOOL m_bContinueExecutionNow;   // After GenerateErrorReport() m_bContinueExecution is reset to FALSE. This is the current value
 };
-
-

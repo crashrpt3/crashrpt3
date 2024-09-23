@@ -11,7 +11,6 @@ be found in the Authors.txt file in the root of the source tree.
 #pragma once
 #include "AssyncNotification.h"
 #include "MailMsg.h"
-#include "smtpclient.h"
 #include "HttpRequestSender.h"
 #include "tinyxml.h"
 #include "CrashInfoReader.h"
@@ -24,14 +23,6 @@ enum ActionType
     RESTART_APP         = 0x04, // Crashed app should be restarted.
     SEND_REPORT         = 0x08, // Report should be sent.
 	SEND_RECENT_REPORTS = 0x10  // Recent crash reports should be sent.
-};
-
-// Mail client launch confirmation status
-enum eMailClientConfirm
-{
-    NOT_CONFIRMED_YET, // User didn't confirm yet
-    ALLOWED,           // User allowed mail client launch
-    NOT_ALLOWED        // User didn't allow mail client launch
 };
 
 // Messages sent to GUI buy the sender
@@ -166,12 +157,6 @@ private:
     // Restarts the application.
     BOOL RestartApp();
 
-	// Dumps registry key to the XML file.
-    int DumpRegKey(CString sRegKey, CString sDestFile, CString& sErrorMsg);
-
-	// Used internally for dumping a registry key.
-    int DumpRegKey(HKEY hKeyParent, CString sSubKey, TiXmlElement* elem);
-
     // Packs error report files to ZIP archive.
     BOOL CompressReportFiles(CErrorReportInfo* eri);
 
@@ -190,12 +175,6 @@ private:
     // Formats Email text.
     CString FormatEmailText();
 
-    // Sends error report over SMTP.
-    BOOL SendOverSMTP();
-
-    // Sends error report over Simple MAPI.
-    BOOL SendOverSMAPI();
-
 	// Sends all recently queued error reports in turn.
 	BOOL SendRecentReports();
 
@@ -212,15 +191,12 @@ private:
     HANDLE m_hThread;                   // Handle to the worker thread.
     int m_SendAttempt;                  // Number of current sending attempt.
     AssyncNotification m_Assync;        // Used for communication with the main thread.
-    CEmailMessage m_EmailMsg;           // Email message to send.
-    CSmtpClient m_SmtpClient;           // Used to send report over SMTP.
     CHttpRequestSender m_HttpSender;    // Used to send report over HTTP.
     CMailMsg m_MapiSender;              // Used to send report over SMAPI.
     CString m_sZipName;                 // Name of the ZIP archive to send.
     int m_Action;                       // Current assynchronous action.
     BOOL m_bExport;                     // If TRUE than export should be performed.
     CString m_sExportFileName;          // File name for exporting.
-	eMailClientConfirm m_MailClientConfirm;  // Mail program confirmation result.
     BOOL m_bSendingNow;                 // TRUE if in progress of sending reports.
 	BOOL m_bErrors;                     // TRUE if there were errors.
 	CString m_sCrashLogFile;            // Log file.

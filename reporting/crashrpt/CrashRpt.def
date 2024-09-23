@@ -4,10 +4,9 @@ crInstall
 crUninstall
 crInstallToCurrentThread2
 crUninstallFromCurrentThread
-crAddFile2
+crAddFile
 crAddProperty
 crGenerateErrorReport
 crEmulateCrash
 crGetLastErrorMsg
 crSetCrashCallback
-crSetEmailSubject

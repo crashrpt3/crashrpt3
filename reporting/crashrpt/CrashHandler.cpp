@@ -43,8 +43,6 @@ CCrashHandler::CCrashHandler()
     m_bInitialized = FALSE;
     m_dwFlags = 0;
     m_MinidumpType = MiniDumpNormal;
-    m_nSmtpPort = 25;
-    m_nSmtpProxyPort = 2525;
     memset(&m_uPriorities, 0, 3*sizeof(UINT));
     m_hEvent = NULL;
 	m_hEvent2 = NULL;
@@ -69,8 +67,6 @@ int CCrashHandler::Init(
         LPCTSTR lpcszAppName,
         LPCTSTR lpcszAppVersion,
         LPCTSTR lpcszCrashSenderPath,
-        LPCTSTR lpcszTo,
-        LPCTSTR lpcszSubject,
         LPCTSTR lpcszUrl,
         UINT (*puPriorities)[5],
         DWORD dwFlags,
@@ -80,11 +76,7 @@ int CCrashHandler::Init(
         LPCTSTR lpcszErrorReportSaveDir,
         LPCTSTR lpcszRestartCmdLine,
         LPCTSTR lpcszLangFilePath,
-        LPCTSTR lpcszEmailText,
-        LPCTSTR lpcszSmtpProxy,
         LPCTSTR lpcszCustomSenderIcon,
-		LPCTSTR lpcszSmtpLogin,
-		LPCTSTR lpcszSmtpPassword,
 		int nRestartTimeout,
 		int nMaxReportsPerDay)
 {
@@ -184,58 +176,6 @@ int CCrashHandler::Init(
 	if(m_nRestartTimeout<=0)
 		m_nRestartTimeout = 60; // use default 60 sec timeout
 	m_nMaxReportsPerDay = nMaxReportsPerDay;
-
-    // Save E-mail recipient(s) address
-    m_sEmailTo = lpcszTo;
-    m_nSmtpPort = 25;
-
-    // Check for custom SMTP port
-    int pos = m_sEmailTo.ReverseFind(':');
-    if(pos>=0)
-    {
-        CString sServer = m_sEmailTo.Mid(0, pos);
-        CString sPort = m_sEmailTo.Mid(pos+1);
-        m_sEmailTo = sServer;
-        m_nSmtpPort = _ttoi(sPort);
-    }
-
-    // Set up SMTP proxy
-    m_nSmtpProxyPort = 25;
-    if(lpcszSmtpProxy!=NULL)
-    {
-        m_sSmtpProxyServer = lpcszSmtpProxy;
-        int pos2 = m_sSmtpProxyServer.ReverseFind(':');
-        if(pos2>=0)
-        {
-            CString sServer = m_sSmtpProxyServer.Mid(0, pos2);
-            CString sPort = m_sSmtpProxyServer.Mid(pos2+1);
-            m_sSmtpProxyServer = sServer;
-            m_nSmtpProxyPort = _ttoi(sPort);
-        }
-    }
-
-	// Save login and password used for SMTP authentication.
-	if(lpcszSmtpLogin!=NULL)
-	{
-		m_sSmtpLogin = lpcszSmtpLogin;
-
-		if(lpcszSmtpPassword!=NULL)
-			m_sSmtpPassword = lpcszSmtpPassword;
-	}
-
-    // Save E-mail subject
-    m_sEmailSubject = lpcszSubject;
-
-    // If the subject is empty...
-    if(m_sEmailSubject.IsEmpty())
-    {
-        // Generate the default subject
-        m_sEmailSubject.Format(_T("%s %s Error Report"), (LPCTSTR)m_sAppName,
-            m_sAppVersion.IsEmpty()?_T("[unknown_ver]"): (LPCTSTR)m_sAppVersion);
-    }
-
-    // Save Email text.
-    m_sEmailText = lpcszEmailText;
 
     // Save crash report delivery priorities
     if(puPriorities!=NULL)
@@ -524,8 +464,6 @@ CRASH_DESCRIPTION* CCrashHandler::PackCrashInfoIntoSharedMem(CSharedMem* pShared
     m_pTmpCrashDesc->m_dwCrashRptVer = CRASHRPT_VER;
     m_pTmpCrashDesc->m_dwInstallFlags = m_dwFlags;
     m_pTmpCrashDesc->m_MinidumpType = m_MinidumpType;
-    m_pTmpCrashDesc->m_nSmtpPort = m_nSmtpPort;
-    m_pTmpCrashDesc->m_nSmtpProxyPort = m_nSmtpProxyPort;
     memcpy(m_pTmpCrashDesc->m_uPriorities, m_uPriorities, sizeof(UINT)*3);
 	m_pTmpCrashDesc->m_dwProcessId = GetCurrentProcessId();
 	m_pTmpCrashDesc->m_bClientAppCrashed = FALSE;
@@ -543,12 +481,6 @@ CRASH_DESCRIPTION* CCrashHandler::PackCrashInfoIntoSharedMem(CSharedMem* pShared
     m_pTmpCrashDesc->m_dwUnsentCrashReportsFolderOffs = PackString(m_sUnsentCrashReportsFolder);
     m_pTmpCrashDesc->m_dwCustomSenderIconOffs = PackString(m_sCustomSenderIcon);
     m_pTmpCrashDesc->m_dwUrlOffs = PackString(m_sUrl);
-    m_pTmpCrashDesc->m_dwEmailToOffs = PackString(m_sEmailTo);
-    m_pTmpCrashDesc->m_dwEmailSubjectOffs = PackString(m_sEmailSubject);
-    m_pTmpCrashDesc->m_dwEmailTextOffs = PackString(m_sEmailText);
-    m_pTmpCrashDesc->m_dwSmtpProxyServerOffs = PackString(m_sSmtpProxyServer);
-	m_pTmpCrashDesc->m_dwSmtpLoginOffs = PackString(m_sSmtpLogin);
-	m_pTmpCrashDesc->m_dwSmtpPasswordOffs = PackString(m_sSmtpPassword);
 
 	// Pack file items
 	std::map<CString, FileItem>::iterator fit;
@@ -566,16 +498,6 @@ CRASH_DESCRIPTION* CCrashHandler::PackCrashInfoIntoSharedMem(CSharedMem* pShared
 	{
 		// Pack this prop into shared mem.
 		PackProperty(pit->first, pit->second);
-	}
-
-	// Pack reg keys
-	std::map<CString, RegKeyInfo>::iterator rit;
-	for(rit=m_RegKeys.begin(); rit!=m_RegKeys.end(); rit++)
-	{
-		RegKeyInfo& rki = rit->second;
-
-		// Pack this reg key into shared mem.
-		PackRegKey(rit->first, rki);
 	}
 
     return m_pTmpCrashDesc;
@@ -612,11 +534,11 @@ DWORD CCrashHandler::PackFileItem(FileItem& fi)
     FILE_ITEM* pFileItem = (FILE_ITEM*)pView;
 
     memcpy(pFileItem->m_uchMagic, "FIL", 3);
-    pFileItem->m_dwSrcFilePathOffs = PackString(fi.m_sSrcFilePath);
-    pFileItem->m_dwDstFileNameOffs = PackString(fi.m_sDstFileName);
-    pFileItem->m_dwDescriptionOffs = PackString(fi.m_sDescription);
-    pFileItem->m_bMakeCopy = fi.m_bMakeCopy;
-	pFileItem->m_bAllowDelete = fi.m_bAllowDelete;
+    pFileItem->m_dwSrcFilePathOffs = PackString(fi.srcFilePath);
+    pFileItem->m_dwDstFileNameOffs = PackString(fi.dstFileName);
+    pFileItem->m_dwDescriptionOffs = PackString(fi.description);
+    pFileItem->m_bMakeCopy = fi.isMakeCopy;
+	pFileItem->m_bAllowDelete = fi.isAllowDelete;
     pFileItem->m_wSize = (WORD)(m_pTmpCrashDesc->m_dwTotalSize-dwTotalSize);
 
     m_pTmpSharedMem->DestroyView(pView);
@@ -638,27 +560,6 @@ DWORD CCrashHandler::PackProperty(CString sName, CString sValue)
     pProp->m_dwNameOffs = PackString(sName);
     pProp->m_dwValueOffs = PackString(sValue);
     pProp->m_wSize = (WORD)(m_pTmpCrashDesc->m_dwTotalSize-dwTotalSize);
-
-    m_pTmpSharedMem->DestroyView(pView);
-    return dwTotalSize;
-}
-
-// Packs registry key to shared memory
-DWORD CCrashHandler::PackRegKey(CString sKeyName, RegKeyInfo& rki)
-{
-    DWORD dwTotalSize = m_pTmpCrashDesc->m_dwTotalSize;
-    WORD wLength = sizeof(REG_KEY);
-    m_pTmpCrashDesc->m_dwTotalSize += wLength;
-    m_pTmpCrashDesc->m_uRegKeyEntries++;
-
-    LPBYTE pView = m_pTmpSharedMem->CreateView(dwTotalSize, wLength);
-    REG_KEY* pKey = (REG_KEY*)pView;
-
-    memcpy(pKey->m_uchMagic, "REG", 3);
-	pKey->m_bAllowDelete = rki.m_bAllowDelete;
-    pKey->m_dwRegKeyNameOffs = PackString(sKeyName);
-	pKey->m_dwDstFileNameOffs = PackString(rki.m_sDstFileName);
-    pKey->m_wSize = (WORD)(m_pTmpCrashDesc->m_dwTotalSize-dwTotalSize);
 
     m_pTmpSharedMem->DestroyView(pView);
     return dwTotalSize;
@@ -917,7 +818,7 @@ int CCrashHandler::SetThreadExceptionHandlers(DWORD dwFlags)
         // separately for each thread. Each new thread needs to install its own
         // terminate function. Thus, each thread is in charge of its own termination handling.
         // http://msdn.microsoft.com/en-us/library/t6fk7h29.aspx
-        handlers.m_prevTerm = set_terminate(TerminateHandler);
+        handlers.pfnTerminateHandlerPrev = set_terminate(TerminateHandler);
     }
 
     if(dwFlags&CR_INST_UNEXPECTED_HANDLER)
@@ -927,27 +828,27 @@ int CCrashHandler::SetThreadExceptionHandlers(DWORD dwFlags)
         // separately for each thread. Each new thread needs to install its own
         // unexpected function. Thus, each thread is in charge of its own unexpected handling.
         // http://msdn.microsoft.com/en-us/library/h46t5b69.aspx
-        handlers.m_prevUnexp = set_unexpected(UnexpectedHandler);
+        handlers.pfnUnexceptedHandlerPrev = set_unexpected(UnexpectedHandler);
     }
 
     if(dwFlags&CR_INST_SIGFPE_HANDLER)
     {
         // Catch a floating point error
         typedef void (*sigh)(int);
-        handlers.m_prevSigFPE = signal(SIGFPE, (sigh)SigfpeHandler);
+        handlers.pfnSigFPEHandlerPrev = signal(SIGFPE, (sigh)SigfpeHandler);
     }
 
 
     if(dwFlags&CR_INST_SIGILL_HANDLER)
     {
         // Catch an illegal instruction
-        handlers.m_prevSigILL = signal(SIGILL, SigillHandler);
+        handlers.pfnSigILLHandlerPrev = signal(SIGILL, SigillHandler);
     }
 
     if(dwFlags&CR_INST_SIGSEGV_HANDLER)
     {
         // Catch illegal storage access errors
-        handlers.m_prevSigSEGV = signal(SIGSEGV, SigsegvHandler);
+        handlers.pfnSigSEGVHandlerPrev = signal(SIGSEGV, SigsegvHandler);
     }
 
     // Insert the structure to the list of handlers
@@ -979,20 +880,20 @@ int CCrashHandler::UnSetThreadExceptionHandlers()
 
     ThreadExceptionHandlers* handlers = &(it->second);
 
-    if(handlers->m_prevTerm!=NULL)
-        set_terminate(handlers->m_prevTerm);
+    if(handlers->pfnTerminateHandlerPrev!=NULL)
+        set_terminate(handlers->pfnTerminateHandlerPrev);
 
-    if(handlers->m_prevUnexp!=NULL)
-        set_unexpected(handlers->m_prevUnexp);
+    if(handlers->pfnUnexceptedHandlerPrev!=NULL)
+        set_unexpected(handlers->pfnUnexceptedHandlerPrev);
 
-    if(handlers->m_prevSigFPE!=NULL)
-        signal(SIGFPE, handlers->m_prevSigFPE);
+    if(handlers->pfnSigFPEHandlerPrev!=NULL)
+        signal(SIGFPE, handlers->pfnSigFPEHandlerPrev);
 
-    if(handlers->m_prevSigILL!=NULL)
-        signal(SIGINT, handlers->m_prevSigILL);
+    if(handlers->pfnSigILLHandlerPrev!=NULL)
+        signal(SIGINT, handlers->pfnSigILLHandlerPrev);
 
-    if(handlers->m_prevSigSEGV!=NULL)
-        signal(SIGSEGV, handlers->m_prevSigSEGV);
+    if(handlers->pfnSigSEGVHandlerPrev!=NULL)
+        signal(SIGSEGV, handlers->pfnSigSEGVHandlerPrev);
 
     // Remove from the list
     m_ThreadExceptionHandlers.erase(it);
@@ -1045,13 +946,13 @@ int CCrashHandler::AddFile(LPCTSTR pszFile, LPCTSTR pszDestFile, LPCTSTR pszDesc
 
 		// Add file to file list.
 		FileItem fi;
-		fi.m_sDescription = pszDesc;
-		fi.m_sSrcFilePath = pszFile;
-		fi.m_bMakeCopy = (dwFlags&CR_AF_MAKE_FILE_COPY)!=0;
-		fi.m_bAllowDelete = (dwFlags&CR_AF_ALLOW_DELETE)!=0;
+		fi.description = pszDesc;
+		fi.srcFilePath = pszFile;
+		fi.isMakeCopy = (dwFlags&CR_AF_MAKE_FILE_COPY)!=0;
+		fi.isAllowDelete = (dwFlags&CR_AF_ALLOW_DELETE)!=0;
 		if(pszDestFile!=NULL)
 		{
-			fi.m_sDstFileName = pszDestFile;
+			fi.dstFileName = pszDestFile;
 		}
 		else
 		{
@@ -1062,18 +963,18 @@ int CCrashHandler::AddFile(LPCTSTR pszFile, LPCTSTR pszDestFile, LPCTSTR pszDesc
 			if(pos!=-1)
 				sDestFile = sDestFile.Mid(pos+1);
 
-			fi.m_sDstFileName = sDestFile;
+			fi.dstFileName = sDestFile;
 		}
 
 		// Check if file is already in our list
-		std::map<CString, FileItem>::iterator it = m_files.find(fi.m_sDstFileName);
+		std::map<CString, FileItem>::iterator it = m_files.find(fi.dstFileName);
 		if(it!=m_files.end())
 		{
 			crSetErrorMsg(_T("A file with such a destination name already exists."));
 			return 1;
 		}
 
-		m_files[fi.m_sDstFileName] = fi;
+		m_files[fi.dstFileName] = fi;
 
 		// Pack this file item into shared mem.
 		PackFileItem(fi);
@@ -1082,12 +983,12 @@ int CCrashHandler::AddFile(LPCTSTR pszFile, LPCTSTR pszDestFile, LPCTSTR pszDesc
 	{
 		// Add file search pattern to file list.
 		FileItem fi;
-		fi.m_sDescription = pszDesc;
-		fi.m_sSrcFilePath = pszFile;
-		fi.m_sDstFileName = Utility::GetFileName(pszFile);
-		fi.m_bMakeCopy = (dwFlags&CR_AF_MAKE_FILE_COPY)!=0;
-		fi.m_bAllowDelete = (dwFlags&CR_AF_ALLOW_DELETE)!=0;
-		m_files[fi.m_sDstFileName] = fi;
+		fi.description = pszDesc;
+		fi.srcFilePath = pszFile;
+		fi.dstFileName = Utility::GetFileName(pszFile);
+		fi.isMakeCopy = (dwFlags&CR_AF_MAKE_FILE_COPY)!=0;
+		fi.isAllowDelete = (dwFlags&CR_AF_ALLOW_DELETE)!=0;
+		m_files[fi.dstFileName] = fi;
 
 		// Pack this file item into shared mem.
 		PackFileItem(fi);
