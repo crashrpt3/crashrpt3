@@ -1031,8 +1031,6 @@ int CCrashHandler::GenerateErrorReport(
         m_pCrashDesc->m_uInvParamLine = pExceptionInfo->uLine;
     }
 
-    ATLASSERT(m_lpfnCallback == nullptr);
-
     // New-style callback
     if (CR_CB_CANCEL == CallBack(CR_CB_STAGE_PREPARE, pExceptionInfo))
     {

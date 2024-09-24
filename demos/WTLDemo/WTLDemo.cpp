@@ -98,21 +98,21 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
     info.cb = sizeof(CrInstallInfo);  
     info.lpApplicationName = _T("WTLDemo");
     info.lpApplicationVersion = _T("1.3.1");
-    info.lpServerURL = _T("http://localhost:80/crashrpt.php");
-    info.uCrashHandlers = CR_CRASH_HANDLER_ALL; // Install all available exception handlers.    
-    info.dwInstallFlags |= CR_INST_APP_RESTART;            // Restart the application on crash.  
+    //info.lpServerURL = _T("http://localhost:80/crashrpt.php");
+    //info.uCrashHandlers = CR_CRASH_HANDLER_ALL; // Install all available exception handlers.    
+    //info.dwInstallFlags |= CR_INST_APP_RESTART;            // Restart the application on crash.  
     //info.dwInstallFlags |= CR_INST_NO_GUI;               // Don't display GUI.
     //info.dwInstallFlags |= CR_INST_DONT_SEND_REPORT;     // Don't send report immediately, just queue for later delivery.
     //info.dwInstallFlags |= CR_INST_STORE_ZIP_ARCHIVES;   // Store ZIP archives along with uncompressed files (to be used with CR_INST_DONT_SEND_REPORT)
-	//info.dwInstallFlags |= CR_INST_SHOW_ADDITIONAL_INFO_FIELDS; //!< Make "Your E-mail" and "Describe what you were doing when the problem occurred" fields of Error Report dialog always visible.
-	//info.dwInstallFlags |= CR_INST_SEND_QUEUED_REPORTS;    // Send reports that were failed to send recently.	
-	//info.dwInstallFlags |= CR_INST_AUTO_THREAD_HANDLERS; 
-    info.lpDBGHelpDirectory = NULL;
-    info.uMinidumpType = MiniDumpNormal;
-    info.lpPrivacyPolicyURL = _T("http://code.google.com/p/crashrpt/wiki/PrivacyPolicyTemplate");
-    info.lpOutputDirectory = NULL;
-    info.lpRestartCommand = _T("/restart");
-	info.nRestartTimeout = 50;
+    //info.dwInstallFlags |= CR_INST_SHOW_ADDITIONAL_INFO_FIELDS; //!< Make "Your E-mail" and "Describe what you were doing when the problem occurred" fields of Error Report dialog always visible.
+    //info.dwInstallFlags |= CR_INST_SEND_QUEUED_REPORTS;    // Send reports that were failed to send recently.	
+    //info.dwInstallFlags |= CR_INST_AUTO_THREAD_HANDLERS; 
+    //info.lpDBGHelpDirectory = NULL;
+    //info.uMinidumpType = MiniDumpNormal;
+    //info.lpPrivacyPolicyURL = _T("http://code.google.com/p/crashrpt/wiki/PrivacyPolicyTemplate");
+    //info.lpOutputDirectory = NULL;
+    //info.lpRestartCommand = _T("/restart");
+    //info.nRestartTimeout = 50;
 
     // Install crash handlers.
     crashrpt::CrInstallGurad cr_install_helper(&info);

@@ -11,11 +11,10 @@ be found in the Authors.txt file in the root of the source tree.
 // crashcon.cpp : Defines the entry point for the console application.
 //
 
-#include <stdio.h>
-#include <conio.h>
+#include <iostream>
 #include <tchar.h>
 #include <assert.h>
-#include <process.h>
+
 #include "CrashRpt.h" // Include CrashRpt header
 
 LPVOID lpvState = NULL; // Not used, deprecated
@@ -46,13 +45,10 @@ int main(int argc, char* argv[])
         return FALSE;
     }
 
-    printf("Press Enter to simulate a null pointer exception or any other key to exit...\n");
-    int n = _getch();
-    if(n==13)
-    {
-        int *p = 0;
-        *p = 0; // Access violation
-    }
+    printf("Press crash type you wanna test:\n");
+    UINT32 crashType = 0;
+    std::cin >> crashType;
+    crEmulateCrash(crashType);
 
 #ifdef TEST_DEPRECATED_FUNCS
     Uninstall(lpvState); // Uninstall exception handlers

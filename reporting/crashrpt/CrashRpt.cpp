@@ -26,6 +26,15 @@ std::map<DWORD, CString> g_sErrorMsg; // Last error messages for each calling th
 // Forward declaration.
 int crClearErrorMsg();
 
+
+namespace {
+    static void _crCrashedByCppThrow()
+    {
+        throw 13;
+    }
+}
+
+
 CRASHRPT_API(int) crInstall(const CrInstallInfo* pInfo)
 {
     int nStatus = -1;
@@ -615,8 +624,8 @@ CRASHRPT_API(int) crEmulateCrash(unsigned ExceptionType) noexcept(false)
     break;
     case CR_CRASH_TYPE_CPP_THROW:
     {
+        _crCrashedByCppThrow();
         // Throw typed C++ exception.
-        throw 13;
     }
     break;
     case CR_CRASH_TYPE_STACK_OVERFLOW:
