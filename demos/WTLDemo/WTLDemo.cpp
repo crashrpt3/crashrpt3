@@ -8,14 +8,10 @@ tree. All contributing project authors may
 be found in the Authors.txt file in the root of the source tree.
 ***************************************************************************************/
 
-// CrashRptTest.cpp : main source file for CrashRptTest.exe
-//
-
 #include "stdafx.h"
 #include "resource.h"
 #include "MainDlg.h"
 #include "CrashThread.h"
-#include <shellapi.h>
 
 
 CAppModule _Module;

@@ -124,10 +124,7 @@ int CMiniDumpReader::Open(CString sFileName, CString sSymSearchPath)
     SymSetOptions(dwOptions);
 
     strconv_t strconv;
-    BOOL bSymInit = SymInitializeW(
-        m_DumpData.m_hProcess,
-        strconv.t2w(sSymSearchPath),
-        FALSE);
+    BOOL bSymInit = SymInitializeW(m_DumpData.m_hProcess, strconv.t2w(sSymSearchPath), FALSE);
 
     if(!bSymInit)
     {

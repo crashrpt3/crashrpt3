@@ -31,9 +31,6 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***************************************************************************************/
 
 #pragma once
-#include "stdafx.h"
-#include <shellapi.h>
-#include <atlctrlx.h>
 #include "CrashRpt.h"
 
 class CDocumentDlg : public CDialogImpl<CDocumentDlg>

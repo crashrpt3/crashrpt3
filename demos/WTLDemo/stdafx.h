@@ -8,23 +8,22 @@ tree. All contributing project authors may
 be found in the Authors.txt file in the root of the source tree.
 ***************************************************************************************/
 
-// stdafx.h : include file for standard system include files,
-//  or project specific include files that are used frequently, but
-//      are changed infrequently
-//
-
 #pragma once
 
 // Change these values to use different versions
-#define WINVER		0x0501
-#define _WIN32_WINNT	0x0501
-#define _WIN32_IE	0x0600
-#define _RICHEDIT_VER	0x0300
+#define WINVER          0x0501
+#define _WIN32_WINNT    0x0501
+#define _WIN32_IE       0x0600
+#define _RICHEDIT_VER   0x0300
 
 #include <atldef.h>
 #if ( _ATL_VER < 0x0800 )
 #define _WTL_SUPPORT_SDK_ATL3 // Support of VC++ Express 2005 and ATL 3.0
 #endif
+
+#if (_ATL_VER < 0x0700)
+#include <atlimpl.cpp>
+#endif //(_ATL_VER < 0x0700)
 
 // Support for VS2005 Express & SDK ATL
 #ifdef _WTL_SUPPORT_SDK_ATL3
@@ -40,12 +39,12 @@ be found in the Authors.txt file in the root of the source tree.
 #define _WTLSUP_INCLUDED
 namespace ATL
 {
-    inline void * __stdcall __AllocStdCallThunk()
+    inline void* __stdcall __AllocStdCallThunk()
     {
         return ::HeapAlloc(::GetProcessHeap(), 0, sizeof(_stdcallthunk));
     }
 
-    inline void __stdcall __FreeStdCallThunk(void *p)
+    inline void __stdcall __FreeStdCallThunk(void* p)
     {
         ::HeapFree(::GetProcessHeap(), 0, p);
     }
@@ -57,10 +56,10 @@ namespace ATL
 extern CAppModule _Module;
 
 #include <atlwin.h>
-
 #include <atlframe.h>
 #include <atlctrls.h>
 #include <atldlgs.h>
+#include <atlctrlx.h>
 
 #define _WTL_USE_CSTRING
 #include <atlmisc.h>

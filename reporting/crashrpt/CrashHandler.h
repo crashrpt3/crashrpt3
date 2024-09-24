@@ -14,7 +14,6 @@ be found in the Authors.txt file in the root of the source tree.
 // Date: 2009
 
 #pragma once
-#include "stdafx.h"
 #include "CrashRpt.h"
 #include "Utility.h"
 #include "CritSec.h"
@@ -104,7 +103,7 @@ public:
     int Destroy();
 
     // Sets crash callback function (wide-char version).
-    int SetCrashCallbackW(PFN_CRASH_CALLBACK pfnCallback, LPVOID pUserParam);
+    int SetCrashCallback(PFN_CRASH_CALLBACK pfnCallback, LPVOID pUserParam);
 
     // Adds a file to the crash report.
     int AddFile(__in_z LPCTSTR lpFile, __in_opt LPCTSTR lpDestFile, __in_opt LPCTSTR lpDesc, DWORD dwFlags);

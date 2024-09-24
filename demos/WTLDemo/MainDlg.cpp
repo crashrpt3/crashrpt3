@@ -18,7 +18,6 @@ be found in the Authors.txt file in the root of the source tree.
 #include "DocumentDlg.h"
 #include "MainDlg.h"
 #include "CrashThread.h"
-#include <assert.h>
 
 #define MANUAL_REPORT 128
 

@@ -95,8 +95,6 @@ typedef struct _CrInstallInfo
     LPCWSTR lpCrashSenderDirectory; //!< Directory where CrashSender.exe is located.
     LPCWSTR lpDBGHelpDirectory;     //!< Directory where dbghelp.dll is located.
     LPCWSTR lpOutputDirectory;      //!< Directory where to save dump error reports.
-    INT32 nRestartTimeout;          //!< Timeout for application restart.
-    INT32 nMaxReportsPerDay;        //!< Maximum number of crash reports that will be sent per calendar day.
     UINT32 uCrashHandlers;          //!< See micro CR_CRASH_HANDLER_ALL
     MINIDUMP_TYPE uMinidumpType;    //!< Minidump type.
 } CrInstallInfo;
@@ -111,16 +109,11 @@ typedef struct _CrInstallInfo
 CRASHRPT_API(int) crInstall(const CrInstallInfo* pInfo);
 CRASHRPT_API(int) crUninstall();
 
-CRASHRPT_API(int) crInstallToCurrentThread(DWORD dwFlags);
-CRASHRPT_API(int) crUninstallFromCurrentThread();
-
-CRASHRPT_API(int) crSetCrashCallback(PFN_CRASH_CALLBACK pfnCallback, LPVOID lpParam);
-
 CRASHRPT_API(int) crAddFile(LPCWSTR pszFile, LPCWSTR pszDestFile, LPCWSTR pszDesc, DWORD dwFlags);
 CRASHRPT_API(int) crAddProperty(LPCWSTR pszPropName, LPCWSTR pszPropValue);
 
+CRASHRPT_API(int) crSetCrashCallback(PFN_CRASH_CALLBACK pfnCallback, LPVOID lpParam);
 CRASHRPT_API(int) crGetLastErrorMsg(LPWSTR pszBuffer, UINT uBuffSize);
-
 CRASHRPT_API(int) crGenerateErrorReport(PCR_EXCEPTION_INFO pExceptionInfo);
 
 #ifdef __cplusplus
@@ -140,26 +133,6 @@ public:
         if (m_ret == 0)
         {
             crUninstall();
-        }
-    }
-
-private:
-    int m_ret;
-};
-
-class CrThreadInstallGuard
-{
-public:
-    CrThreadInstallGuard(DWORD dwFlags = 0)
-    {
-        m_ret = crInstallToCurrentThread(dwFlags);
-    }
-
-    ~CrThreadInstallGuard()
-    {
-        if (m_ret == 0)
-        {
-            crUninstallFromCurrentThread();
         }
     }
 

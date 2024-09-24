@@ -317,7 +317,7 @@ int CCrashHandler::Init(
     return 0;
 }
 
-int CCrashHandler::SetCrashCallbackW(PFN_CRASH_CALLBACK pfnCallback, LPVOID pUserParam)
+int CCrashHandler::SetCrashCallback(PFN_CRASH_CALLBACK pfnCallback, LPVOID pUserParam)
 {
     m_pfnCallback2W = pfnCallback;
     m_pCallbackParam = pUserParam;
@@ -694,9 +694,7 @@ int CCrashHandler::SetThreadExceptionHandlers(DWORD dwFlags)
     CAutoLock lock(&m_csThreadExceptionHandlers);
 
     // Try and find our thread ID in the list of threads.
-    std::map<DWORD, ThreadExceptionHandlers>::iterator it =
-        m_ThreadExceptionHandlers.find(dwThreadId);
-
+    auto it = m_ThreadExceptionHandlers.find(dwThreadId);
     if (it != m_ThreadExceptionHandlers.end())
     {
         // handlers are already set for the thread

@@ -27,6 +27,10 @@ be found in the Authors.txt file in the root of the source tree.
 #define _WTL_SUPPORT_SDK_ATL3 // Support of VC++ Express 2005 and ATL 3.0
 #endif
 
+#if (_ATL_VER < 0x0700)
+#include <atlimpl.cpp>
+#endif //(_ATL_VER < 0x0700)
+
 // Support for VS2005 Express & SDK ATL
 #ifdef _WTL_SUPPORT_SDK_ATL3
 #define _CRT_SECURE_NO_DEPRECATE

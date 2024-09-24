@@ -2,8 +2,6 @@ EXPORTS
 
 crInstall
 crUninstall
-crInstallToCurrentThread
-crUninstallFromCurrentThread
 crAddFile
 crAddProperty
 crGenerateErrorReport

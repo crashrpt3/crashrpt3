@@ -157,65 +157,11 @@ CRASHRPT_API(int) crUninstall()
     return 0;
 }
 
-// Sets C++ exception handlers for the calling thread
-CRASHRPT_API(int) crInstallToCurrentThread(DWORD dwFlags)
-{
-    crSetErrorMsg(_T("Success."));
-
-    CCrashHandler* pCrashHandler =
-        CCrashHandler::GetCurrentProcessCrashHandler();
-
-    if (pCrashHandler == NULL)
-    {
-        crSetErrorMsg(_T("Crash handler was already installed for current thread."));
-        return 1;
-    }
-
-    int nResult = pCrashHandler->SetThreadExceptionHandlers(dwFlags);
-    if (nResult != 0)
-        return 2; // Error?
-
-    // Ok.
-    return 0;
-}
-
-// Unsets C++ exception handlers from the calling thread
-CRASHRPT_API(int)
-crUninstallFromCurrentThread()
-{
-    crSetErrorMsg(_T("Success."));
-
-    CCrashHandler* pCrashHandler =
-        CCrashHandler::GetCurrentProcessCrashHandler();
-
-    if (pCrashHandler == NULL)
-    {
-        ATLASSERT(pCrashHandler != NULL);
-        crSetErrorMsg(_T("Crash handler wasn't previously installed for current thread."));
-        return 1; // Invalid parameter?
-    }
-
-    int nResult = pCrashHandler->UnSetThreadExceptionHandlers();
-    if (nResult != 0)
-        return 2; // Error?
-
-    // Clear last error message for this thread.
-    crClearErrorMsg();
-
-    // OK.
-    return 0;
-}
-
-CRASHRPT_API(int)
-crSetCrashCallback(
-    PFN_CRASH_CALLBACK pfnCallbackFunc,
-    LPVOID lpParam
-)
+CRASHRPT_API(int) crSetCrashCallback(PFN_CRASH_CALLBACK pfnCallbackFunc, LPVOID lpParam)
 {
     crSetErrorMsg(_T("Unspecified error."));
 
-    CCrashHandler* pCrashHandler =
-        CCrashHandler::GetCurrentProcessCrashHandler();
+    CCrashHandler* pCrashHandler = CCrashHandler::GetCurrentProcessCrashHandler();
 
     if (pCrashHandler == NULL)
     {
@@ -223,7 +169,7 @@ crSetCrashCallback(
         return 1; // No handler installed for current process?
     }
 
-    pCrashHandler->SetCrashCallbackW(pfnCallbackFunc, lpParam);
+    pCrashHandler->SetCrashCallback(pfnCallbackFunc, lpParam);
 
     // OK
     crSetErrorMsg(_T("Success."));

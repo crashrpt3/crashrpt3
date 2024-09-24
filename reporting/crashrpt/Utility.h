@@ -16,7 +16,6 @@ be found in the Authors.txt file in the root of the source tree.
 #ifndef _UTILITY_H_
 #define _UTILITY_H_
 
-#include "stdafx.h"
 
 namespace Utility
 {

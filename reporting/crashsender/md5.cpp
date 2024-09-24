@@ -42,6 +42,7 @@ be found in the Authors.txt file in the root of the source tree.
 */
 
 //md5 class include
+#include "stdafx.h"
 #include "md5.h"
 
 // Constants for MD5Transform routine.

@@ -4,11 +4,6 @@ project(WTLDemo)
 aux_source_directory(. SOURCE_FILE_LIST)
 file(GLOB HEADER_FILE_LIST *.h)
 
-# pre-compile header
-set(USE_PCH_FILE_LIST ${SOURCE_FILE_LIST})
-list(REMOVE_ITEM USE_PCH_FILE_LIST ./stdafx.cpp)
-add_msvc_precompiled_header(stdafx.h ./stdafx.cpp USE_PCH_FILE_LIST)
-
 # resource files
 list(APPEND SOURCE_FILE_LIST ./WTLDemo.rc )
 
@@ -21,8 +16,11 @@ include_directories(
   ${REPOSITORY_DIR}/include
   ${REPOSITORY_DIR}/thirdparty/wtl)
 
-# exe
+# target
 add_executable(WTLDemo WIN32 ${SOURCE_FILE_LIST} ${HEADER_FILE_LIST})
+
+# pch
+target_precompile_headers(WTLDemo PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/stdafx.h)
 
 # link
 target_link_libraries(WTLDemo CrashRpt)

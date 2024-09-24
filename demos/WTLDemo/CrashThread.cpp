@@ -10,9 +10,6 @@ be found in the Authors.txt file in the root of the source tree.
 
 #include "stdafx.h"
 #include "CrashThread.h"
-#include <exception>
-#include <signal.h>
-#include <assert.h>
 
 // Tests crGenerateErrorReport
 void test_generate_report()
@@ -41,7 +38,6 @@ DWORD WINAPI CrashThread(LPVOID pParam)
     CrashThreadInfo* pInfo = (CrashThreadInfo*)pParam;
 
     // Install per-thread exception handlers
-    crashrpt::CrThreadInstallGuard cr_install_helper(0);
 
     for(;;)
     {
