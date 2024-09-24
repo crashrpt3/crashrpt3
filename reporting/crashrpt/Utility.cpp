@@ -20,21 +20,18 @@ be found in the Authors.txt file in the root of the source tree.
 
 CString Utility::getAppName()
 {
-    TCHAR szFileName[_MAX_PATH];
-    GetModuleFileName(NULL, szFileName, _MAX_FNAME);
-
-    CString sAppName; // Extract from last '\' to '.'
-    sAppName = szFileName;
-    sAppName = sAppName.Mid(sAppName.ReverseFind(_T('\\')) + 1).SpanExcluding(_T("."));
-
-    return sAppName;
+    TCHAR szFileName[MAX_PATH + 1] = { 0 };
+    ::GetModuleFileName(NULL, szFileName, MAX_PATH);
+    CString szAppName = szFileName;
+    szAppName = szAppName.Mid(szAppName.ReverseFind(_T('\\')) + 1).SpanExcluding(_T("."));
+    return szAppName;
 }
 
 CString Utility::GetModuleName(HMODULE hModule)
 {
     CString string;
-    LPTSTR buf = string.GetBuffer(_MAX_PATH);
-    GetModuleFileName(hModule, buf, _MAX_PATH);
+    LPTSTR buf = string.GetBuffer(MAX_PATH + 1);
+    GetModuleFileName(hModule, buf, MAX_PATH);
     string.ReleaseBuffer();
     return string;
 }
@@ -42,8 +39,8 @@ CString Utility::GetModuleName(HMODULE hModule)
 CString Utility::GetModulePath(HMODULE hModule)
 {
     CString string;
-    LPTSTR buf = string.GetBuffer(_MAX_PATH);
-    GetModuleFileName(hModule, buf, _MAX_PATH);
+    LPTSTR buf = string.GetBuffer(MAX_PATH + 1);
+    GetModuleFileName(hModule, buf, MAX_PATH);
     TCHAR* ptr = _tcsrchr(buf,'\\');
     if(ptr!=NULL)
         *(ptr)=0; // remove executable name
@@ -279,7 +276,7 @@ int Utility::GetSpecialFolder(int csidl, CString& sFolderPath)
 {
     sFolderPath.Empty();
 
-    TCHAR szPath[_MAX_PATH];
+    TCHAR szPath[MAX_PATH];
     BOOL bResult = SHGetSpecialFolderPath(NULL, szPath, csidl, TRUE);
     if(!bResult)
         return 1;
@@ -305,9 +302,9 @@ int Utility::RecycleFile(CString sFilePath, bool bPermanentDelete)
     SHFILEOPSTRUCT fop;
     memset(&fop, 0, sizeof(SHFILEOPSTRUCT));
 
-    TCHAR szFrom[_MAX_PATH];
-    memset(szFrom, 0, sizeof(TCHAR)*(_MAX_PATH));
-    _TCSCPY_S(szFrom, _MAX_PATH, sFilePath.GetBuffer(0));
+    TCHAR szFrom[MAX_PATH];
+    memset(szFrom, 0, sizeof(TCHAR)*(MAX_PATH));
+    _TCSCPY_S(szFrom, MAX_PATH, sFilePath.GetBuffer(0));
     szFrom[sFilePath.GetLength()+1] = 0;
 
     fop.fFlags |= FOF_SILENT;                // don't report progress

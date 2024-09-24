@@ -5,6 +5,6 @@ crUninstall
 crAddFile
 crAddProperty
 crGenerateErrorReport
-crTestCrash
-crGetLastErrorMsg
+crGetLastError
 crSetCrashCallback
+crTestCrash

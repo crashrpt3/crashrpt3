@@ -92,8 +92,8 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
     CrInstallInfo info;
     ZeroMemory(&info, sizeof(CrInstallInfo));
     info.cb = sizeof(CrInstallInfo);  
-    info.lpAppName = _T("WTLDemo");
-    info.lpAppVersion = _T("1.3.1");
+    info.szAppName = _T("WTLDemo");
+    info.szAppVersion = _T("1.3.1");
     //info.lpServerURL = _T("http://localhost:80/crashrpt.php");
     //info.uCrashHandlers = CR_CRASH_HANDLER_ALL; // Install all available exception handlers.    
     //info.dwInstallFlags |= CR_INST_APP_RESTART;            // Restart the application on crash.  

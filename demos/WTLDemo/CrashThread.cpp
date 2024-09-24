@@ -27,7 +27,7 @@ void test_generate_report()
     {
         TCHAR szErrorMsg[256];
         CString sError = _T("Error generating error report!\nErrorMsg:");
-        crGetLastErrorMsg(szErrorMsg, 256);
+        crGetLastError(szErrorMsg, 256);
         sError+=szErrorMsg;
         MessageBox(NULL, sError, 0, 0);
     }
@@ -57,7 +57,7 @@ DWORD WINAPI CrashThread(LPVOID pParam)
             // Test exception handler
             TCHAR szErrorMsg[256];
             CString sError = _T("Error creating exception situation!\nErrorMsg:");
-            crGetLastErrorMsg(szErrorMsg, 256);
+            crGetLastError(szErrorMsg, 256);
             sError+=szErrorMsg;
             MessageBox(NULL, sError, _T("Error"), 0);    
         }

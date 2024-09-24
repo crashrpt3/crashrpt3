@@ -85,17 +85,16 @@ typedef int (CALLBACK* PFN_CRASH_CALLBACK) (CR_CRASH_CALLBACK_INFO* pInfo);
 #define CR_CRASH_HANDLER_SIGTERM                        0x1000 //!< Install SIGTERM signal handler.
 #define CR_CRASH_HANDLER_ALL                            0xFFFF //!< Install all possible exception handlers.
 
-typedef struct _CrInstallInfo
-{
+typedef struct _CrInstallInfo {
     WORD cb;                        //!< Size of this structure in bytes; must be initialized before using!
-    LPCWSTR lpAppName;              //!< Application name.
-    LPCWSTR lpAppVersion;           //!< Application version.
-    LPCWSTR lpServerURL;            //!< URL of server-side script (used in HTTP connection).
-    LPCWSTR lpPrivacyPolicyURL;     //!< URL of privacy policy agreement.
-    LPCWSTR lpCrashSenderDirectory; //!< Directory where CrashSender.exe is located.
-    LPCWSTR lpDBGHelpDirectory;     //!< Directory where dbghelp.dll is located.
-    LPCWSTR lpOutputDirectory;      //!< Directory where to save dump error reports.
-    UINT32 uCrashHandlers;          //!< See micro CR_CRASH_HANDLER_ALL
+    LPCWSTR szAppName;              //!< Application name.
+    LPCWSTR szAppVersion;           //!< Application version.
+    LPCWSTR szServerURL;            //!< URL of server-side script (used in HTTP connection).
+    LPCWSTR szPrivacyPolicyURL;     //!< URL of privacy policy agreement.
+    LPCWSTR szCrashSenderDirectory; //!< Directory where CrashSender.exe is located.
+    LPCWSTR szDBGHelpDirectory;     //!< Directory where dbghelp.dll is located.
+    LPCWSTR szOutputDirectory;      //!< Directory where to save dump error reports.
+    UINT32 uCrashHandler;           //!< See micro CR_CRASH_HANDLER_ALL
     MINIDUMP_TYPE uMinidumpType;    //!< Minidump type.
 } CrInstallInfo;
 
@@ -113,7 +112,7 @@ CRASHRPT_API(int) crAddFile(LPCWSTR pszFile, LPCWSTR pszDestFile, LPCWSTR pszDes
 CRASHRPT_API(int) crAddProperty(LPCWSTR pszPropName, LPCWSTR pszPropValue);
 
 CRASHRPT_API(int) crSetCrashCallback(PFN_CRASH_CALLBACK pfnCallback, LPVOID lpParam);
-CRASHRPT_API(int) crGetLastErrorMsg(LPWSTR pszBuffer, UINT uBuffSize);
+CRASHRPT_API(int) crGetLastError(LPWSTR pszBuffer, UINT uBuffSize);
 CRASHRPT_API(int) crGenerateErrorReport(PCR_EXCEPTION_INFO pExceptionInfo);
 
 #ifdef __cplusplus

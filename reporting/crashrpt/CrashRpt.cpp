@@ -19,13 +19,11 @@ be found in the Authors.txt file in the root of the source tree.
 #include "Utility.h"
 #include "strconv.h"
 
-HANDLE g_hModuleCrashRpt = NULL; // Handle to CrashRpt.dll module.
+HANDLE g_hModuleCrashRpt = nullptr; // Handle to CrashRpt.dll module.
 CComAutoCriticalSection g_cs;    // Critical section for thread-safe accessing error messages.
 std::map<DWORD, CString> g_sErrorMsg; // Last error messages for each calling thread.
 
-// Forward declaration.
-int crClearErrorMsg();
-
+void crClearErrorMsg();
 
 namespace {
     static void _crCrashedByCppThrow()
@@ -34,160 +32,124 @@ namespace {
     }
 }
 
-
 CRASHRPT_API(int) crInstall(const CrInstallInfo* pInfo)
 {
-    int nStatus = -1;
-    crSetErrorMsg(_T("Success."));
-    strconv_t strconv;
-    CCrashHandler* pCrashHandler = NULL;
+    int ret = 1;
+    CCrashHandler* pCrashHandler = nullptr;
 
-    // Validate input parameters.
-    if (pInfo == NULL ||
-        pInfo->cb != sizeof(CrInstallInfo))
+    do
     {
-        crSetErrorMsg(_T("pInfo is NULL or pInfo->cb member is not valid."));
-        nStatus = 1;
-        goto cleanup;
-    }
+        crSetLastError(L"");
 
-    // Check if crInstall() already was called for current process.
-    pCrashHandler = CCrashHandler::GetCurrentProcessCrashHandler();
-
-    if (pCrashHandler != NULL &&
-        pCrashHandler->IsInitialized())
-    {
-        crSetErrorMsg(_T("Can't install crash handler to the same process twice."));
-        nStatus = 2;
-        goto cleanup;
-    }
-
-    if (pCrashHandler == NULL)
-    {
-        pCrashHandler = new CCrashHandler();
-        if (pCrashHandler == NULL)
+        if (pInfo == nullptr || pInfo->cb != sizeof(CrInstallInfo))
         {
-            crSetErrorMsg(_T("Error allocating memory for crash handler."));
-            nStatus = 3;
-            goto cleanup;
+            crSetLastError(L"pInfo is nullptr or pInfo->cb member is not valid.");
+            break;
+        }
+
+        pCrashHandler = CCrashHandler::instance();
+        if (pCrashHandler && pCrashHandler->isInitialized())
+        {
+            crSetLastError(L"Can't install crash handler to the same process twice.");
+            break;
+        }
+
+        if (!pCrashHandler)
+        {
+            pCrashHandler = new CCrashHandler();
+            if (!pCrashHandler)
+            {
+                crSetLastError(L"Error allocating memory for crash handler.");
+                break;
+            }
+        }
+
+        ret = pCrashHandler->initialize(
+            pInfo->szAppName,
+            pInfo->szAppVersion,
+            pInfo->szCrashSenderDirectory,
+            pInfo->szServerURL,
+            pInfo->uCrashHandler,
+            pInfo->szPrivacyPolicyURL,
+            pInfo->szDBGHelpDirectory,
+            pInfo->uMinidumpType,
+            pInfo->szOutputDirectory);
+
+        if (ret != 0)
+        {
+            ret = 1;
+            break;
+        }
+    } while (false);
+
+    if (ret != 0)
+    {
+        if (pCrashHandler && !pCrashHandler->isInitialized())
+        {
+            delete pCrashHandler;
         }
     }
-
-    {
-        LPCTSTR ptszAppName = strconv.w2t((LPWSTR)pInfo->lpAppName);
-        LPCTSTR ptszAppVersion = strconv.w2t((LPWSTR)pInfo->lpAppVersion);
-        LPCTSTR ptszCrashSenderPath = strconv.w2t((LPWSTR)pInfo->lpCrashSenderDirectory);
-        LPCTSTR ptszUrl = strconv.w2t((LPWSTR)pInfo->lpServerURL);
-        LPCTSTR ptszPrivacyPolicyURL = strconv.w2t((LPWSTR)pInfo->lpPrivacyPolicyURL);
-        LPCTSTR ptszDebugHelpDLL_file = strconv.w2t((LPWSTR)pInfo->lpDBGHelpDirectory);
-        MINIDUMP_TYPE miniDumpType = pInfo->uMinidumpType;
-        LPCTSTR ptszErrorReportSaveDir = strconv.w2t((LPWSTR)pInfo->lpOutputDirectory);
-
-        int nInitResult = pCrashHandler->Init(
-            ptszAppName,
-            ptszAppVersion,
-            ptszCrashSenderPath,
-            ptszUrl,
-            pInfo->uCrashHandlers,
-            ptszPrivacyPolicyURL,
-            ptszDebugHelpDLL_file,
-            miniDumpType,
-            ptszErrorReportSaveDir
-        );
-
-        if (nInitResult != 0)
-        {
-            nStatus = 4;
-            goto cleanup;
-        }
-    }
-
-    // OK.
-    nStatus = 0;
-
-cleanup:
-
-    if (nStatus != 0) // If failed
-    {
-        if (pCrashHandler != NULL &&
-            !pCrashHandler->IsInitialized())
-        {
-            // Release crash handler object
-            CCrashHandler::ReleaseCurrentProcessCrashHandler();
-        }
-    }
-
-    return nStatus;
+    return ret;
 }
 
 CRASHRPT_API(int) crUninstall()
 {
-    crSetErrorMsg(_T("Success."));
+    crSetLastError(L"");
 
-    // Get crash handler singleton
-    CCrashHandler* pCrashHandler =
-        CCrashHandler::GetCurrentProcessCrashHandler();
+    CCrashHandler* pCrashHandler = CCrashHandler::instance();
 
-    // Check if found
-    if (pCrashHandler == NULL ||
-        !pCrashHandler->IsInitialized())
+    if (!pCrashHandler)
     {
-        crSetErrorMsg(_T("Crash handler wasn't preiviously installed for this process."));
+        crSetLastError(_T("Crash handler wasn't preiviously installed for this process."));
         return 1;
     }
 
-    // Uninstall main thread's C++ exception handlers
-    int nUnset = pCrashHandler->UnSetThreadExceptionHandlers();
-    if (nUnset != 0)
-        return 2;
+    if (!pCrashHandler->isInitialized())
+    {
+        crSetLastError(_T("Crash handler wasn't preiviously installed for this process."));
+        return 1;
+    }
 
-    // Destroy the crash handler.
-    int nDestroy = pCrashHandler->Destroy();
-    if (nDestroy != 0)
-        return 3;
+    if (0 != pCrashHandler->uninitialize())
+    {
+        return 1;
+    }
 
-    // Free the crash handler object.
     delete pCrashHandler;
-
-    // Clear last error message list.
-    g_cs.Lock();
-    g_sErrorMsg.clear();
-    g_cs.Unlock();
-
     return 0;
 }
 
 CRASHRPT_API(int) crSetCrashCallback(PFN_CRASH_CALLBACK pfnCallbackFunc, LPVOID lpParam)
 {
-    crSetErrorMsg(_T("Unspecified error."));
+    crSetLastError(_T("Unspecified error."));
 
-    CCrashHandler* pCrashHandler = CCrashHandler::GetCurrentProcessCrashHandler();
+    CCrashHandler* pCrashHandler = CCrashHandler::instance();
 
-    if (pCrashHandler == NULL)
+    if (pCrashHandler == nullptr)
     {
-        crSetErrorMsg(_T("Crash handler wasn't previously installed for current process."));
+        crSetLastError(_T("Crash handler wasn't previously installed for current process."));
         return 1; // No handler installed for current process?
     }
 
     pCrashHandler->SetCrashCallback(pfnCallbackFunc, lpParam);
 
     // OK
-    crSetErrorMsg(_T("Success."));
+    crSetLastError(_T("Success."));
     return 0;
 }
 
 CRASHRPT_API(int) crAddFile(PCWSTR pszFile, PCWSTR pszDestFile, PCWSTR pszDesc, DWORD dwFlags)
 {
-    crSetErrorMsg(_T("Success."));
+    crSetLastError(_T("Success."));
 
     strconv_t strconv;
 
     CCrashHandler* pCrashHandler =
-        CCrashHandler::GetCurrentProcessCrashHandler();
+        CCrashHandler::instance();
 
-    if (pCrashHandler == NULL)
+    if (pCrashHandler == nullptr)
     {
-        crSetErrorMsg(_T("Crash handler wasn't previously installed for current process."));
+        crSetLastError(_T("Crash handler wasn't previously installed for current process."));
         return 1; // No handler installed for current process?
     }
 
@@ -212,52 +174,52 @@ crAddProperty(
     LPCWSTR pszPropValue
 )
 {
-    crSetErrorMsg(_T("Unspecified error."));
+    crSetLastError(_T("Unspecified error."));
 
     strconv_t strconv;
     LPCTSTR pszPropNameT = strconv.w2t(pszPropName);
     LPCTSTR pszPropValueT = strconv.w2t(pszPropValue);
 
     CCrashHandler* pCrashHandler =
-        CCrashHandler::GetCurrentProcessCrashHandler();
+        CCrashHandler::instance();
 
-    if (pCrashHandler == NULL)
+    if (pCrashHandler == nullptr)
     {
-        crSetErrorMsg(_T("Crash handler wasn't previously installed for current process."));
+        crSetLastError(_T("Crash handler wasn't previously installed for current process."));
         return 1; // No handler installed for current process?
     }
 
     int nResult = pCrashHandler->AddProperty(CString(pszPropNameT), CString(pszPropValueT));
     if (nResult != 0)
     {
-        crSetErrorMsg(_T("Invalid property name specified."));
+        crSetLastError(_T("Invalid property name specified."));
         return 2; // Failed to add the property
     }
 
-    crSetErrorMsg(_T("Success."));
+    crSetLastError(_T("Success."));
     return 0;
 }
 
 CRASHRPT_API(int)
 crGenerateErrorReport(PCR_EXCEPTION_INFO pExceptionInfo)
 {
-    crSetErrorMsg(_T("Unspecified error."));
+    crSetLastError(_T("Unspecified error."));
 
-    if (pExceptionInfo == NULL ||
+    if (pExceptionInfo == nullptr ||
         pExceptionInfo->cb != sizeof(CR_EXCEPTION_INFO))
     {
-        crSetErrorMsg(_T("Exception info is NULL or invalid."));
+        crSetLastError(_T("Exception info is nullptr or invalid."));
         return 1;
     }
 
     CCrashHandler* pCrashHandler =
-        CCrashHandler::GetCurrentProcessCrashHandler();
+        CCrashHandler::instance();
 
-    if (pCrashHandler == NULL)
+    if (pCrashHandler == nullptr)
     {
         // Handler is not installed for current process
-        crSetErrorMsg(_T("Crash handler wasn't previously installed for current process."));
-        ATLASSERT(pCrashHandler != NULL);
+        crSetLastError(_T("Crash handler wasn't previously installed for current process."));
+        ATLASSERT(pCrashHandler != nullptr);
         return 2;
     }
 
@@ -265,9 +227,9 @@ crGenerateErrorReport(PCR_EXCEPTION_INFO pExceptionInfo)
 }
 
 CRASHRPT_API(int)
-crGetLastErrorMsg(LPWSTR pszBuffer, UINT uBuffSize)
+crGetLastError(LPWSTR pszBuffer, UINT uBuffSize)
 {
-    if (pszBuffer == NULL || uBuffSize == 0)
+    if (pszBuffer == nullptr || uBuffSize == 0)
         return -1; // Null pointer to buffer
 
     strconv_t strconv;
@@ -296,30 +258,24 @@ crGetLastErrorMsg(LPWSTR pszBuffer, UINT uBuffSize)
     return size;
 }
 
-int crSetErrorMsg(LPCTSTR pszErrorMsg)
+void crSetLastError(LPCWSTR szMessage)
 {
     g_cs.Lock();
     DWORD dwThreadId = GetCurrentThreadId();
-    g_sErrorMsg[dwThreadId] = pszErrorMsg;
+    g_sErrorMsg[dwThreadId] = szMessage;
     g_cs.Unlock();
-    return 0;
 }
 
-int crClearErrorMsg()
+void crClearErrorMsg()
 {
-    // This method erases the error message for the caller thread.
-    // This may be required to avoid "memory leaks".
-
     g_cs.Lock();
     DWORD dwThreadId = GetCurrentThreadId();
-    std::map<DWORD, CString>::iterator itMsg =
-        g_sErrorMsg.find(dwThreadId);
+    auto itMsg = g_sErrorMsg.find(dwThreadId);
     if (itMsg == g_sErrorMsg.end())
     {
         g_sErrorMsg.erase(itMsg);
     }
     g_cs.Unlock();
-    return 0;
 }
 
 #include <float.h>
@@ -405,7 +361,7 @@ namespace
 #pragma warning(disable: 4702)
     int RecurseAlloc()
     {
-        int* pi = NULL;
+        int* pi = nullptr;
         for (;;)
             pi = new int[BIG_NUMBER];
         return 0;
@@ -455,7 +411,7 @@ namespace
 
 CRASHRPT_API(int) crTestCrash(unsigned uTestCrash) noexcept(false)
 {
-    crSetErrorMsg(_T("Unspecified error."));
+    crSetLastError(_T("Unspecified error."));
 
     switch (uTestCrash)
     {
@@ -463,7 +419,7 @@ CRASHRPT_API(int) crTestCrash(unsigned uTestCrash) noexcept(false)
     {
         // Access violation
         int* p = 0;
-#pragma warning(disable : 6011)   // warning C6011: Dereferencing NULL pointer 'p'
+#pragma warning(disable : 6011)   // warning C6011: Dereferencing nullptr pointer 'p'
         * p = 0;
 #pragma warning(default : 6011)
     }
@@ -500,7 +456,7 @@ CRASHRPT_API(int) crTestCrash(unsigned uTestCrash) noexcept(false)
     {
         char* formatString;
         // Call printf_s with invalid parameters.
-        formatString = NULL;
+        formatString = nullptr;
 #pragma warning(disable : 6387)   // warning C6387: 'argument 1' might be '0': this does not adhere to the specification for the function 'printf'
         printf(formatString);
 #pragma warning(default : 6387)
@@ -529,34 +485,34 @@ CRASHRPT_API(int) crTestCrash(unsigned uTestCrash) noexcept(false)
     {
         int result = raise(SIGILL);
         ATLASSERT(result == 0);
-        crSetErrorMsg(_T("Error raising SIGILL."));
+        crSetLastError(_T("Error raising SIGILL."));
         return result;
     }
     case CR_TEST_CRASH_SIGINT:
     {
         int result = raise(SIGINT);
         ATLASSERT(result == 0);
-        crSetErrorMsg(_T("Error raising SIGINT."));
+        crSetLastError(_T("Error raising SIGINT."));
         return result;
     }
     case CR_TEST_CRASH_SIGSEGV:
     {
         int result = raise(SIGSEGV);
         ATLASSERT(result == 0);
-        crSetErrorMsg(_T("Error raising SIGSEGV."));
+        crSetLastError(_T("Error raising SIGSEGV."));
         return result;
     }
     case CR_TEST_CRASH_SIGTERM:
     {
         int result = raise(SIGTERM);
-        crSetErrorMsg(_T("Error raising SIGTERM."));
+        crSetLastError(_T("Error raising SIGTERM."));
         ATLASSERT(result == 0);
         return result;
     }
     case CR_TEST_CRASH_NONCONTINUABLE:
     {
         // Raise noncontinuable software exception
-        ::RaiseException(123, EXCEPTION_NONCONTINUABLE, 0, NULL);
+        ::RaiseException(123, EXCEPTION_NONCONTINUABLE, 0, nullptr);
     }
     break;
     case CR_TEST_CRASH_CPP_THROW:
@@ -572,7 +528,7 @@ CRASHRPT_API(int) crTestCrash(unsigned uTestCrash) noexcept(false)
     }
     default:
     {
-        crSetErrorMsg(_T("Unknown exception type specified."));
+        crSetLastError(_T("Unknown exception type specified."));
     }
     break;
     }

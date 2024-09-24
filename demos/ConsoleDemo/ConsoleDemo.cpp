@@ -29,8 +29,8 @@ int main(int argc, char* argv[])
     CrInstallInfo info;
     memset(&info, 0, sizeof(CrInstallInfo));
     info.cb = sizeof(CrInstallInfo);             // Size of the structure
-    info.lpAppName = _T("CrashRpt Console Test"); // App name
-    info.lpAppVersion = _T("1.0.0");              // App version
+    info.szAppName = _T("CrashRpt Console Test"); // App name
+    info.szAppVersion = _T("1.0.0");              // App version
 
     // Install crash handlers
     int nInstResult = crInstall(&info);
@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
     if(nInstResult!=0)
     {
         TCHAR buff[256];
-        crGetLastErrorMsg(buff, 256); // Get last error
+        crGetLastError(buff, 256); // Get last error
         _tprintf(_T("%s\n"), buff); // and output it to the screen
         return FALSE;
     }

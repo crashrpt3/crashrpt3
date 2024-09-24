@@ -177,7 +177,7 @@ void CMainDlg::DoCrash()
             {
                 TCHAR szErrorMsg[256];
                 CString sError = _T("Error creating exception situation!\nErrorMsg:");
-                crGetLastErrorMsg(szErrorMsg, 256);
+                crGetLastError(szErrorMsg, 256);
                 sError+=szErrorMsg;
                 MessageBox(sError);
             }
