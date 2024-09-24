@@ -229,22 +229,17 @@ public:
     CString     m_sLangFileName;        // Path to language INI file.
     CString     m_sDbgHelpPath;         // Path to dbghelp.dll.
     CString     m_sAppName;             // Application name.
-    CString     m_sCustomSenderIcon;    // Custom icon resource for Error Report dialog.
     CString     m_sUrl;                 // URL (used for HTTP connection).
     BOOL        m_bSilentMode;          // Should we show GUI?
     BOOL        m_bSendErrorReport;     // Should we send error report now?
-	BOOL		m_bSendMandatory;       // Disable "Close" and "Other actions.." buttons on Error Report dialog.
 	BOOL		m_bShowAdditionalInfoFields; // Make "Your E-mail" and "Describe what you were doing when the problem occurred" fields of Error Report dialog always visible.
-	BOOL		m_bAllowAttachMoreFiles; // Whether to allow user to attach more files to crash report by clicking "Attach More File(s)" item from context menu of Error Report Details dialog.
     BOOL        m_bStoreZIPArchives;    // Should we store zipped error report files?
     BOOL        m_bSendRecentReports;   // Should we send recently queued reports now?
     BOOL        m_bAppRestart;          // Should we restart the crashed application?
     CString     m_sRestartCmdLine;      // Command line for crashed app restart.
 	int         m_nRestartTimeout;      // Restart timeout.
     int         m_nMaxReportsPerDay;    // Maximum number of crash reports that will be sent per calendar day.
-    UINT        m_uPriorities[3];       // Error report delivery priorities.
     CString     m_sPrivacyPolicyURL;    // Privacy policy URL.
-    BOOL        m_bGenerateMinidump;    // Should we generate crash minidump file?
     MINIDUMP_TYPE m_MinidumpType;       // Minidump type.
     CPoint      m_ptCursorPos;          // Mouse cursor position on crash.
     CRect       m_rcAppWnd;             // Rectangle of the application's main window.
@@ -269,9 +264,6 @@ public:
 
     // Gets crash info from shared memory.
     int Init(LPCTSTR szFileMappingName);
-
-    // Loads custom icon (if defined).
-    HICON GetCustomIcon();
 
     // Returns report by its index in the list.
     CErrorReportInfo* GetReport(int nIndex);

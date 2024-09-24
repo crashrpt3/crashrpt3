@@ -91,15 +91,13 @@ public:
         LPCTSTR lpcszAppVersion = NULL,
         LPCTSTR lpcszCrashSenderPath = NULL,
         LPCTSTR lpcszUrl = NULL,
-        UINT(*puPriorities)[5] = NULL,
+        UINT32 uCrashHandlers = 0,
         DWORD dwFlags = 0,
         LPCTSTR lpcszPrivacyPolicyURL = NULL,
         LPCTSTR lpcszDebugHelpDLLPath = NULL,
         MINIDUMP_TYPE MiniDumpType = MiniDumpNormal,
         LPCTSTR lpcszErrorReportSaveDir = NULL,
         LPCTSTR lpcszRestartCmdLine = NULL,
-        LPCTSTR lpcszLangFilePath = NULL,
-        LPCTSTR lpcszCustomSenderIcon = NULL,
         int nRestartTimeout = 0,
         int nMaxReportsPerDay = 0);
 
@@ -122,7 +120,7 @@ public:
     int GenerateErrorReport(__in_opt PCR_EXCEPTION_INFO pExceptionInfo = NULL);
 
     // Sets/unsets exception handlers for the entire process
-    int SetProcessExceptionHandlers(DWORD dwFlags);
+    int SetProcessExceptionHandlers(UINT32 uCrashHandlers);
     int UnSetProcessExceptionHandlers();
 
     // Sets/unsets exception handlers for the caller thread
@@ -141,7 +139,7 @@ public:
     /* Exception handler functions. */
 
     // Structured exception handler (SEH handler)
-    static LONG WINAPI SehHandler(__in PEXCEPTION_POINTERS pExceptionPtrs);
+    static LONG WINAPI SEHHandler(PEXCEPTION_POINTERS pExceptionPtrs);
     static DWORD WINAPI StackOverflowThreadFunction(LPVOID threadParameter);
     // C++ terminate handler
     static void __cdecl TerminateHandler();
@@ -222,25 +220,25 @@ public:
     // Singleton of the CCrashHandler class.
     static CCrashHandler* m_pProcessCrashHandler;
 
-    // Previous SEH exception filter.
-    LPTOP_LEVEL_EXCEPTION_FILTER  m_oldSehHandler;
+    // Old SEH exception filter.
+    LPTOP_LEVEL_EXCEPTION_FILTER  m_hOldSEH;
 
 #if _MSC_VER>=1300
-    _purecall_handler m_prevPurec;   // Previous pure virtual call exception filter.
-    _PNH m_prevNewHandler; // Previous new operator exception filter.
+    _purecall_handler m_hOldPure;   // Previous pure virtual call exception filter.
+    _PNH m_hOldOperatorNew; // Previous new operator exception filter.
 #endif
 
 #if _MSC_VER>=1400
-    _invalid_parameter_handler m_prevInvpar; // Previous invalid parameter exception filter.
+    _invalid_parameter_handler m_hOldInvalidParam; // Previous invalid parameter exception filter.
 #endif
 
 #if _MSC_VER>=1300 && _MSC_VER<1400
-    _secerr_handler_func m_prevSec; // Previous security exception filter.
+    _secerr_handler_func m_hOldSecurity; // Previous security exception filter.
 #endif
 
-    void(__cdecl* m_prevSigABRT)(int); // Previous SIGABRT handler.
-    void(__cdecl* m_prevSigINT)(int);  // Previous SIGINT handler.
-    void(__cdecl* m_prevSigTERM)(int); // Previous SIGTERM handler.
+    void(__cdecl* m_hOldSIGABRT)(int); // Old SIGABRT handler.
+    void(__cdecl* m_hOldSIGINT)(int);  // Old SIGINT handler.
+    void(__cdecl* m_hOldSIGTERM)(int); // Old SIGTERM handler.
 
     // List of exception handlers installed for worker threads of this process.
     std::map<DWORD, ThreadExceptionHandlers> m_ThreadExceptionHandlers;
@@ -257,13 +255,11 @@ public:
     int m_nRestartTimeout;         // Restart timeout.
     int m_nMaxReportsPerDay;       // Maximum number of crash reports that will be sent per calendar day.
     CString m_sUrl;                // Url to use when sending error report over HTTP.
-    UINT m_uPriorities[3];         // Delivery priorities.
     CString m_sPrivacyPolicyURL;   // Privacy policy URL.
     CString m_sPathToCrashSender;  // Path to CrashSender.exe
     CString m_sLangFileName;       // Language file.
     CString m_sPathToDebugHelpDll; // Path to dbghelp.dll.
     CString m_sUnsentCrashReportsFolder; // Path to the folder where to save error reports.
-    CString m_sCustomSenderIcon;   // Resource name that can be used as custom Error Report dialog icon.
     std::map<CString, FileItem> m_files; // File items to include.
     std::map<CString, CString> m_props;  // User-defined properties to include.
     CCritSec m_csCrashLock;        // Critical section used to synchronize thread access to this object.

@@ -60,49 +60,52 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
     m_cboExcType = GetDlgItem(IDC_EXCTYPE);
 
     nItem = m_cboExcType.AddString(_T("SEH exception"));
-    m_cboExcType.SetItemData(nItem, CR_SEH_EXCEPTION);
+    m_cboExcType.SetItemData(nItem, CR_CRASH_TYPE_SEH);
 
     nItem = m_cboExcType.AddString(_T("terminate"));
-    m_cboExcType.SetItemData(nItem, CR_CPP_TERMINATE_CALL);
+    m_cboExcType.SetItemData(nItem, CR_CRASH_TYPE_TERMINATE_CALL);
 
     nItem = m_cboExcType.AddString(_T("unexpected"));
-    m_cboExcType.SetItemData(nItem, CR_CPP_UNEXPECTED_CALL);
+    m_cboExcType.SetItemData(nItem, CR_CRASH_TYPE_UNEXPECTED_CALL);
 
     nItem = m_cboExcType.AddString(_T("pure virtual method call"));
-    m_cboExcType.SetItemData(nItem, CR_CPP_PURE_CALL);
+    m_cboExcType.SetItemData(nItem, CR_CRASH_TYPE_CPP_PURE);
 
     nItem = m_cboExcType.AddString(_T("new operator fault"));
-    m_cboExcType.SetItemData(nItem, CR_CPP_NEW_OPERATOR_ERROR);
+    m_cboExcType.SetItemData(nItem, CR_CRASH_TYPE_CPP_NEW_OPERATOR);
 
     nItem = m_cboExcType.AddString(_T("buffer overrun"));
-    m_cboExcType.SetItemData(nItem, CR_CPP_SECURITY_ERROR);
+    m_cboExcType.SetItemData(nItem, CR_CRASH_TYPE_SECURITY);
 
     nItem = m_cboExcType.AddString(_T("invalid parameter"));
-    m_cboExcType.SetItemData(nItem, CR_CPP_INVALID_PARAMETER);
+    m_cboExcType.SetItemData(nItem, CR_CRASH_TYPE_INVALID_PARAMETER);
 
     nItem = m_cboExcType.AddString(_T("SIGABRT"));
-    m_cboExcType.SetItemData(nItem, CR_CPP_SIGABRT);
+    m_cboExcType.SetItemData(nItem, CR_CRASH_TYPE_SIGABRT);
 
     nItem = m_cboExcType.AddString(_T("SIGFPE"));
-    m_cboExcType.SetItemData(nItem, CR_CPP_SIGFPE);
+    m_cboExcType.SetItemData(nItem, CR_CRASH_TYPE_SIGFPE);
 
     nItem = m_cboExcType.AddString(_T("SIGILL"));
-    m_cboExcType.SetItemData(nItem, CR_CPP_SIGILL);
+    m_cboExcType.SetItemData(nItem, CR_CRASH_TYPE_SIGILL);
 
     nItem = m_cboExcType.AddString(_T("SIGINT"));
-    m_cboExcType.SetItemData(nItem, CR_CPP_SIGINT);
+    m_cboExcType.SetItemData(nItem, CR_CRASH_TYPE_SIGINT);
 
     nItem = m_cboExcType.AddString(_T("SIGSEGV"));
-    m_cboExcType.SetItemData(nItem, CR_CPP_SIGSEGV);
+    m_cboExcType.SetItemData(nItem, CR_CRASH_TYPE_SIGSEGV);
 
     nItem = m_cboExcType.AddString(_T("SIGTERM"));
-    m_cboExcType.SetItemData(nItem, CR_CPP_SIGTERM);
+    m_cboExcType.SetItemData(nItem, CR_CRASH_TYPE_SIGTERM);
+
+    nItem = m_cboExcType.AddString(_T("non continuable"));
+    m_cboExcType.SetItemData(nItem, CR_CRASH_TYPE_NONCONTINUABLE);
 
     nItem = m_cboExcType.AddString(_T("throw C++ typed exception"));
-    m_cboExcType.SetItemData(nItem, CR_THROW);
+    m_cboExcType.SetItemData(nItem, CR_CRASH_TYPE_CPP_THROW);
 
 	nItem = m_cboExcType.AddString(_T("stack overflow"));
-    m_cboExcType.SetItemData(nItem, CR_STACK_OVERFLOW);
+    m_cboExcType.SetItemData(nItem, CR_CRASH_TYPE_STACK_OVERFLOW);
 
     nItem = m_cboExcType.AddString(_T("Manual report"));
     m_cboExcType.SetItemData(nItem, MANUAL_REPORT);

@@ -58,14 +58,13 @@ void DeliveryTests::Test_HttpDelivery()
 
         // Install crash handler for the main thread
 
-        CR_INSTALL_INFO info;
-        memset(&info, 0, sizeof(CR_INSTALL_INFO));
-        info.cb = sizeof(CR_INSTALL_INFO);
-        info.pszAppVersion = _T("1.0.0"); // Specify app version, otherwise it will fail.
-        info.dwFlags = CR_INST_NO_GUI;
-        info.pszUrl = _T("localhost/crashrpt.php"); // Use HTTP address for delivery
-        info.uPriorities[CR_HTTP] = 0;
-        info.pszErrorReportSaveDir = sTmpFolder;
+        CrInstallInfo info;
+        memset(&info, 0, sizeof(CrInstallInfo));
+        info.cb = sizeof(CrInstallInfo);
+        info.lpApplicationVersion = _T("1.0.0"); // Specify app version, otherwise it will fail.
+        info.dwInstallFlags = CR_INST_NO_GUI;
+        info.lpServerURL = _T("localhost/crashrpt.php"); // Use HTTP address for delivery
+        info.lpOutputDirectory = sTmpFolder;
         int nInstResult = crInstall(&info);
         TEST_ASSERT(nInstResult==0);
 
@@ -108,13 +107,12 @@ void DeliveryTests::Test_SmtpDelivery()
 
         // Install crash handler for the main thread
 
-        CR_INSTALL_INFO info;
-        memset(&info, 0, sizeof(CR_INSTALL_INFO));
-        info.cb = sizeof(CR_INSTALL_INFO);
-        info.pszAppVersion = _T("1.0.0"); // Specify app version, otherwise it will fail.
-        info.dwFlags = CR_INST_NO_GUI;
-        info.uPriorities[CR_HTTP] = CR_NEGATIVE_PRIORITY;
-        info.pszErrorReportSaveDir = sTmpFolder;
+        CrInstallInfo info;
+        memset(&info, 0, sizeof(CrInstallInfo));
+        info.cb = sizeof(CrInstallInfo);
+        info.lpApplicationVersion = _T("1.0.0"); // Specify app version, otherwise it will fail.
+        info.dwInstallFlags = CR_INST_NO_GUI;
+        info.lpOutputDirectory = sTmpFolder;
         int nInstResult = crInstall(&info);
         TEST_ASSERT(nInstResult==0);
 
@@ -157,13 +155,12 @@ void DeliveryTests::Test_SmtpDelivery_proxy()
 
         // Install crash handler for the main thread
 
-        CR_INSTALL_INFO info;
-        memset(&info, 0, sizeof(CR_INSTALL_INFO));
-        info.cb = sizeof(CR_INSTALL_INFO);
-        info.pszAppVersion = _T("1.0.0"); // Specify app version, otherwise it will fail.
-        info.dwFlags = CR_INST_NO_GUI;
-        info.uPriorities[CR_HTTP] = CR_NEGATIVE_PRIORITY;
-        info.pszErrorReportSaveDir = sTmpFolder;
+        CrInstallInfo info;
+        memset(&info, 0, sizeof(CrInstallInfo));
+        info.cb = sizeof(CrInstallInfo);
+        info.lpApplicationVersion = _T("1.0.0"); // Specify app version, otherwise it will fail.
+        info.dwInstallFlags = CR_INST_NO_GUI;
+        info.lpOutputDirectory = sTmpFolder;
         int nInstResult = crInstall(&info);
         TEST_ASSERT(nInstResult==0);
 
@@ -209,13 +206,12 @@ void DeliveryTests::Test_SMAPI_Delivery()
 
         // Install crash handler for the main thread
 
-        CR_INSTALL_INFO info;
-        memset(&info, 0, sizeof(CR_INSTALL_INFO));
-        info.cb = sizeof(CR_INSTALL_INFO);
-        info.pszAppVersion = _T("1.0.0"); // Specify app version, otherwise it will fail.
-        info.dwFlags = CR_INST_NO_GUI;
-        info.uPriorities[CR_HTTP] = CR_NEGATIVE_PRIORITY;
-        info.pszErrorReportSaveDir = sTmpFolder;
+        CrInstallInfo info;
+        memset(&info, 0, sizeof(CrInstallInfo));
+        info.cb = sizeof(CrInstallInfo);
+        info.lpApplicationVersion = _T("1.0.0"); // Specify app version, otherwise it will fail.
+        info.dwInstallFlags = CR_INST_NO_GUI;
+        info.lpOutputDirectory = sTmpFolder;
         int nInstResult = crInstall(&info);
         TEST_ASSERT(nInstResult==0);
 

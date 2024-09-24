@@ -20,7 +20,7 @@ void test_generate_report()
     CR_EXCEPTION_INFO ei;
     memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
     ei.cb = sizeof(CR_EXCEPTION_INFO);
-    ei.nExceptionType = CR_SEH_EXCEPTION;
+    ei.nExceptionType = CR_CRASH_TYPE_SEH;
     ei.dwSEHCode = 0x1234;
     ei.lpExceptionPointers = NULL;
     ei.bManual = TRUE; // Signal the report is being generated manually.
@@ -41,7 +41,7 @@ DWORD WINAPI CrashThread(LPVOID pParam)
     CrashThreadInfo* pInfo = (CrashThreadInfo*)pParam;
 
     // Install per-thread exception handlers
-    CrThreadAutoInstallHelper cr_install_helper(0);
+    crashrpt::CrThreadInstallGuard cr_install_helper(0);
 
     for(;;)
     {

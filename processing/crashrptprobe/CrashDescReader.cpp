@@ -239,7 +239,7 @@ int CCrashDescReader::Load(CString sFileName)
     }
     
     // Get FPESubcode (for FPE exceptions only)
-    if(m_dwExceptionType==CR_CPP_SIGFPE)
+    if(m_dwExceptionType==CR_CRASH_TYPE_SIGFPE)
     {
         TiXmlHandle hFPESubcode = hRoot.ToElement()->FirstChild("FPESubcode");
         if(hFPESubcode.ToElement())
@@ -256,7 +256,7 @@ int CCrashDescReader::Load(CString sFileName)
 
     // Get InvParamExpression, InvParamFunction, InvParamFile, InvParamLine
     // (for invalid parameter exceptions only)
-    if(m_dwExceptionType==CR_CPP_INVALID_PARAMETER)
+    if(m_dwExceptionType==CR_CRASH_TYPE_INVALID_PARAMETER)
     {
         TiXmlHandle hInvParamExpression = hRoot.ToElement()->FirstChild("InvParamExpression");
         if(hInvParamExpression.ToElement())

@@ -2,7 +2,7 @@ EXPORTS
 
 crInstall
 crUninstall
-crInstallToCurrentThread2
+crInstallToCurrentThread
 crUninstallFromCurrentThread
 crAddFile
 crAddProperty

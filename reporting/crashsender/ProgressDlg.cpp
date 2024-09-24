@@ -25,15 +25,8 @@ LRESULT CProgressDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lP
         Utility::SetLayoutRTL(m_hWnd);
     }
 
-    HICON hIcon = NULL;
-
     // Try to load custom icon
-    hIcon = pSender->GetCrashInfo()->GetCustomIcon();
-    // If there is no custom icon, load the default one
-    if(hIcon==NULL)
-        hIcon = ::LoadIcon(_Module.GetResourceInstance(), MAKEINTRESOURCE(IDR_MAINFRAME));
-
-    // Set dialog icon
+     HICON hIcon = ::LoadIcon(_Module.GetResourceInstance(), MAKEINTRESOURCE(IDR_MAINFRAME));
     SetIcon(hIcon, FALSE);
     SetIcon(hIcon, TRUE);
 

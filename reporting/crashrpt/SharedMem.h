@@ -63,7 +63,6 @@ struct CRASH_DESCRIPTION
     UINT m_uFileItems;             // Count of file item records.
     UINT m_uCustomProps;           // Count of user-defined properties.
     DWORD m_dwInstallFlags;        // Flags passed to crInstall() function.
-    UINT m_uPriorities[3];         // Delivery priorities.
     MINIDUMP_TYPE m_MinidumpType;  // Minidump type.
     DWORD m_dwUrlOffs;             // Offset of recipient URL.
     DWORD m_dwAppNameOffs;         // Offset of application name.
@@ -76,7 +75,6 @@ struct CRASH_DESCRIPTION
     DWORD m_dwUnsentCrashReportsFolderOffs;  // Offset of folder name where error reports are stored.
     DWORD m_dwPrivacyPolicyURLOffs; // Offset of privacy policy URL.
     DWORD m_dwPathToDebugHelpDllOffs; // Offset of dbghelp path.
-    DWORD m_dwCustomSenderIconOffs; // Offset of custom Error Report dialog icon resource name.
     DWORD m_dwImageNameOffs;       // Offset to image name.
     DWORD m_dwProcessId;           // Process ID.
     DWORD m_dwThreadId;            // Thread ID.

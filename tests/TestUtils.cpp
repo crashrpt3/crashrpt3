@@ -41,14 +41,14 @@ BOOL TestUtils::CreateErrorReport(CString sTmpFolder, CString& sErrorReportName,
         if(lResult!=ERROR_SUCCESS)
             goto cleanup;
 
-        CR_INSTALL_INFO infoW;
-        memset(&infoW, 0, sizeof(CR_INSTALL_INFO));
-        infoW.cb = sizeof(CR_INSTALL_INFO);
-        infoW.pszAppName = L"My& app Name &";
+        CrInstallInfo infoW;
+        memset(&infoW, 0, sizeof(CrInstallInfo));
+        infoW.cb = sizeof(CrInstallInfo);
+        infoW.lpApplicationName = L"My& app Name &";
         // Use appname with restricted XML characters
-        infoW.pszAppVersion = L"1.0.0 &<'a应> \"<";
-        infoW.pszErrorReportSaveDir = sTmpFolder;
-        infoW.dwFlags = CR_INST_NO_GUI|CR_INST_DONT_SEND_REPORT|CR_INST_STORE_ZIP_ARCHIVES;
+        infoW.lpApplicationVersion = L"1.0.0 &<'a应> \"<";
+        infoW.lpOutputDirectory = sTmpFolder;
+        infoW.dwInstallFlags = CR_INST_NO_GUI|CR_INST_DONT_SEND_REPORT|CR_INST_STORE_ZIP_ARCHIVES;
 
         int nInstallResult = crInstall(&infoW);
         if(nInstallResult!=0)
@@ -59,7 +59,7 @@ BOOL TestUtils::CreateErrorReport(CString sTmpFolder, CString& sErrorReportName,
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(ei);
-        ei.nExceptionType = CR_SEH_EXCEPTION;
+        ei.nExceptionType = CR_CRASH_TYPE_SEH;
         ei.dwSEHCode = 0x123;
 
         // Generate error report

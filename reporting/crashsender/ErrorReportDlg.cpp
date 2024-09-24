@@ -50,19 +50,8 @@ LRESULT CErrorReportDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /
     // Center the dialog on the screen.
     CenterWindow();
 
-    HICON hIcon = NULL;
-
-    // Get custom icon.
-    hIcon = pCI->GetCustomIcon();
-    if(hIcon==NULL)
-    {
-        // Use default icon, if custom icon is not provided.
-        hIcon = ::LoadIcon(_Module.GetResourceInstance(), MAKEINTRESOURCE(IDR_MAINFRAME));
-    }
-
-    // Set window icon.
+    HICON hIcon = ::LoadIcon(_Module.GetResourceInstance(), MAKEINTRESOURCE(IDR_MAINFRAME));
     SetIcon(hIcon, 0);
-
 
     // Get the first icon in the EXE image and use it for header.
     m_HeadingIcon = ExtractIcon(NULL, pReport->GetImageName(), 0);
@@ -146,15 +135,6 @@ LRESULT CErrorReportDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /
         m_btnCancel.SetWindowText(pSender->GetLangStr(_T("MainDlg"), _T("OtherActions")));
     else
         m_btnCancel.SetWindowText(pSender->GetLangStr(_T("MainDlg"), _T("CloseTheProgram")));
-
-    // If send procedure is mandatory...
-    if(pCI->m_bSendMandatory)
-    {
-        // Hide Cancel button
-        m_btnCancel.ShowWindow(SW_HIDE);
-        // Remove Close button
-        SetWindowLong(GWL_STYLE, GetWindowLong(GWL_STYLE) & ~WS_SYSMENU);
-    }
 
     // Init font for heading text
     memset(&lf, 0, sizeof(LOGFONT));
@@ -519,8 +499,6 @@ int CErrorReportDlg::CreateTrayIcon(bool bCreate, HWND hWndParent)
     // This method creates (bCreate==TRUE) or destroys (bCreate==FALSE)
     // the tray icon.
 
-    CErrorReportSender* pSender = CErrorReportSender::GetInstance();
-
     // Prepare icon info
     NOTIFYICONDATA nf;
     memset(&nf,0,sizeof(NOTIFYICONDATA));
@@ -537,10 +515,7 @@ int CErrorReportDlg::CreateTrayIcon(bool bCreate, HWND hWndParent)
 #endif
 
         // Try to load custom icon
-        HICON hIcon = pSender->GetCrashInfo()->GetCustomIcon();
-        if(hIcon==NULL)
-            hIcon = ::LoadIcon(_Module.GetResourceInstance(), MAKEINTRESOURCE(IDR_MAINFRAME));
-        nf.hIcon = hIcon;
+        nf.hIcon = ::LoadIcon(_Module.GetResourceInstance(), MAKEINTRESOURCE(IDR_MAINFRAME));
         _TCSCPY_S(nf.szTip, 128, _T("Sending Error Report"));
 
         Shell_NotifyIcon(NIM_ADD, &nf);

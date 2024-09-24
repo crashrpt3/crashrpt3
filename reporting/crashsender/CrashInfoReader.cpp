@@ -338,14 +338,10 @@ CCrashInfoReader::CCrashInfoReader()
 	m_nCrashRptVersion = 0;
 	m_bSilentMode = FALSE;
 	m_bSendErrorReport = TRUE;
-	m_bSendMandatory = FALSE;
 	m_bShowAdditionalInfoFields = FALSE;
-	m_bAllowAttachMoreFiles = FALSE;
 	m_bStoreZIPArchives = FALSE;
 	m_bSendRecentReports = FALSE;
 	m_bAppRestart = FALSE;
-	m_uPriorities[CR_HTTP] = 3;
-	m_bGenerateMinidump = TRUE;
 	m_MinidumpType = MiniDumpNormal;
 	m_ptCursorPos = CPoint(0, 0);
 	m_rcAppWnd = CRect(0, 0, 0, 0);
@@ -466,11 +462,11 @@ int CCrashInfoReader::UnpackCrashDescription(CErrorReportInfo& eri)
     m_nExceptionType = m_pCrashDesc->m_nExceptionType;
     m_dwExceptionCode = m_pCrashDesc->m_dwExceptionCode;
     
-    if(m_nExceptionType==CR_CPP_SIGFPE)
+    if(m_nExceptionType==CR_CRASH_TYPE_SIGFPE)
     {
         m_uFPESubcode = m_pCrashDesc->m_uFPESubcode;
     }
-    else if(m_nExceptionType==CR_CPP_INVALID_PARAMETER)
+    else if(m_nExceptionType==CR_CRASH_TYPE_INVALID_PARAMETER)
     {
         UnpackString(m_pCrashDesc->m_dwInvParamExprOffs, m_sInvParamExpr);
         UnpackString(m_pCrashDesc->m_dwInvParamFunctionOffs, m_sInvParamFunction);
@@ -488,24 +484,19 @@ int CCrashInfoReader::UnpackCrashDescription(CErrorReportInfo& eri)
     DWORD dwInstallFlags = m_pCrashDesc->m_dwInstallFlags;
     m_bSilentMode = (dwInstallFlags&CR_INST_NO_GUI)!=0;
     m_bSendErrorReport = (dwInstallFlags&CR_INST_DONT_SEND_REPORT)==0;
-	m_bSendMandatory = (dwInstallFlags&CR_INST_SEND_MANDATORY)!=0;
 	m_bShowAdditionalInfoFields = (dwInstallFlags&CR_INST_SHOW_ADDITIONAL_INFO_FIELDS)!=0;
-	m_bAllowAttachMoreFiles = (dwInstallFlags&CR_INST_ALLOW_ATTACH_MORE_FILES)!=0;
     m_bStoreZIPArchives = (dwInstallFlags&CR_INST_STORE_ZIP_ARCHIVES)!=0;
     m_bAppRestart = (dwInstallFlags&CR_INST_APP_RESTART)!=0;
-    m_bGenerateMinidump = (dwInstallFlags&CR_INST_NO_MINIDUMP)==0;
     m_bQueueEnabled = (dwInstallFlags&CR_INST_SEND_QUEUED_REPORTS)!=0;
     m_MinidumpType = m_pCrashDesc->m_MinidumpType;
     UnpackString(m_pCrashDesc->m_dwRestartCmdLineOffs, m_sRestartCmdLine);
 	m_nRestartTimeout = m_pCrashDesc->m_nRestartTimeout;
     m_nMaxReportsPerDay = m_pCrashDesc->m_nMaxReportsPerDay;
     UnpackString(m_pCrashDesc->m_dwUrlOffs, m_sUrl);
-    memcpy(m_uPriorities, m_pCrashDesc->m_uPriorities, sizeof(UINT)*3);
     UnpackString(m_pCrashDesc->m_dwPrivacyPolicyURLOffs, m_sPrivacyPolicyURL);
     UnpackString(m_pCrashDesc->m_dwLangFileNameOffs, m_sLangFileName);
     UnpackString(m_pCrashDesc->m_dwPathToDebugHelpDllOffs, m_sDbgHelpPath);
     UnpackString(m_pCrashDesc->m_dwUnsentCrashReportsFolderOffs, m_sUnsentCrashReportsFolder);
-    UnpackString(m_pCrashDesc->m_dwCustomSenderIconOffs, m_sCustomSenderIcon);
 	m_bClientAppCrashed = m_pCrashDesc->m_bClientAppCrashed;
 
     DWORD dwOffs = m_pCrashDesc->m_wSize;
@@ -1344,58 +1335,6 @@ LONG64 CCrashInfoReader::GetUncompressedReportSize(CErrorReportInfo& eri)
 
 	// Return summary size
     return lTotalSize;
-}
-
-HICON CCrashInfoReader::GetCustomIcon()
-{
-	// This method extracts custom icon from the specified resource file.
-	// If the custom icon not specified, NULL is returned.
-
-    if(!m_sCustomSenderIcon.IsEmpty())
-    {
-		// First parse the path (the path is in form of <filename>[,<icon_index>])
-        CString sResourceFile;
-        CString sIconIndex;
-        int nIconIndex = 0;
-
-		// Get position of comma
-        int nComma = m_sCustomSenderIcon.ReverseFind(',');
-        if(nComma>=0)
-        {
-			// Split resource file path and icon index
-            sResourceFile = m_sCustomSenderIcon.Left(nComma);
-            sIconIndex = m_sCustomSenderIcon.Mid(nComma+1);
-            sIconIndex.TrimLeft();
-            sIconIndex.TrimRight();
-            nIconIndex = _ttoi(sIconIndex);
-        }
-        else
-        {
-			// There is no icon index, just resource file path
-            sResourceFile = m_sCustomSenderIcon;
-        }
-
-        sResourceFile.TrimRight();
-
-        if(nIconIndex==-1)
-        {
-            return NULL;
-        }
-
-        // Check that custom icon can be loaded
-        HICON hIcon = ExtractIcon(NULL, sResourceFile, nIconIndex);
-        if(hIcon==NULL || hIcon==(HICON)1)
-        {
-			// Failure
-            return NULL;
-        }
-
-		// Return icon handle
-        return hIcon;
-    }
-
-	// Return NULL to indicate custom icon not specified
-    return NULL;
 }
 
 // Returns last error message.

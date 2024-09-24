@@ -430,11 +430,7 @@ LRESULT CDetailDlg::OnListRClick(int /*idCtrl*/, LPNMHDR /*pnmh*/, BOOL& /*bHand
 
     submenu.EnableMenuItem(ID_MENU7_OPEN, (nSelected==1)?MF_ENABLED:MF_DISABLED);
     submenu.EnableMenuItem(ID_MENU7_DELETESELECTEDFILE, (nSelected>0 && bAllowDelete)?MF_ENABLED:MF_DISABLED);
-
-    if(!pCI->m_bAllowAttachMoreFiles)
-    {
-        submenu.DeleteMenu(ID_MENU7_ATTACHMOREFILES, MF_BYCOMMAND);
-    }
+    submenu.DeleteMenu(ID_MENU7_ATTACHMOREFILES, MF_BYCOMMAND);
 
     submenu.TrackPopupMenu(0, pt.x, pt.y, m_hWnd);
     return 0;

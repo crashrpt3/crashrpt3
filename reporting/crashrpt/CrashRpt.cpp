@@ -26,7 +26,7 @@ std::map<DWORD, CString> g_sErrorMsg; // Last error messages for each calling th
 // Forward declaration.
 int crClearErrorMsg();
 
-CRASHRPT_EXPORT_API(int) crInstall(CR_INSTALL_INFO* pInfo)
+CRASHRPT_API(int) crInstall(const CrInstallInfo* pInfo)
 {
     int nStatus = -1;
     crSetErrorMsg(_T("Success."));
@@ -35,7 +35,7 @@ CRASHRPT_EXPORT_API(int) crInstall(CR_INSTALL_INFO* pInfo)
 
     // Validate input parameters.
     if (pInfo == NULL ||
-        pInfo->cb != sizeof(CR_INSTALL_INFO))
+        pInfo->cb != sizeof(CrInstallInfo))
     {
         crSetErrorMsg(_T("pInfo is NULL or pInfo->cb member is not valid."));
         nStatus = 1;
@@ -65,32 +65,28 @@ CRASHRPT_EXPORT_API(int) crInstall(CR_INSTALL_INFO* pInfo)
     }
 
     {
-        LPCTSTR ptszAppName = strconv.w2t((LPWSTR)pInfo->pszAppName);
-        LPCTSTR ptszAppVersion = strconv.w2t((LPWSTR)pInfo->pszAppVersion);
-        LPCTSTR ptszCrashSenderPath = strconv.w2t((LPWSTR)pInfo->pszCrashSenderPath);
-        LPCTSTR ptszUrl = strconv.w2t((LPWSTR)pInfo->pszUrl);
-        LPCTSTR ptszPrivacyPolicyURL = strconv.w2t((LPWSTR)pInfo->pszPrivacyPolicyURL);
-        LPCTSTR ptszDebugHelpDLL_file = strconv.w2t((LPWSTR)pInfo->pszDebugHelpDLL);
-        MINIDUMP_TYPE miniDumpType = pInfo->uMiniDumpType;
-        LPCTSTR ptszErrorReportSaveDir = strconv.w2t((LPWSTR)pInfo->pszErrorReportSaveDir);
-        LPCTSTR ptszRestartCmdLine = strconv.w2t((LPWSTR)pInfo->pszRestartCmdLine);
-        LPCTSTR ptszLangFilePath = strconv.w2t((LPWSTR)pInfo->pszLangFilePath);
-        LPCTSTR ptszCustomSenderIcon = strconv.w2t((LPWSTR)pInfo->pszCustomSenderIcon);
+        LPCTSTR ptszAppName = strconv.w2t((LPWSTR)pInfo->lpApplicationName);
+        LPCTSTR ptszAppVersion = strconv.w2t((LPWSTR)pInfo->lpApplicationVersion);
+        LPCTSTR ptszCrashSenderPath = strconv.w2t((LPWSTR)pInfo->lpCrashSenderDirectory);
+        LPCTSTR ptszUrl = strconv.w2t((LPWSTR)pInfo->lpServerURL);
+        LPCTSTR ptszPrivacyPolicyURL = strconv.w2t((LPWSTR)pInfo->lpPrivacyPolicyURL);
+        LPCTSTR ptszDebugHelpDLL_file = strconv.w2t((LPWSTR)pInfo->lpDBGHelpDirectory);
+        MINIDUMP_TYPE miniDumpType = pInfo->uMinidumpType;
+        LPCTSTR ptszErrorReportSaveDir = strconv.w2t((LPWSTR)pInfo->lpOutputDirectory);
+        LPCTSTR ptszRestartCmdLine = strconv.w2t((LPWSTR)pInfo->lpRestartCommand);
 
         int nInitResult = pCrashHandler->Init(
             ptszAppName,
             ptszAppVersion,
             ptszCrashSenderPath,
             ptszUrl,
-            &pInfo->uPriorities,
-            pInfo->dwFlags,
+            pInfo->uCrashHandlers,
+            pInfo->dwInstallFlags,
             ptszPrivacyPolicyURL,
             ptszDebugHelpDLL_file,
             miniDumpType,
             ptszErrorReportSaveDir,
             ptszRestartCmdLine,
-            ptszLangFilePath,
-            ptszCustomSenderIcon,
             pInfo->nRestartTimeout,
             pInfo->nMaxReportsPerDay
         );
@@ -120,7 +116,7 @@ cleanup:
     return nStatus;
 }
 
-CRASHRPT_EXPORT_API(int) crUninstall()
+CRASHRPT_API(int) crUninstall()
 {
     crSetErrorMsg(_T("Success."));
 
@@ -158,8 +154,7 @@ CRASHRPT_EXPORT_API(int) crUninstall()
 }
 
 // Sets C++ exception handlers for the calling thread
-CRASHRPT_EXPORT_API(int)
-crInstallToCurrentThread2(DWORD dwFlags)
+CRASHRPT_API(int) crInstallToCurrentThread(DWORD dwFlags)
 {
     crSetErrorMsg(_T("Success."));
 
@@ -181,7 +176,7 @@ crInstallToCurrentThread2(DWORD dwFlags)
 }
 
 // Unsets C++ exception handlers from the calling thread
-CRASHRPT_EXPORT_API(int)
+CRASHRPT_API(int)
 crUninstallFromCurrentThread()
 {
     crSetErrorMsg(_T("Success."));
@@ -207,14 +202,7 @@ crUninstallFromCurrentThread()
     return 0;
 }
 
-
-CRASHRPT_EXPORT_API(int)
-crInstallToCurrentThread()
-{
-    return crInstallToCurrentThread2(0);
-}
-
-CRASHRPT_EXPORT_API(int)
+CRASHRPT_API(int)
 crSetCrashCallback(
     PFN_CRASH_CALLBACK pfnCallbackFunc,
     LPVOID lpParam
@@ -238,7 +226,7 @@ crSetCrashCallback(
     return 0;
 }
 
-CRASHRPT_EXPORT_API(int) crAddFile(PCWSTR pszFile, PCWSTR pszDestFile, PCWSTR pszDesc, DWORD dwFlags)
+CRASHRPT_API(int) crAddFile(PCWSTR pszFile, PCWSTR pszDestFile, PCWSTR pszDesc, DWORD dwFlags)
 {
     crSetErrorMsg(_T("Success."));
 
@@ -268,7 +256,7 @@ CRASHRPT_EXPORT_API(int) crAddFile(PCWSTR pszFile, PCWSTR pszDestFile, PCWSTR ps
     return 0;
 }
 
-CRASHRPT_EXPORT_API(int)
+CRASHRPT_API(int)
 crAddProperty(
     LPCWSTR pszPropName,
     LPCWSTR pszPropValue
@@ -300,7 +288,7 @@ crAddProperty(
     return 0;
 }
 
-CRASHRPT_EXPORT_API(int)
+CRASHRPT_API(int)
 crGenerateErrorReport(PCR_EXCEPTION_INFO pExceptionInfo)
 {
     crSetErrorMsg(_T("Unspecified error."));
@@ -326,7 +314,7 @@ crGenerateErrorReport(PCR_EXCEPTION_INFO pExceptionInfo)
     return pCrashHandler->GenerateErrorReport(pExceptionInfo);
 }
 
-CRASHRPT_EXPORT_API(int)
+CRASHRPT_API(int)
 crGetLastErrorMsg(LPWSTR pszBuffer, UINT uBuffSize)
 {
     if (pszBuffer == NULL || uBuffSize == 0)
@@ -519,13 +507,13 @@ namespace
     }
 }
 
-CRASHRPT_EXPORT_API(int) crEmulateCrash(unsigned ExceptionType) noexcept(false)
+CRASHRPT_API(int) crEmulateCrash(unsigned ExceptionType) noexcept(false)
 {
     crSetErrorMsg(_T("Unspecified error."));
 
     switch (ExceptionType)
     {
-    case CR_SEH_EXCEPTION:
+    case CR_CRASH_TYPE_SEH:
     {
         // Access violation
         int* p = 0;
@@ -534,25 +522,25 @@ CRASHRPT_EXPORT_API(int) crEmulateCrash(unsigned ExceptionType) noexcept(false)
 #pragma warning(default : 6011)
     }
     break;
-    case CR_CPP_TERMINATE_CALL:
+    case CR_CRASH_TYPE_TERMINATE_CALL:
     {
         // Call terminate
         terminate();
     }
     break;
-    case CR_CPP_UNEXPECTED_CALL:
+    case CR_CRASH_TYPE_UNEXPECTED_CALL:
     {
         // Call unexpected
         unexpected();
     }
     break;
-    case CR_CPP_PURE_CALL:
+    case CR_CRASH_TYPE_CPP_PURE:
     {
         // pure virtual method call
         purecall_test();
     }
     break;
-    case CR_CPP_SECURITY_ERROR:
+    case CR_CRASH_TYPE_SECURITY:
     {
         // Cause buffer overrun (/GS compiler option)
 
@@ -562,7 +550,7 @@ CRASHRPT_EXPORT_API(int) crEmulateCrash(unsigned ExceptionType) noexcept(false)
         test_buffer_overrun();
     }
     break;
-    case CR_CPP_INVALID_PARAMETER:
+    case CR_CRASH_TYPE_INVALID_PARAMETER:
     {
         char* formatString;
         // Call printf_s with invalid parameters.
@@ -573,65 +561,65 @@ CRASHRPT_EXPORT_API(int) crEmulateCrash(unsigned ExceptionType) noexcept(false)
 
     }
     break;
-    case CR_CPP_NEW_OPERATOR_ERROR:
+    case CR_CRASH_TYPE_CPP_NEW_OPERATOR:
     {
         // Cause memory allocation error
         RecurseAlloc();
     }
     break;
-    case CR_CPP_SIGABRT:
+    case CR_CRASH_TYPE_SIGABRT:
     {
         // Call abort
         abort();
     }
     break;
-    case CR_CPP_SIGFPE:
+    case CR_CRASH_TYPE_SIGFPE:
     {
         // floating point exception ( /fp:except compiler option)
         sigfpe_test();
         return 1;
     }
-    case CR_CPP_SIGILL:
+    case CR_CRASH_TYPE_SIGILL:
     {
         int result = raise(SIGILL);
         ATLASSERT(result == 0);
         crSetErrorMsg(_T("Error raising SIGILL."));
         return result;
     }
-    case CR_CPP_SIGINT:
+    case CR_CRASH_TYPE_SIGINT:
     {
         int result = raise(SIGINT);
         ATLASSERT(result == 0);
         crSetErrorMsg(_T("Error raising SIGINT."));
         return result;
     }
-    case CR_CPP_SIGSEGV:
+    case CR_CRASH_TYPE_SIGSEGV:
     {
         int result = raise(SIGSEGV);
         ATLASSERT(result == 0);
         crSetErrorMsg(_T("Error raising SIGSEGV."));
         return result;
     }
-    case CR_CPP_SIGTERM:
+    case CR_CRASH_TYPE_SIGTERM:
     {
         int result = raise(SIGTERM);
         crSetErrorMsg(_T("Error raising SIGTERM."));
         ATLASSERT(result == 0);
         return result;
     }
-    case CR_NONCONTINUABLE_EXCEPTION:
+    case CR_CRASH_TYPE_NONCONTINUABLE:
     {
         // Raise noncontinuable software exception
-        RaiseException(123, EXCEPTION_NONCONTINUABLE, 0, NULL);
+        ::RaiseException(123, EXCEPTION_NONCONTINUABLE, 0, NULL);
     }
     break;
-    case CR_THROW:
+    case CR_CRASH_TYPE_CPP_THROW:
     {
         // Throw typed C++ exception.
         throw 13;
     }
     break;
-    case CR_STACK_OVERFLOW:
+    case CR_CRASH_TYPE_STACK_OVERFLOW:
     {
         // Infinite recursion and stack overflow.
         CauseStackOverflow();

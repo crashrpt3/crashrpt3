@@ -627,7 +627,7 @@ crpGetPropertyW(
         }
         else if(sColumnId.Compare(CRP_COL_INVPARAM_FUNCTION)==0)
         {
-            if(pDescReader->m_dwExceptionType!=CR_CPP_INVALID_PARAMETER)
+            if(pDescReader->m_dwExceptionType!=CR_CRASH_TYPE_INVALID_PARAMETER)
             {
                 crpSetErrorMsg(_T("This property is supported for invalid parameter errors only."));
                 return -3;
@@ -636,7 +636,7 @@ crpGetPropertyW(
         }
         else if(sColumnId.Compare(CRP_COL_INVPARAM_EXPRESSION)==0)
         {
-            if(pDescReader->m_dwExceptionType!=CR_CPP_INVALID_PARAMETER)
+            if(pDescReader->m_dwExceptionType!=CR_CRASH_TYPE_INVALID_PARAMETER)
             {
                 crpSetErrorMsg(_T("This property is supported for invalid parameter errors only."));
                 return -3;
@@ -645,7 +645,7 @@ crpGetPropertyW(
         }
         else if(sColumnId.Compare(CRP_COL_INVPARAM_FILE)==0)
         {
-            if(pDescReader->m_dwExceptionType!=CR_CPP_INVALID_PARAMETER)
+            if(pDescReader->m_dwExceptionType!=CR_CRASH_TYPE_INVALID_PARAMETER)
             {
                 crpSetErrorMsg(_T("This property is supported for invalid parameter errors only."));
                 return -3;
@@ -654,7 +654,7 @@ crpGetPropertyW(
         }
         else if(sColumnId.Compare(CRP_COL_INVPARAM_LINE)==0)
         {
-            if(pDescReader->m_dwExceptionType!=CR_CPP_INVALID_PARAMETER)
+            if(pDescReader->m_dwExceptionType!=CR_CRASH_TYPE_INVALID_PARAMETER)
             {
                 crpSetErrorMsg(_T("This property is supported for invalid parameter errors only."));
                 return -3;

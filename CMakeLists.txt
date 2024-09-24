@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 3.1)
 project (CrashRpt)
 
 # CrashRpt version number and path
-set (CRASHRPT_VER 1500)
+set (CRASHRPT_VER 3100)
 
 # Check supported generators
 if(NOT MSVC OR ${MSVC_VERSION} LESS 1600)

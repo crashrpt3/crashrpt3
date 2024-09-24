@@ -25,8 +25,8 @@ class CrashRptAPITests : public CTestSuite
         REGISTER_TEST(Test_crInstall_missing_app_ver)
         REGISTER_TEST(Test_crInstallW_zero_info)
         REGISTER_TEST(Test_crInstallW_short_path_name)
-        REGISTER_TEST(Test_crInstallToCurrentThread2)
-        REGISTER_TEST(Test_crInstallToCurrentThread2_concurrent)
+        REGISTER_TEST(Test_crInstallToCurrentThread)
+        REGISTER_TEST(Test_crInstallToCurrentThread_concurrent)
         REGISTER_TEST(Test_crAddFile)
         REGISTER_TEST(Test_crAddPropertyW)
         REGISTER_TEST(Test_crSetCrashCallbackW)
@@ -57,8 +57,8 @@ class CrashRptAPITests : public CTestSuite
     void Test_crInstall_missing_app_ver();
     void Test_crInstallW_zero_info();
     void Test_crInstallW_short_path_name();
-    void Test_crInstallToCurrentThread2();
-    void Test_crInstallToCurrentThread2_concurrent();
+    void Test_crInstallToCurrentThread();
+    void Test_crInstallToCurrentThread_concurrent();
     void Test_crAddFile();
     void Test_crAddPropertyW();
     void Test_crSetCrashCallbackW();
@@ -112,8 +112,8 @@ void CrashRptAPITests::Test_crInstall_wrong_cb()
 {
     // Test crInstall with wrong cb parameter - should fail
 
-    CR_INSTALL_INFO info;
-    memset(&info, 0, sizeof(CR_INSTALL_INFO));
+    CrInstallInfo info;
+    memset(&info, 0, sizeof(CrInstallInfo));
     info.cb = 1000;
 
     int nInstallResult = crInstall(&info);
@@ -128,9 +128,9 @@ void CrashRptAPITests::Test_crInstall_missing_app_ver()
     // Test crInstall with with missing app version
     // As this console app has missing EXE product version - should fail
 
-    CR_INSTALL_INFO info;
-    memset(&info, 0, sizeof(CR_INSTALL_INFO));
-    info.cb = sizeof(CR_INSTALL_INFO);
+    CrInstallInfo info;
+    memset(&info, 0, sizeof(CrInstallInfo));
+    info.cb = sizeof(CrInstallInfo);
 
     int nInstallResult = crInstall(&info);
     TEST_ASSERT(nInstallResult!=0);
@@ -143,10 +143,10 @@ void CrashRptAPITests::Test_crInstallW_zero_info()
 {
     // Test crInstallW with zero info
 
-    CR_INSTALL_INFO infoW;
-    memset(&infoW, 0, sizeof(CR_INSTALL_INFO));
-    infoW.cb = sizeof(CR_INSTALL_INFO);
-    infoW.pszAppVersion = L"1.0.0"; // Specify app version, otherwise it will fail.
+    CrInstallInfo infoW;
+    memset(&infoW, 0, sizeof(CrInstallInfo));
+    infoW.cb = sizeof(CrInstallInfo);
+    infoW.lpApplicationVersion = L"1.0.0"; // Specify app version, otherwise it will fail.
 
     int nInstallResult = crInstall(&infoW);
     TEST_ASSERT(nInstallResult==0);
@@ -212,14 +212,14 @@ void CrashRptAPITests::Test_crInstall_in_different_folder()
 
 
         // Install crash handler
-        CR_INSTALL_INFO infoW;
-        memset(&infoW, 0, sizeof(CR_INSTALL_INFO));
-        infoW.cb = sizeof(CR_INSTALL_INFO);
-        infoW.pszAppName = L"My& app Name & '"; // Use appname with restricted XML characters
-        infoW.pszAppVersion = L"1.0.0"; // Specify app version, otherwise it will fail.
+        CrInstallInfo infoW;
+        memset(&infoW, 0, sizeof(CrInstallInfo));
+        infoW.cb = sizeof(CrInstallInfo);
+        infoW.lpApplicationName = L"My& app Name & '"; // Use appname with restricted XML characters
+        infoW.lpApplicationVersion = L"1.0.0"; // Specify app version, otherwise it will fail.
 
-        typedef int (WINAPI *PFNCRINSTALLW)(PCR_INSTALL_INFO);
-        PFNCRINSTALLW pfncrInstallW = (PFNCRINSTALLW)GetProcAddress(hCrashRpt, "crInstallW");
+        typedef int (WINAPI *PFNCRINSTALLW)(const CrInstallInfo*);
+        PFNCRINSTALLW pfncrInstallW = (PFNCRINSTALLW)GetProcAddress(hCrashRpt, "crInstall");
         TEST_ASSERT(pfncrInstallW!=NULL);
 
         typedef int (WINAPI *PFNCRUNINSTALL)();
@@ -260,11 +260,11 @@ void CrashRptAPITests::Test_crInstallW_short_path_name()
     // Remove tmp folder
     Utility::RecycleFile(sTmpDir, TRUE);
 
-    CR_INSTALL_INFO infoW;
-    memset(&infoW, 0, sizeof(CR_INSTALL_INFO));
-    infoW.cb = sizeof(CR_INSTALL_INFO);
-    infoW.pszAppVersion = L"1.0.0"; // Specify app version, otherwise it will fail.
-    infoW.pszErrorReportSaveDir = szShortPath;
+    CrInstallInfo infoW;
+    memset(&infoW, 0, sizeof(CrInstallInfo));
+    infoW.cb = sizeof(CrInstallInfo);
+    infoW.lpApplicationVersion = L"1.0.0"; // Specify app version, otherwise it will fail.
+    infoW.lpOutputDirectory = szShortPath;
 
     int nInstallResult = crInstall(&infoW);
     TEST_ASSERT(nInstallResult==0);
@@ -302,10 +302,10 @@ void CrashRptAPITests::Test_crAddFile()
         TEST_ASSERT(nResult!=0);
 
         // Install crash handler
-        CR_INSTALL_INFO infoW;
-        memset(&infoW, 0, sizeof(CR_INSTALL_INFO));
-        infoW.cb = sizeof(CR_INSTALL_INFO);
-        infoW.pszAppVersion = L"1.0.0"; // Specify app version, otherwise it will fail.
+        CrInstallInfo infoW;
+        memset(&infoW, 0, sizeof(CrInstallInfo));
+        infoW.cb = sizeof(CrInstallInfo);
+        infoW.lpApplicationVersion = L"1.0.0"; // Specify app version, otherwise it will fail.
 
         int nInstallResult = crInstall(&infoW);
         TEST_ASSERT(nInstallResult==0);
@@ -346,10 +346,10 @@ void CrashRptAPITests::Test_crAddPropertyW()
         TEST_ASSERT(nResult!=0);
 
         // Install crash handler
-        CR_INSTALL_INFO infoW;
-        memset(&infoW, 0, sizeof(CR_INSTALL_INFO));
-        infoW.cb = sizeof(CR_INSTALL_INFO);
-        infoW.pszAppVersion = L"1.0.0"; // Specify app version, otherwise it will fail.
+        CrInstallInfo infoW;
+        memset(&infoW, 0, sizeof(CrInstallInfo));
+        infoW.cb = sizeof(CrInstallInfo);
+        infoW.lpApplicationVersion = L"1.0.0"; // Specify app version, otherwise it will fail.
 
         int nInstallResult = crInstall(&infoW);
         TEST_ASSERT(nInstallResult==0);
@@ -379,10 +379,10 @@ void CrashRptAPITests::Test_crGetLastErrorMsgW()
         TEST_ASSERT(nResult>0);
 
         // Install crash handler
-        CR_INSTALL_INFO infoW;
-        memset(&infoW, 0, sizeof(CR_INSTALL_INFO));
-        infoW.cb = sizeof(CR_INSTALL_INFO);
-        infoW.pszAppVersion = L"1.0.0"; // Specify app version, otherwise it will fail.
+        CrInstallInfo infoW;
+        memset(&infoW, 0, sizeof(CrInstallInfo));
+        infoW.cb = sizeof(CrInstallInfo);
+        infoW.lpApplicationVersion = L"1.0.0"; // Specify app version, otherwise it will fail.
 
         int nInstallResult = crInstall(&infoW);
         TEST_ASSERT(nInstallResult==0);
@@ -423,19 +423,19 @@ void CrashRptAPITests::Test_CrAutoInstallHelper()
 {
     // Install crash handler
 
-    CR_INSTALL_INFO info;
-    memset(&info, 0, sizeof(CR_INSTALL_INFO));
-    info.cb = sizeof(CR_INSTALL_INFO);
-    info.pszAppVersion = _T("1.0.0"); // Specify app version, otherwise it will fail.
+    CrInstallInfo info;
+    memset(&info, 0, sizeof(CrInstallInfo));
+    info.cb = sizeof(CrInstallInfo);
+    info.lpApplicationVersion = _T("1.0.0"); // Specify app version, otherwise it will fail.
 
-    CrAutoInstallHelper cr_install_helper(&info);
+    crashrpt::CrInstallGurad cr_install_helper(&info);
 }
 
 
 DWORD WINAPI CrashRptAPITests::ThreadProc1(LPVOID lpParam)
 {
     // Install thread exception handlers
-    CrThreadAutoInstallHelper cr_thread_install(0);
+    crashrpt::CrThreadInstallGuard cr_thread_install(0);
 
     int* pnResult = (int*)lpParam;
     *pnResult = 0;
@@ -447,13 +447,13 @@ void CrashRptAPITests::Test_CrThreadAutoInstallHelper()
 {
     // Install crash handler for the main thread
 
-    CR_INSTALL_INFO info;
-    memset(&info, 0, sizeof(CR_INSTALL_INFO));
-    info.cb = sizeof(CR_INSTALL_INFO);
-    info.pszAppVersion = _T("1.0.0"); // Specify app version, otherwise it will fail.
+    CrInstallInfo info;
+    memset(&info, 0, sizeof(CrInstallInfo));
+    info.cb = sizeof(CrInstallInfo);
+    info.lpApplicationVersion = _T("1.0.0"); // Specify app version, otherwise it will fail.
 
     {
-        CrAutoInstallHelper cr_install_helper(&info);
+        crashrpt::CrInstallGurad cr_install_helper(&info);
 
         // Run a worker thread
         int nResult = -1;
@@ -480,7 +480,7 @@ void CrashRptAPITests::Test_crEmulateCrash()
         TEST_ASSERT(nResult!=0);
 
         // Test it with invalid argument - should fail
-        int nResult2 = crEmulateCrash(CR_STACK_OVERFLOW+1);
+        int nResult2 = crEmulateCrash(CR_CRASH_TYPE_STACK_OVERFLOW+1);
         TEST_ASSERT(nResult2!=0);
     }
 
@@ -500,11 +500,11 @@ DWORD WINAPI CrashRptAPITests::ThreadProc2(LPVOID /*lpParam*/)
         TEST_ASSERT(nUnResult!=0);
 
         // Install thread exception handlers - should succeed
-        int nResult = crInstallToCurrentThread2(0);
+        int nResult = crInstallToCurrentThread(0);
         TEST_ASSERT(nResult==0);
 
         // Install thread exception handlers the second time - should fail
-        int nResult2 = crInstallToCurrentThread2(0);
+        int nResult2 = crInstallToCurrentThread(0);
         TEST_ASSERT(nResult2!=0);
     }
 
@@ -517,29 +517,29 @@ DWORD WINAPI CrashRptAPITests::ThreadProc2(LPVOID /*lpParam*/)
     return 0;
 }
 
-void CrashRptAPITests::Test_crInstallToCurrentThread2()
+void CrashRptAPITests::Test_crInstallToCurrentThread()
 {
     {
         // Call before install - must fail
-        int nResult = crInstallToCurrentThread2(0);
+        int nResult = crInstallToCurrentThread(0);
         TEST_ASSERT(nResult!=0);
 
         // Call before install - must fail
-        int nResult2 = crInstallToCurrentThread2(0);
+        int nResult2 = crInstallToCurrentThread(0);
         TEST_ASSERT(nResult2!=0);
 
         // Install crash handler for the main thread
 
-        CR_INSTALL_INFO info;
-        memset(&info, 0, sizeof(CR_INSTALL_INFO));
-        info.cb = sizeof(CR_INSTALL_INFO);
-        info.pszAppVersion = _T("1.0.0"); // Specify app version, otherwise it will fail.
+        CrInstallInfo info;
+        memset(&info, 0, sizeof(CrInstallInfo));
+        info.cb = sizeof(CrInstallInfo);
+        info.lpApplicationVersion = _T("1.0.0"); // Specify app version, otherwise it will fail.
 
         int nInstResult = crInstall(&info);
         TEST_ASSERT(nInstResult==0);
 
         // Call in the main thread - must fail
-        int nResult3 = crInstallToCurrentThread2(0);
+        int nResult3 = crInstallToCurrentThread(0);
         TEST_ASSERT(nResult3!=0);
 
         // Run a worker thread
@@ -564,7 +564,7 @@ DWORD WINAPI CrashRptAPITests::ThreadProc3(LPVOID /*lpParam*/)
     for(i=0; i<100; i++)
     {
         // Install thread exception handlers - should succeed
-        int nResult = crInstallToCurrentThread2(0);
+        int nResult = crInstallToCurrentThread(0);
         TEST_ASSERT(nResult==0);
 
         Sleep(10);
@@ -580,14 +580,14 @@ DWORD WINAPI CrashRptAPITests::ThreadProc3(LPVOID /*lpParam*/)
     return 0;
 }
 
-void CrashRptAPITests::Test_crInstallToCurrentThread2_concurrent()
+void CrashRptAPITests::Test_crInstallToCurrentThread_concurrent()
 {
     // Install crash handler for the main thread
 
-    CR_INSTALL_INFO info;
-    memset(&info, 0, sizeof(CR_INSTALL_INFO));
-    info.cb = sizeof(CR_INSTALL_INFO);
-    info.pszAppVersion = _T("1.0.0"); // Specify app version, otherwise it will fail.
+    CrInstallInfo info;
+    memset(&info, 0, sizeof(CrInstallInfo));
+    info.cb = sizeof(CrInstallInfo);
+    info.lpApplicationVersion = _T("1.0.0"); // Specify app version, otherwise it will fail.
 
     {
         int nInstResult = crInstall(&info);
@@ -629,12 +629,12 @@ void CrashRptAPITests::Test_crGenerateErrorReport()
 
         // Install crash handler for the main thread
 
-        CR_INSTALL_INFO info;
-        memset(&info, 0, sizeof(CR_INSTALL_INFO));
-        info.cb = sizeof(CR_INSTALL_INFO);
-        info.pszAppVersion = _T("1.0.0"); // Specify app version, otherwise it will fail.
-        info.dwFlags = CR_INST_NO_GUI|CR_INST_DONT_SEND_REPORT;
-        info.pszErrorReportSaveDir = sTmpFolder;
+        CrInstallInfo info;
+        memset(&info, 0, sizeof(CrInstallInfo));
+        info.cb = sizeof(CrInstallInfo);
+        info.lpApplicationVersion = _T("1.0.0"); // Specify app version, otherwise it will fail.
+        info.dwInstallFlags = CR_INST_NO_GUI|CR_INST_DONT_SEND_REPORT;
+        info.lpOutputDirectory = sTmpFolder;
         int nInstResult = crInstall(&info);
         TEST_ASSERT(nInstResult==0);
 
@@ -683,7 +683,7 @@ void CrashRptAPITests::Test_undecorated_func_names()
     #endif
         TEST_ASSERT(hCrashRpt!=NULL);
 
-        typedef int (WINAPI *PFNCRINSTALLW)(PCR_INSTALL_INFO);
+        typedef int (WINAPI *PFNCRINSTALLW)(const CrInstallInfo*);
         PFNCRINSTALLW pfncrInstallW = (PFNCRINSTALLW)GetProcAddress(hCrashRpt, "crInstall");
         TEST_ASSERT(pfncrInstallW!=NULL);
 
@@ -691,10 +691,10 @@ void CrashRptAPITests::Test_undecorated_func_names()
         PFNCRUNINSTALL pfncrUninstall = (PFNCRUNINSTALL)GetProcAddress(hCrashRpt, "crUninstall");
         TEST_ASSERT(pfncrUninstall!=NULL);
 
-        typedef int (WINAPI *PFNCRINSTALLTOCURRENTTHREAD2)();
-        PFNCRINSTALLTOCURRENTTHREAD2 pfncrInstallToCurrentThread2 =
-            (PFNCRINSTALLTOCURRENTTHREAD2)GetProcAddress(hCrashRpt, "crInstallToCurrentThread2");
-        TEST_ASSERT(pfncrInstallToCurrentThread2!=NULL);
+        typedef int (WINAPI *PFNCRINSTALLTOCURRENTTHREAD)();
+        PFNCRINSTALLTOCURRENTTHREAD pfncrInstallToCurrentThread =
+            (PFNCRINSTALLTOCURRENTTHREAD)GetProcAddress(hCrashRpt, "crInstallToCurrentThread");
+        TEST_ASSERT(pfncrInstallToCurrentThread!=NULL);
 
         typedef int (WINAPI *PFNCRUNINSTALLFROMCURRENTTHREAD)();
         PFNCRUNINSTALLFROMCURRENTTHREAD pfncrUninstallFromCurrentThread =
@@ -848,12 +848,12 @@ void CrashRptAPITests::Test_crSetCrashCallbackW()
         TEST_ASSERT(bCreate);
 
         // Set config
-        CR_INSTALL_INFO ii;
-        memset(&ii, 0, sizeof(CR_INSTALL_INFO));
-        ii.cb = sizeof(CR_INSTALL_INFO);
-        ii.pszAppVersion = L"1.0.0";
-        ii.pszErrorReportSaveDir = strconv.t2w(sTmpFolder);
-        ii.dwFlags = CR_INST_NO_GUI;
+        CrInstallInfo ii;
+        memset(&ii, 0, sizeof(CrInstallInfo));
+        ii.cb = sizeof(CrInstallInfo);
+        ii.lpApplicationVersion = L"1.0.0";
+        ii.lpOutputDirectory = strconv.t2w(sTmpFolder);
+        ii.dwInstallFlags = CR_INST_NO_GUI;
 
         // Install crash handler - assume success
         int nInstall = crInstall(&ii);
@@ -914,12 +914,12 @@ void CrashRptAPITests::Test_crSetCrashCallbackW_stage()
         TEST_ASSERT(bCreate);
 
         // Set config
-        CR_INSTALL_INFO ii;
-        memset(&ii, 0, sizeof(CR_INSTALL_INFO));
-        ii.cb = sizeof(CR_INSTALL_INFO);
-        ii.pszAppVersion = L"1.0.0";
-        ii.pszErrorReportSaveDir = strconv.t2w(sTmpFolder);
-        ii.dwFlags = CR_INST_NO_GUI;
+        CrInstallInfo ii;
+        memset(&ii, 0, sizeof(CrInstallInfo));
+        ii.cb = sizeof(CrInstallInfo);
+        ii.lpApplicationVersion = L"1.0.0";
+        ii.lpOutputDirectory = strconv.t2w(sTmpFolder);
+        ii.dwInstallFlags = CR_INST_NO_GUI;
 
         // Install crash handler - assume success
         int nInstall = crInstall(&ii);
@@ -985,12 +985,12 @@ void CrashRptAPITests::Test_crSetCrashCallbackW_cancel()
         TEST_ASSERT(bCreate);
 
         // Set config
-        CR_INSTALL_INFO ii;
-        memset(&ii, 0, sizeof(CR_INSTALL_INFO));
-        ii.cb = sizeof(CR_INSTALL_INFO);
-        ii.pszAppVersion = L"1.0.0";
-        ii.pszErrorReportSaveDir = strconv.t2w(sTmpFolder);
-        ii.dwFlags = CR_INST_NO_GUI;
+        CrInstallInfo ii;
+        memset(&ii, 0, sizeof(CrInstallInfo));
+        ii.cb = sizeof(CrInstallInfo);
+        ii.lpApplicationVersion = L"1.0.0";
+        ii.lpOutputDirectory = strconv.t2w(sTmpFolder);
+        ii.dwInstallFlags = CR_INST_NO_GUI;
 
         // Install crash handler - assume success
         int nInstall = crInstall(&ii);

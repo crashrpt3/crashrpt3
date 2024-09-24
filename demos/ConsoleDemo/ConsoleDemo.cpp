@@ -27,14 +27,14 @@ int main(int argc, char* argv[])
 
     // Install crash reporting
 
-    CR_INSTALL_INFO info;
-    memset(&info, 0, sizeof(CR_INSTALL_INFO));
-    info.cb = sizeof(CR_INSTALL_INFO);             // Size of the structure
-    info.pszAppName = _T("CrashRpt Console Test"); // App name
-    info.pszAppVersion = _T("1.0.0");              // App version
+    CrInstallInfo info;
+    memset(&info, 0, sizeof(CrInstallInfo));
+    info.cb = sizeof(CrInstallInfo);             // Size of the structure
+    info.lpApplicationName = _T("CrashRpt Console Test"); // App name
+    info.lpApplicationVersion = _T("1.0.0");              // App version
 
     // Install crash handlers
-    int nInstResult = crInstall(&info);            
+    int nInstResult = crInstall(&info);
     assert(nInstResult==0);
 
     // Check result
