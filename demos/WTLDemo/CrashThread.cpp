@@ -20,9 +20,9 @@ void test_generate_report()
     CR_EXCEPTION_INFO ei;
     memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
     ei.cb = sizeof(CR_EXCEPTION_INFO);
-    ei.nExceptionType = CR_CRASH_TYPE_SEH;
+    ei.nExceptionType = CR_TEST_CRASH_SEH;
     ei.dwSEHCode = 0x1234;
-    ei.lpExceptionPointers = NULL;
+    ei.pExceptionPointers = NULL;
     ei.bManual = TRUE; // Signal the report is being generated manually.
 
     int nResult = crGenerateErrorReport(&ei);
@@ -56,7 +56,7 @@ DWORD WINAPI CrashThread(LPVOID pParam)
             // Test generate report manually
             test_generate_report();
         }
-        else if(crEmulateCrash(pInfo->m_ExceptionType)!=0)
+        else if(crTestCrash(pInfo->m_ExceptionType)!=0)
         {
             // Test exception handler
             TCHAR szErrorMsg[256];

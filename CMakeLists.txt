@@ -14,7 +14,6 @@ endif(NOT MSVC OR ${MSVC_VERSION} LESS 1600)
 option(CRASHRPT_BUILD_SHARED_LIBS "If set (default), CrashRpt modules are built as dynamic-link libraries, otherwise as static libs." ON)
 option(CRASHRPT_LINK_CRT_AS_DLL "If set (default), CrashRpt modules link C run-time (CRT) as multi-threaded dynamic libraries, otherwise as multi-threaded static libs." ON)
 option(CRASHRPT_BUILD_DEMOS "If set (default), CrashRpt builds the demo projects." ON)
-option(CRASHRPT_BUILD_TESTS "If set (default), CrashRpt builds the test projects." ON)
 option(CRASHRPT_INSTALL_PDB "If set (default), CrashRpt also installs PDB files." ON)
 if(MSVC AND ${MSVC_VERSION} GREATER 1920)
   option(CRASHRPT_BUILD_CPP17 "If set (default), CrashRpt builds using /std:c++17 mode." ON)
@@ -113,10 +112,6 @@ add_subdirectory("reporting/crashsender")
 add_subdirectory("processing/crashrptprobe")
 add_subdirectory("processing/crprober")
 
-IF(CRASHRPT_BUILD_TESTS)
-  add_subdirectory("tests")
-ENDIF()
-
 add_subdirectory("thirdparty/tinyxml")
 add_subdirectory("thirdparty/minizip")
 add_subdirectory("thirdparty/zlib")
@@ -136,11 +131,6 @@ endif()
 MESSAGE("Copying test data files...")
 FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/lang_files/crashrpt_lang_EN.ini DESTINATION ${CMAKE_BINARY_DIR}/bin/)
 FILE(RENAME ${CMAKE_BINARY_DIR}/bin/crashrpt_lang_EN.ini ${CMAKE_BINARY_DIR}/bin/crashrpt_lang.ini)
-
-IF(CRASHRPT_BUILD_TESTS)
-  FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/tests/dummy.ini DESTINATION ${CMAKE_BINARY_DIR}/bin/)
-  FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/tests/dummy.log DESTINATION ${CMAKE_BINARY_DIR}/bin/)
-ENDIF(CRASHRPT_BUILD_TESTS)
 
 # Installation
 

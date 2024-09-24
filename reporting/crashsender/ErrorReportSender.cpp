@@ -63,18 +63,6 @@ BOOL CErrorReportSender::Init(LPCTSTR szFileMappingName)
         return FALSE;
     }
 
-    // Check for the report throttling
-    if (m_CrashInfo.m_bSendErrorReport)
-    {
-        const int nDailyReportCount = m_CrashInfo.GetDailyReportCount();
-        if (m_CrashInfo.m_nMaxReportsPerDay != 0 && m_CrashInfo.m_nMaxReportsPerDay <= nDailyReportCount)
-        {
-            // Parent process can now terminate
-            UnblockParentProcess();
-            return FALSE;
-        }
-    }
-
     // Check window mirroring settings
     CString sRTL = Utility::GetINIString(m_CrashInfo.m_sLangFileName, _T("Settings"), _T("RTLReading"));
     if (sRTL.CompareNoCase(_T("1")) == 0)
@@ -845,13 +833,13 @@ BOOL CErrorReportSender::CreateCrashDescriptionXML(CErrorReportInfo& eri)
     sExceptionCode.Format(_T("%d"), m_CrashInfo.m_dwExceptionCode);
     AddElemToXML(_T("ExceptionCode"), sExceptionCode, root);
 
-    if (m_CrashInfo.m_nExceptionType == CR_CRASH_TYPE_SIGFPE)
+    if (m_CrashInfo.m_nExceptionType == CR_TEST_CRASH_SIGFPE)
     {
         CString sFPESubcode;
         sFPESubcode.Format(_T("%d"), m_CrashInfo.m_uFPESubcode);
         AddElemToXML(_T("FPESubcode"), sFPESubcode, root);
     }
-    else if (m_CrashInfo.m_nExceptionType == CR_CRASH_TYPE_INVALID_PARAMETER)
+    else if (m_CrashInfo.m_nExceptionType == CR_TEST_CRASH_INVALID_PARAMETER)
     {
         AddElemToXML(_T("InvParamExpression"), m_CrashInfo.m_sInvParamExpr, root);
         AddElemToXML(_T("InvParamFunction"), m_CrashInfo.m_sInvParamFunction, root);
@@ -1299,17 +1287,7 @@ BOOL CErrorReportSender::RestartApp()
 
     // Format command line
     CString sCmdLine;
-    if (m_CrashInfo.m_sRestartCmdLine.IsEmpty())
-    {
-        // Format with double quotes to avoid first empty parameter
-        sCmdLine.Format(_T("\"%s\""), (LPCTSTR)pReport->GetImageName());
-    }
-    else
-    {
-        // Format with double quotes to avoid first empty parameters
-        sCmdLine.Format(_T("\"%s\" %s"), (LPCTSTR)pReport->GetImageName(),
-            m_CrashInfo.m_sRestartCmdLine.GetBuffer(0));
-    }
+    sCmdLine.Format(_T("\"%s\""), (LPCTSTR)pReport->GetImageName());
 
     // Create process using the command line prepared earlier
     BOOL bCreateProcess = CreateProcess(

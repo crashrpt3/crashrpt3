@@ -74,15 +74,14 @@ CRASHRPT_API(int) crInstall(const CrInstallInfo* pInfo)
     }
 
     {
-        LPCTSTR ptszAppName = strconv.w2t((LPWSTR)pInfo->lpApplicationName);
-        LPCTSTR ptszAppVersion = strconv.w2t((LPWSTR)pInfo->lpApplicationVersion);
+        LPCTSTR ptszAppName = strconv.w2t((LPWSTR)pInfo->lpAppName);
+        LPCTSTR ptszAppVersion = strconv.w2t((LPWSTR)pInfo->lpAppVersion);
         LPCTSTR ptszCrashSenderPath = strconv.w2t((LPWSTR)pInfo->lpCrashSenderDirectory);
         LPCTSTR ptszUrl = strconv.w2t((LPWSTR)pInfo->lpServerURL);
         LPCTSTR ptszPrivacyPolicyURL = strconv.w2t((LPWSTR)pInfo->lpPrivacyPolicyURL);
         LPCTSTR ptszDebugHelpDLL_file = strconv.w2t((LPWSTR)pInfo->lpDBGHelpDirectory);
         MINIDUMP_TYPE miniDumpType = pInfo->uMinidumpType;
         LPCTSTR ptszErrorReportSaveDir = strconv.w2t((LPWSTR)pInfo->lpOutputDirectory);
-        LPCTSTR ptszRestartCmdLine = strconv.w2t((LPWSTR)pInfo->lpRestartCommand);
 
         int nInitResult = pCrashHandler->Init(
             ptszAppName,
@@ -90,14 +89,10 @@ CRASHRPT_API(int) crInstall(const CrInstallInfo* pInfo)
             ptszCrashSenderPath,
             ptszUrl,
             pInfo->uCrashHandlers,
-            pInfo->dwInstallFlags,
             ptszPrivacyPolicyURL,
             ptszDebugHelpDLL_file,
             miniDumpType,
-            ptszErrorReportSaveDir,
-            ptszRestartCmdLine,
-            pInfo->nRestartTimeout,
-            pInfo->nMaxReportsPerDay
+            ptszErrorReportSaveDir
         );
 
         if (nInitResult != 0)
@@ -381,10 +376,6 @@ int crClearErrorMsg()
     return 0;
 }
 
-//-----------------------------------------------------------------------------------------------
-// Below crEmulateCrash() related stuff goes
-
-
 #include <float.h>
 #pragma optimize("g", off)
 
@@ -516,13 +507,13 @@ namespace
     }
 }
 
-CRASHRPT_API(int) crEmulateCrash(unsigned ExceptionType) noexcept(false)
+CRASHRPT_API(int) crTestCrash(unsigned uTestCrash) noexcept(false)
 {
     crSetErrorMsg(_T("Unspecified error."));
 
-    switch (ExceptionType)
+    switch (uTestCrash)
     {
-    case CR_CRASH_TYPE_SEH:
+    case CR_TEST_CRASH_SEH:
     {
         // Access violation
         int* p = 0;
@@ -531,25 +522,25 @@ CRASHRPT_API(int) crEmulateCrash(unsigned ExceptionType) noexcept(false)
 #pragma warning(default : 6011)
     }
     break;
-    case CR_CRASH_TYPE_TERMINATE_CALL:
+    case CR_TEST_CRASH_TERMINATE_CALL:
     {
         // Call terminate
         terminate();
     }
     break;
-    case CR_CRASH_TYPE_UNEXPECTED_CALL:
+    case CR_TEST_CRASH_UNEXPECTED_CALL:
     {
         // Call unexpected
         unexpected();
     }
     break;
-    case CR_CRASH_TYPE_CPP_PURE:
+    case CR_TEST_CRASH_CPP_PURE:
     {
         // pure virtual method call
         purecall_test();
     }
     break;
-    case CR_CRASH_TYPE_SECURITY:
+    case CR_TEST_CRASH_SECURITY:
     {
         // Cause buffer overrun (/GS compiler option)
 
@@ -559,7 +550,7 @@ CRASHRPT_API(int) crEmulateCrash(unsigned ExceptionType) noexcept(false)
         test_buffer_overrun();
     }
     break;
-    case CR_CRASH_TYPE_INVALID_PARAMETER:
+    case CR_TEST_CRASH_INVALID_PARAMETER:
     {
         char* formatString;
         // Call printf_s with invalid parameters.
@@ -570,65 +561,65 @@ CRASHRPT_API(int) crEmulateCrash(unsigned ExceptionType) noexcept(false)
 
     }
     break;
-    case CR_CRASH_TYPE_CPP_NEW_OPERATOR:
+    case CR_TEST_CRASH_CPP_NEW_OPERATOR:
     {
         // Cause memory allocation error
         RecurseAlloc();
     }
     break;
-    case CR_CRASH_TYPE_SIGABRT:
+    case CR_TEST_CRASH_SIGABRT:
     {
         // Call abort
         abort();
     }
     break;
-    case CR_CRASH_TYPE_SIGFPE:
+    case CR_TEST_CRASH_SIGFPE:
     {
         // floating point exception ( /fp:except compiler option)
         sigfpe_test();
         return 1;
     }
-    case CR_CRASH_TYPE_SIGILL:
+    case CR_TEST_CRASH_SIGILL:
     {
         int result = raise(SIGILL);
         ATLASSERT(result == 0);
         crSetErrorMsg(_T("Error raising SIGILL."));
         return result;
     }
-    case CR_CRASH_TYPE_SIGINT:
+    case CR_TEST_CRASH_SIGINT:
     {
         int result = raise(SIGINT);
         ATLASSERT(result == 0);
         crSetErrorMsg(_T("Error raising SIGINT."));
         return result;
     }
-    case CR_CRASH_TYPE_SIGSEGV:
+    case CR_TEST_CRASH_SIGSEGV:
     {
         int result = raise(SIGSEGV);
         ATLASSERT(result == 0);
         crSetErrorMsg(_T("Error raising SIGSEGV."));
         return result;
     }
-    case CR_CRASH_TYPE_SIGTERM:
+    case CR_TEST_CRASH_SIGTERM:
     {
         int result = raise(SIGTERM);
         crSetErrorMsg(_T("Error raising SIGTERM."));
         ATLASSERT(result == 0);
         return result;
     }
-    case CR_CRASH_TYPE_NONCONTINUABLE:
+    case CR_TEST_CRASH_NONCONTINUABLE:
     {
         // Raise noncontinuable software exception
         ::RaiseException(123, EXCEPTION_NONCONTINUABLE, 0, NULL);
     }
     break;
-    case CR_CRASH_TYPE_CPP_THROW:
+    case CR_TEST_CRASH_CPP_THROW:
     {
         _crCrashedByCppThrow();
         // Throw typed C++ exception.
     }
     break;
-    case CR_CRASH_TYPE_STACK_OVERFLOW:
+    case CR_TEST_CRASH_STACK_OVERFLOW:
     {
         // Infinite recursion and stack overflow.
         CauseStackOverflow();
@@ -653,28 +644,11 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID /*lpReserved*/)
     }
     else if (dwReason == DLL_THREAD_ATTACH)
     {
-        // The current process is creating a new thread.
-        CCrashHandler* pCrashHandler = CCrashHandler::GetCurrentProcessCrashHandler();
-        if (pCrashHandler != NULL &&
-            pCrashHandler->IsInitialized() &&
-            (pCrashHandler->GetFlags() & CR_INST_AUTO_THREAD_HANDLERS) != 0)
-        {
-            pCrashHandler->SetThreadExceptionHandlers(0);
-        }
     }
     else if (dwReason == DLL_THREAD_DETACH)
     {
-        // A thread is exiting cleanly.
-        CCrashHandler* pCrashHandler = CCrashHandler::GetCurrentProcessCrashHandler();
-        if (pCrashHandler != NULL &&
-            pCrashHandler->IsInitialized() &&
-            (pCrashHandler->GetFlags() & CR_INST_AUTO_THREAD_HANDLERS) != 0)
-        {
-            pCrashHandler->UnSetThreadExceptionHandlers();
-        }
     }
 
     return TRUE;
 }
 #endif
-

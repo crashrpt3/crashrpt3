@@ -41,7 +41,6 @@ CCrashHandler::CCrashHandler()
 {
     // Init member variables to their defaults
     m_bInitialized = FALSE;
-    m_dwFlags = 0;
     m_MinidumpType = MiniDumpNormal;
     m_hEvent = NULL;
     m_hEvent2 = NULL;
@@ -68,14 +67,10 @@ int CCrashHandler::Init(
     LPCTSTR lpcszCrashSenderPath,
     LPCTSTR lpcszUrl,
     UINT32 uCrashHandlers,
-    DWORD dwFlags,
     LPCTSTR lpcszPrivacyPolicyURL,
     LPCTSTR lpcszDebugHelpDLLPath,
     MINIDUMP_TYPE MiniDumpType,
-    LPCTSTR lpcszErrorReportSaveDir,
-    LPCTSTR lpcszRestartCmdLine,
-    int nRestartTimeout,
-    int nMaxReportsPerDay)
+    LPCTSTR lpcszErrorReportSaveDir)
 {
     // This method initializes configuration parameters,
     // creates shared memory buffer and saves the configuration parameters there,
@@ -83,17 +78,11 @@ int CCrashHandler::Init(
 
     crSetErrorMsg(_T("Unspecified error."));
 
-    // Save flags
-    m_dwFlags = dwFlags;
-    m_dwFlags |= uCrashHandlers;
-
     // Save minidump type
     m_MinidumpType = MiniDumpType;
 
     // Save application name
     m_sAppName = lpcszAppName;
-
-    // If no app name provided, use the default (EXE name)
     if (m_sAppName.IsEmpty())
     {
         m_sAppName = Utility::getAppName();
@@ -124,22 +113,6 @@ int CCrashHandler::Init(
     {
         m_sUrl = CString(lpcszUrl);
     }
-
-    // Check that we store ZIP archives only when error reports are not being sent.
-    BOOL bSendErrorReport = (dwFlags & CR_INST_DONT_SEND_REPORT) ? FALSE : TRUE;
-    BOOL bStoreZIPArchives = (dwFlags & CR_INST_STORE_ZIP_ARCHIVES) ? TRUE : FALSE;
-    if (bSendErrorReport && bStoreZIPArchives)
-    {
-        crSetErrorMsg(_T("The flag CR_INST_STORE_ZIP_ARCHIVES should be used with CR_INST_DONT_SEND_REPORT flag."));
-        return 1;
-    }
-
-    // Save restart command line
-    m_sRestartCmdLine = lpcszRestartCmdLine;
-    m_nRestartTimeout = nRestartTimeout;
-    if (m_nRestartTimeout <= 0)
-        m_nRestartTimeout = 60; // use default 60 sec timeout
-    m_nMaxReportsPerDay = nMaxReportsPerDay;
 
     // Save privacy policy URL (if exists)
     if (lpcszPrivacyPolicyURL != NULL)
@@ -309,24 +282,6 @@ int CCrashHandler::Init(
         return 1;
     }
 
-    // If user wants us to send pending error reports that were queued recently,
-    // launch the CrashSender.exe and make it to alert user and send the reports.
-    if (dwFlags & CR_INST_SEND_QUEUED_REPORTS)
-    {
-        // Create temporary shared mem.
-        CSharedMem tmpSharedMem;
-        CRASH_DESCRIPTION* pCrashDesc = PackCrashInfoIntoSharedMem(&tmpSharedMem, TRUE);
-        pCrashDesc->m_bSendRecentReports = TRUE;
-        if (0 != LaunchCrashSender(tmpSharedMem.GetName(), TRUE, NULL))
-        {
-            crSetErrorMsg(_T("Couldn't launch CrashSender.exe process."));
-            return 1;
-        }
-
-        m_pTmpCrashDesc = m_pCrashDesc;
-        m_pTmpSharedMem = &m_SharedMem;
-    }
-
     // The following code is intended to fix the issue with 32-bit applications in 64-bit environment.
     // http://support.microsoft.com/kb/976038/en-us
     // http://code.google.com/p/crashrpt/issues/detail?id=104
@@ -409,12 +364,9 @@ CRASH_DESCRIPTION* CCrashHandler::PackCrashInfoIntoSharedMem(CSharedMem* pShared
     m_pTmpCrashDesc->m_wSize = sizeof(CRASH_DESCRIPTION);
     m_pTmpCrashDesc->m_dwTotalSize = sizeof(CRASH_DESCRIPTION);
     m_pTmpCrashDesc->m_dwCrashRptVer = CRASHRPT_VER;
-    m_pTmpCrashDesc->m_dwInstallFlags = m_dwFlags;
     m_pTmpCrashDesc->m_MinidumpType = m_MinidumpType;
     m_pTmpCrashDesc->m_dwProcessId = GetCurrentProcessId();
     m_pTmpCrashDesc->m_bClientAppCrashed = FALSE;
-    m_pTmpCrashDesc->m_nRestartTimeout = m_nRestartTimeout;
-    m_pTmpCrashDesc->m_nMaxReportsPerDay = m_nMaxReportsPerDay;
 
     m_pTmpCrashDesc->m_dwAppNameOffs = PackString(m_sAppName);
     m_pTmpCrashDesc->m_dwAppVersionOffs = PackString(m_sAppVersion);
@@ -422,7 +374,6 @@ CRASH_DESCRIPTION* CCrashHandler::PackCrashInfoIntoSharedMem(CSharedMem* pShared
     m_pTmpCrashDesc->m_dwImageNameOffs = PackString(m_sImageName);
     m_pTmpCrashDesc->m_dwLangFileNameOffs = PackString(m_sLangFileName);
     m_pTmpCrashDesc->m_dwPathToDebugHelpDllOffs = PackString(m_sPathToDebugHelpDll);
-    m_pTmpCrashDesc->m_dwRestartCmdLineOffs = PackString(m_sRestartCmdLine);
     m_pTmpCrashDesc->m_dwPrivacyPolicyURLOffs = PackString(m_sPrivacyPolicyURL);
     m_pTmpCrashDesc->m_dwUnsentCrashReportsFolderOffs = PackString(m_sUnsentCrashReportsFolder);
     m_pTmpCrashDesc->m_dwUrlOffs = PackString(m_sUrl);
@@ -986,18 +937,10 @@ int CCrashHandler::GenerateErrorReport(
     }
 
     // Get exception pointers if they were not provided by the caller.
-    if (pExceptionInfo->lpExceptionPointers == NULL)
+    if (pExceptionInfo->pExceptionPointers == NULL)
     {
         GetExceptionPointers(pExceptionInfo->dwSEHCode, &ExceptionPointers);
-        pExceptionInfo->lpExceptionPointers = &ExceptionPointers;
-    }
-
-    // If error report is being generated manually,
-    // temporarily disable app restart feature.
-    if (pExceptionInfo->bManual)
-    {
-        // Force disable app restart.
-        m_pCrashDesc->m_dwInstallFlags &= ~CR_INST_APP_RESTART;
+        pExceptionInfo->pExceptionPointers = &ExceptionPointers;
     }
 
     // Set "client app crashed" flag.
@@ -1006,23 +949,23 @@ int CCrashHandler::GenerateErrorReport(
     // Save current process ID, thread ID and exception pointers address to shared mem.
     m_pCrashDesc->m_dwProcessId = GetCurrentProcessId();
     m_pCrashDesc->m_dwThreadId = GetCurrentThreadId();
-    m_pCrashDesc->m_pExceptionPtrs = pExceptionInfo->lpExceptionPointers;
+    m_pCrashDesc->m_pExceptionPtrs = pExceptionInfo->pExceptionPointers;
     m_pCrashDesc->m_bSendRecentReports = FALSE;
     m_pCrashDesc->m_nExceptionType = pExceptionInfo->nExceptionType;
 
     if (pExceptionInfo->dwSEHCode == 0)
     {
-        pExceptionInfo->dwSEHCode = pExceptionInfo->lpExceptionPointers->ExceptionRecord->ExceptionCode;
+        pExceptionInfo->dwSEHCode = pExceptionInfo->pExceptionPointers->ExceptionRecord->ExceptionCode;
     }
 
     m_pCrashDesc->m_dwExceptionCode = pExceptionInfo->dwSEHCode;
 
-    if (pExceptionInfo->nExceptionType == CR_CRASH_TYPE_SIGFPE)
+    if (pExceptionInfo->nExceptionType == CR_TEST_CRASH_SIGFPE)
     {
         // Set FPE (floating point exception) subcode
         m_pCrashDesc->m_uFPESubcode = pExceptionInfo->uFloatPointExceptionSubcode;
     }
-    else if (pExceptionInfo->nExceptionType == CR_CRASH_TYPE_INVALID_PARAMETER)
+    else if (pExceptionInfo->nExceptionType == CR_TEST_CRASH_INVALID_PARAMETER)
     {
         // Set invalid parameter exception info fields
         m_pCrashDesc->m_dwInvParamExprOffs = PackString(pExceptionInfo->lpAssertionExpression);
@@ -1331,8 +1274,8 @@ LONG WINAPI CCrashHandler::SEHHandler(PEXCEPTION_POINTERS pExceptionPtrs)
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(CR_EXCEPTION_INFO);
-        ei.nExceptionType = CR_CRASH_TYPE_SEH;
-        ei.lpExceptionPointers = pExceptionPtrs;
+        ei.nExceptionType = CR_TEST_CRASH_SEH;
+        ei.pExceptionPointers = pExceptionPtrs;
         ei.dwSEHCode = pExceptionPtrs->ExceptionRecord->ExceptionCode;
         pCrashHandler->GenerateErrorReport(&ei);
 
@@ -1371,8 +1314,8 @@ DWORD WINAPI CCrashHandler::StackOverflowThreadFunction(LPVOID lpParameter)
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(CR_EXCEPTION_INFO);
-        ei.nExceptionType = CR_CRASH_TYPE_SEH;
-        ei.lpExceptionPointers = pExceptionPtrs;
+        ei.nExceptionType = CR_TEST_CRASH_SEH;
+        ei.pExceptionPointers = pExceptionPtrs;
         ei.dwSEHCode = pExceptionPtrs->ExceptionRecord->ExceptionCode;
         pCrashHandler->GenerateErrorReport(&ei);
 
@@ -1407,7 +1350,7 @@ void __cdecl CCrashHandler::TerminateHandler()
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(CR_EXCEPTION_INFO);
-        ei.nExceptionType = CR_CRASH_TYPE_TERMINATE_CALL;
+        ei.nExceptionType = CR_TEST_CRASH_TERMINATE_CALL;
 
         // Generate crash report
         pCrashHandler->GenerateErrorReport(&ei);
@@ -1441,7 +1384,7 @@ void __cdecl CCrashHandler::UnexpectedHandler()
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(CR_EXCEPTION_INFO);
-        ei.nExceptionType = CR_CRASH_TYPE_UNEXPECTED_CALL;
+        ei.nExceptionType = CR_TEST_CRASH_UNEXPECTED_CALL;
 
         // Generate crash report
         pCrashHandler->GenerateErrorReport(&ei);
@@ -1476,7 +1419,7 @@ void __cdecl CCrashHandler::PureCallHandler()
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(CR_EXCEPTION_INFO);
-        ei.nExceptionType = CR_CRASH_TYPE_CPP_PURE;
+        ei.nExceptionType = CR_TEST_CRASH_CPP_PURE;
 
         // Generate error report.
         pCrashHandler->GenerateErrorReport(&ei);
@@ -1515,7 +1458,7 @@ void __cdecl CCrashHandler::SecurityHandler(int code, void* x)
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(CR_EXCEPTION_INFO);
-        ei.nExceptionType = CR_CRASH_TYPE_SECURITY;
+        ei.nExceptionType = CR_TEST_CRASH_SECURITY;
 
         pCrashHandler->GenerateErrorReport(&ei);
 
@@ -1557,7 +1500,7 @@ void __cdecl CCrashHandler::InvalidParameterHandler(
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(CR_EXCEPTION_INFO);
-        ei.nExceptionType = CR_CRASH_TYPE_INVALID_PARAMETER;
+        ei.nExceptionType = CR_TEST_CRASH_INVALID_PARAMETER;
         ei.lpAssertionExpression = expression;
         ei.lpFunction = funcName;
         ei.lpFile = file;
@@ -1597,8 +1540,8 @@ int __cdecl CCrashHandler::NewHandler(size_t)
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(CR_EXCEPTION_INFO);
-        ei.nExceptionType = CR_CRASH_TYPE_CPP_NEW_OPERATOR;
-        ei.lpExceptionPointers = NULL;
+        ei.nExceptionType = CR_TEST_CRASH_CPP_NEW_OPERATOR;
+        ei.pExceptionPointers = NULL;
 
         // Generate error report.
         pCrashHandler->GenerateErrorReport(&ei);
@@ -1636,7 +1579,7 @@ void CCrashHandler::SigabrtHandler(int)
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(CR_EXCEPTION_INFO);
-        ei.nExceptionType = CR_CRASH_TYPE_SIGABRT;
+        ei.nExceptionType = CR_TEST_CRASH_SIGABRT;
 
         pCrashHandler->GenerateErrorReport(&ei);
 
@@ -1669,8 +1612,8 @@ void CCrashHandler::SigfpeHandler(int /*code*/, int subcode)
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(CR_EXCEPTION_INFO);
-        ei.nExceptionType = CR_CRASH_TYPE_SIGFPE;
-        ei.lpExceptionPointers = (PEXCEPTION_POINTERS)_pxcptinfoptrs;
+        ei.nExceptionType = CR_TEST_CRASH_SIGFPE;
+        ei.pExceptionPointers = (PEXCEPTION_POINTERS)_pxcptinfoptrs;
         ei.uFloatPointExceptionSubcode = subcode;
 
         //Generate crash report.
@@ -1705,7 +1648,7 @@ void CCrashHandler::SigillHandler(int)
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(CR_EXCEPTION_INFO);
-        ei.nExceptionType = CR_CRASH_TYPE_SIGILL;
+        ei.nExceptionType = CR_TEST_CRASH_SIGILL;
 
         // Generate crash report
         pCrashHandler->GenerateErrorReport(&ei);
@@ -1739,7 +1682,7 @@ void CCrashHandler::SigintHandler(int)
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(CR_EXCEPTION_INFO);
-        ei.nExceptionType = CR_CRASH_TYPE_SIGINT;
+        ei.nExceptionType = CR_TEST_CRASH_SIGINT;
 
         // Generate crash report.
         pCrashHandler->GenerateErrorReport(&ei);
@@ -1772,8 +1715,8 @@ void CCrashHandler::SigsegvHandler(int)
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(CR_EXCEPTION_INFO);
-        ei.nExceptionType = CR_CRASH_TYPE_SIGSEGV;
-        ei.lpExceptionPointers = (PEXCEPTION_POINTERS)_pxcptinfoptrs;
+        ei.nExceptionType = CR_TEST_CRASH_SIGSEGV;
+        ei.pExceptionPointers = (PEXCEPTION_POINTERS)_pxcptinfoptrs;
 
         // Generate crash report
         pCrashHandler->GenerateErrorReport(&ei);
@@ -1807,7 +1750,7 @@ void CCrashHandler::SigtermHandler(int)
         CR_EXCEPTION_INFO ei;
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(CR_EXCEPTION_INFO);
-        ei.nExceptionType = CR_CRASH_TYPE_SIGTERM;
+        ei.nExceptionType = CR_TEST_CRASH_SIGTERM;
 
         // Generate crash report
         pCrashHandler->GenerateErrorReport(&ei);
@@ -1819,10 +1762,3 @@ void CCrashHandler::SigtermHandler(int)
         }
     }
 }
-
-DWORD CCrashHandler::GetFlags()
-{
-    return m_dwFlags;
-}
-
-

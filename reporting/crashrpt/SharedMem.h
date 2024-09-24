@@ -62,15 +62,11 @@ struct CRASH_DESCRIPTION
     DWORD m_dwCrashRptVer;         // Version of CrashRpt.
     UINT m_uFileItems;             // Count of file item records.
     UINT m_uCustomProps;           // Count of user-defined properties.
-    DWORD m_dwInstallFlags;        // Flags passed to crInstall() function.
     MINIDUMP_TYPE m_MinidumpType;  // Minidump type.
     DWORD m_dwUrlOffs;             // Offset of recipient URL.
     DWORD m_dwAppNameOffs;         // Offset of application name.
     DWORD m_dwAppVersionOffs;      // Offset of app version.
     DWORD m_dwLangFileNameOffs;    // Offset of language INI file name.
-    DWORD m_dwRestartCmdLineOffs;  // Offset of app restart command line.
-	int m_nRestartTimeout;         // Restart timeout
-    int m_nMaxReportsPerDay;       // Maximum number of crash reports that will be sent per calendar day.
     DWORD m_dwCrashGUIDOffs;       // Offset to crash GUID.
     DWORD m_dwUnsentCrashReportsFolderOffs;  // Offset of folder name where error reports are stored.
     DWORD m_dwPrivacyPolicyURLOffs; // Offset of privacy policy URL.

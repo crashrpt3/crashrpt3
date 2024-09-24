@@ -236,9 +236,6 @@ public:
     BOOL        m_bStoreZIPArchives;    // Should we store zipped error report files?
     BOOL        m_bSendRecentReports;   // Should we send recently queued reports now?
     BOOL        m_bAppRestart;          // Should we restart the crashed application?
-    CString     m_sRestartCmdLine;      // Command line for crashed app restart.
-	int         m_nRestartTimeout;      // Restart timeout.
-    int         m_nMaxReportsPerDay;    // Maximum number of crash reports that will be sent per calendar day.
     CString     m_sPrivacyPolicyURL;    // Privacy policy URL.
     MINIDUMP_TYPE m_MinidumpType;       // Minidump type.
     CPoint      m_ptCursorPos;          // Mouse cursor position on crash.

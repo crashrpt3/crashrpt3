@@ -29,8 +29,8 @@ int main(int argc, char* argv[])
     CrInstallInfo info;
     memset(&info, 0, sizeof(CrInstallInfo));
     info.cb = sizeof(CrInstallInfo);             // Size of the structure
-    info.lpApplicationName = _T("CrashRpt Console Test"); // App name
-    info.lpApplicationVersion = _T("1.0.0");              // App version
+    info.lpAppName = _T("CrashRpt Console Test"); // App name
+    info.lpAppVersion = _T("1.0.0");              // App version
 
     // Install crash handlers
     int nInstResult = crInstall(&info);
@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
     printf("Press crash type you wanna test:\n");
     UINT32 crashType = 0;
     std::cin >> crashType;
-    crEmulateCrash(crashType);
+    crTestCrash(crashType);
 
 #ifdef TEST_DEPRECATED_FUNCS
     Uninstall(lpvState); // Uninstall exception handlers

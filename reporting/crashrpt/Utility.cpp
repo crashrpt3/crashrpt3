@@ -25,8 +25,7 @@ CString Utility::getAppName()
 
     CString sAppName; // Extract from last '\' to '.'
     sAppName = szFileName;
-    sAppName = sAppName.Mid(sAppName.ReverseFind(_T('\\')) + 1)
-        .SpanExcluding(_T("."));
+    sAppName = sAppName.Mid(sAppName.ReverseFind(_T('\\')) + 1).SpanExcluding(_T("."));
 
     return sAppName;
 }
@@ -435,7 +434,7 @@ CString Utility::GetProductVersion(CString sModuleName)
     DWORD dwBuffSize = GetFileVersionInfoSize(sModuleName, 0);
     LPBYTE pBuff = (LPBYTE)GlobalAlloc(GPTR, dwBuffSize);
 
-    if(NULL!=pBuff && 0!=GetFileVersionInfo(sModuleName, 0, dwBuffSize, pBuff))
+    if (NULL != pBuff && 0 != GetFileVersionInfo(sModuleName, 0, dwBuffSize, pBuff))
     {
         VS_FIXEDFILEINFO* fi = NULL;
         UINT uLen = 0;

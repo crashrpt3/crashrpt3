@@ -92,14 +92,10 @@ public:
         LPCTSTR lpcszCrashSenderPath = NULL,
         LPCTSTR lpcszUrl = NULL,
         UINT32 uCrashHandlers = 0,
-        DWORD dwFlags = 0,
         LPCTSTR lpcszPrivacyPolicyURL = NULL,
         LPCTSTR lpcszDebugHelpDLLPath = NULL,
         MINIDUMP_TYPE MiniDumpType = MiniDumpNormal,
-        LPCTSTR lpcszErrorReportSaveDir = NULL,
-        LPCTSTR lpcszRestartCmdLine = NULL,
-        int nRestartTimeout = 0,
-        int nMaxReportsPerDay = 0);
+        LPCTSTR lpcszErrorReportSaveDir = NULL);
 
     // Returns TRUE if object was initialized.
     BOOL IsInitialized();
@@ -126,9 +122,6 @@ public:
     // Sets/unsets exception handlers for the caller thread
     int SetThreadExceptionHandlers(DWORD dwFlags);
     int UnSetThreadExceptionHandlers();
-
-    // Returns flags.
-    DWORD GetFlags();
 
     // Returns the crash handler object (singleton).
     static CCrashHandler* GetCurrentProcessCrashHandler();
@@ -249,11 +242,7 @@ public:
     CString m_sAppVersion;         // Application version.
     CString m_sCrashGUID;          // Crash GUID.
     CString m_sImageName;          // Process image name.
-    DWORD m_dwFlags;               // Flags.
     MINIDUMP_TYPE m_MinidumpType;  // Minidump type.
-    CString m_sRestartCmdLine;     // App restart command line.
-    int m_nRestartTimeout;         // Restart timeout.
-    int m_nMaxReportsPerDay;       // Maximum number of crash reports that will be sent per calendar day.
     CString m_sUrl;                // Url to use when sending error report over HTTP.
     CString m_sPrivacyPolicyURL;   // Privacy policy URL.
     CString m_sPathToCrashSender;  // Path to CrashSender.exe

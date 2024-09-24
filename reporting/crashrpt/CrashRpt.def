@@ -7,6 +7,6 @@ crUninstallFromCurrentThread
 crAddFile
 crAddProperty
 crGenerateErrorReport
-crEmulateCrash
+crTestCrash
 crGetLastErrorMsg
 crSetCrashCallback

@@ -462,11 +462,11 @@ int CCrashInfoReader::UnpackCrashDescription(CErrorReportInfo& eri)
     m_nExceptionType = m_pCrashDesc->m_nExceptionType;
     m_dwExceptionCode = m_pCrashDesc->m_dwExceptionCode;
     
-    if(m_nExceptionType==CR_CRASH_TYPE_SIGFPE)
+    if(m_nExceptionType==CR_TEST_CRASH_SIGFPE)
     {
         m_uFPESubcode = m_pCrashDesc->m_uFPESubcode;
     }
-    else if(m_nExceptionType==CR_CRASH_TYPE_INVALID_PARAMETER)
+    else if(m_nExceptionType==CR_TEST_CRASH_INVALID_PARAMETER)
     {
         UnpackString(m_pCrashDesc->m_dwInvParamExprOffs, m_sInvParamExpr);
         UnpackString(m_pCrashDesc->m_dwInvParamFunctionOffs, m_sInvParamFunction);
@@ -481,17 +481,13 @@ int CCrashInfoReader::UnpackCrashDescription(CErrorReportInfo& eri)
     UnpackString(m_pCrashDesc->m_dwCrashGUIDOffs, eri.m_sCrashGUID);
     UnpackString(m_pCrashDesc->m_dwImageNameOffs, eri.m_sImageName);
     // Unpack install flags
-    DWORD dwInstallFlags = m_pCrashDesc->m_dwInstallFlags;
-    m_bSilentMode = (dwInstallFlags&CR_INST_NO_GUI)!=0;
-    m_bSendErrorReport = (dwInstallFlags&CR_INST_DONT_SEND_REPORT)==0;
-	m_bShowAdditionalInfoFields = (dwInstallFlags&CR_INST_SHOW_ADDITIONAL_INFO_FIELDS)!=0;
-    m_bStoreZIPArchives = (dwInstallFlags&CR_INST_STORE_ZIP_ARCHIVES)!=0;
-    m_bAppRestart = (dwInstallFlags&CR_INST_APP_RESTART)!=0;
-    m_bQueueEnabled = (dwInstallFlags&CR_INST_SEND_QUEUED_REPORTS)!=0;
+    m_bSilentMode = FALSE;
+    m_bSendErrorReport = TRUE;
+	m_bShowAdditionalInfoFields = FALSE;
+    m_bStoreZIPArchives = TRUE;
+    m_bAppRestart = TRUE;
+    m_bQueueEnabled = FALSE;
     m_MinidumpType = m_pCrashDesc->m_MinidumpType;
-    UnpackString(m_pCrashDesc->m_dwRestartCmdLineOffs, m_sRestartCmdLine);
-	m_nRestartTimeout = m_pCrashDesc->m_nRestartTimeout;
-    m_nMaxReportsPerDay = m_pCrashDesc->m_nMaxReportsPerDay;
     UnpackString(m_pCrashDesc->m_dwUrlOffs, m_sUrl);
     UnpackString(m_pCrashDesc->m_dwPrivacyPolicyURLOffs, m_sPrivacyPolicyURL);
     UnpackString(m_pCrashDesc->m_dwLangFileNameOffs, m_sLangFileName);
@@ -707,8 +703,8 @@ void CCrashInfoReader::CollectMiscCrashInfo(CErrorReportInfo& eri)
 		// Check that the application works for at least one minute before crash.
         // This might help to avoid cyclic error report generation when the applciation
         // crashes on startup.
-        double dDiffTime = (double)(uCurTime-uStartTime)*10E-08;
-        if(dDiffTime<m_nRestartTimeout)
+        double dDiffTime = (double)(uCurTime - uStartTime) * 10E-08;
+        if (dDiffTime < 60)
         {
             m_bAppRestart = FALSE; // Disable restart.
         }
