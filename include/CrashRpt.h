@@ -52,20 +52,20 @@ typedef struct
 
 typedef struct
 {
-    WORD cb;                              //!< Size of this structure in bytes.
+    WORD cb;                              //!< Size of this structure in bytes; should be initialized before using.
     INT32 nStage;                         //!< Stage.
-    LPCWSTR pszErrorReportFolder;       //!< Directory where crash report files are located.
-    CR_EXCEPTION_INFO* pExceptionInfo;  //!< Pointer to information about the crash.
-    LPVOID pUserParam;                  //!< Pointer to user-defined data.
-    BOOL bContinueExecution;            //!< Whether to terminate the process (the default) or to continue program execution.
+    CR_EXCEPTION_INFO* pExceptionInfo;    //!< Pointer to information about the crash.
+    LPVOID pUserParam;                    //!< Pointer to user-defined data.
+    BOOL bContinueExecution;              //!< Whether to terminate the process (the default) or to continue program execution.
 } CR_CRASH_CALLBACK_INFO;
+
+typedef int (CALLBACK* PFN_CRASH_CALLBACK) (CR_CRASH_CALLBACK_INFO* pInfo);
 
 // Constants that may be returned by the crash callback function.
 #define CR_CB_CANCEL             0 //!< Cancel crash report generation on the current stage.
 #define CR_CB_DODEFAULT          1 //!< Proceed to the next stages of crash report generation without calling crash callback function.
 #define CR_CB_NOTIFY_NEXT_STAGE  2 //!< Proceed and call the crash callback for the next stage.
 
-typedef int (CALLBACK* PFN_CRASH_CALLBACK) (CR_CRASH_CALLBACK_INFO* pInfo);
 
 // Crash handlers
 #define CR_CRASH_HANDLER_SEH                            0x1    //!< Install SEH handler.
@@ -89,8 +89,8 @@ typedef struct _CrInstallInfo {
     LPCWSTR szAppVersion;           //!< Application version.
     LPCWSTR szServerURL;            //!< URL of server-side script (used in HTTP connection).
     LPCWSTR szPrivacyPolicyURL;     //!< URL of privacy policy agreement.
-    LPCWSTR szCrashSenderDirectory; //!< Directory where CrashSender.exe is located.
-    LPCWSTR szDBGHelpDirectory;     //!< Directory where dbghelp.dll is located.
+    LPCWSTR szCrashSenderPath;      //!< File path of CrashSender.exe.
+    LPCWSTR szDBGHelpPath;          //!< File path of dbghelp.dll.
     LPCWSTR szOutputDirectory;      //!< Directory where to save dump error reports.
     UINT32 uCrashHandler;           //!< See micro CR_CRASH_HANDLER_ALL
     MINIDUMP_TYPE uMinidumpType;    //!< Minidump type.

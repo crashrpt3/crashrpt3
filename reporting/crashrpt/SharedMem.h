@@ -14,7 +14,6 @@ be found in the Authors.txt file in the root of the source tree.
 // Date: 2010
 
 #pragma once
-#include "CritSec.h"
 
 // Generic block header.
 struct GENERIC_HEADER
@@ -40,7 +39,7 @@ struct FILE_ITEM
     DWORD m_dwDstFileNameOffs; // Name of the destination file.
     DWORD m_dwDescriptionOffs; // File description.
     BOOL  m_bMakeCopy;         // Should we make a copy of this file on crash?
-	BOOL  m_bAllowDelete;      // Should allow user to delete the file from crash report?
+    BOOL  m_bAllowDelete;      // Should allow user to delete the file from crash report?
 };
 
 // User-defined property.
@@ -65,7 +64,6 @@ struct CRASH_DESCRIPTION
     DWORD m_dwUrlOffs;             // Offset of recipient URL.
     DWORD m_dwAppNameOffs;         // Offset of application name.
     DWORD m_dwAppVersionOffs;      // Offset of app version.
-    DWORD m_dwLangFileNameOffs;    // Offset of language INI file name.
     DWORD m_dwCrashGUIDOffs;       // Offset to crash GUID.
     DWORD m_dwUnsentCrashReportsFolderOffs;  // Offset of folder name where error reports are stored.
     DWORD m_dwPrivacyPolicyURLOffs; // Offset of privacy policy URL.
@@ -82,8 +80,8 @@ struct CRASH_DESCRIPTION
     UINT m_uFPESubcode;            // FPE subcode.
     PEXCEPTION_POINTERS m_pExceptionPtrs; // Exception pointers.
     BOOL m_bSendRecentReports;     // If TRUE, CrashSender.exe needs to send queued error reports.
-								   // If FALSE, CrashSender.exe needs to send single report.
-	BOOL m_bClientAppCrashed;      // If TRUE, the client app has crashed; otherwise the client has exited without crash.
+                                   // If FALSE, CrashSender.exe needs to send single report.
+    BOOL m_bClientAppCrashed;      // If TRUE, the client app has crashed; otherwise the client has exited without crash.
 };
 
 #define SHARED_MEM_MAX_SIZE 10*1024*1024   /* 10 MB */
@@ -100,8 +98,8 @@ public:
     // Initializes shared memory
     BOOL Init(LPCTSTR szName, BOOL bOpenExisting, ULONG64 uSize);
 
-	// Whether initialized or not
-	BOOL IsInitialized();
+    // Whether initialized or not
+    BOOL IsInitialized();
 
     // Destroys the object
     BOOL Destroy();

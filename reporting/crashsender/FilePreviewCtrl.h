@@ -10,7 +10,6 @@ be found in the Authors.txt file in the root of the source tree.
 
 #pragma once
 #include "stdafx.h"
-#include "CritSec.h"
 
 // Preview mode
 enum PreviewMode
@@ -56,7 +55,7 @@ private:
     HANDLE m_hFileMapping;		  // Memory mapped object
     DWORD m_dwAllocGranularity; // System allocation granularity
     ULONG64 m_uFileLength;		  // Size of the file.
-    CCritSec m_csLock;          // Synchronization object
+    std::recursive_mutex m_lock;
     std::map<DWORD, LPBYTE> m_aViewStartPtrs; // Base of the view of the file.
 };
 
@@ -170,7 +169,7 @@ public:
     PreviewMode m_PreviewMode;   // File preview mode.
     TextEncoding m_TextEncoding; // Text encoding (if in text preview mode).
     int m_nEncSignatureLen;      // Length of the text encoding signature.
-    CCritSec m_csLock;           // Sync object.
+    std::recursive_mutex m_lock;
     CFileMemoryMapping m_fm;     // File mapping object.
     HFONT m_hFont;               // Font in use.
     int m_xChar;                 // Size of character in x direction.

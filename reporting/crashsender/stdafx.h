@@ -15,13 +15,14 @@ be found in the Authors.txt file in the root of the source tree.
 
 #pragma once
 
+#include <mutex>
+
 // Change these values to use different versions
 #define WINVER		0x0501
 #define _WIN32_WINNT	0x0501
 #define _WIN32_IE	0x0600
 #define _RICHEDIT_VER	0x0300
 
-typedef __int64 off_t, _off_t;
 #define _OFF_T_DEFINED
 
 #include <errno.h>

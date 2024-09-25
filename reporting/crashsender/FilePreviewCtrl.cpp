@@ -107,20 +107,20 @@ ULONG64 CFileMemoryMapping::GetSize()
 
 LPBYTE CFileMemoryMapping::CreateView(DWORD dwOffset, DWORD dwLength)
 {
-    DWORD dwThreadId = GetCurrentThreadId();
+    DWORD dwThreadId = ::GetCurrentThreadId();
     DWORD dwBaseOffs = dwOffset-dwOffset%m_dwAllocGranularity;
     DWORD dwDiff = dwOffset-dwBaseOffs;
     LPBYTE pPtr = NULL;
 
-    CAutoLock lock(&m_csLock);
+    std::lock_guard<std::recursive_mutex> guard(m_lock);
 
     std::map<DWORD, LPBYTE>::iterator it = m_aViewStartPtrs.find(dwThreadId);
     if(it!=m_aViewStartPtrs.end())
     {
-        UnmapViewOfFile(it->second);
+        ::UnmapViewOfFile(it->second);
     }
 
-    pPtr = (LPBYTE)MapViewOfFile(m_hFileMapping, FILE_MAP_READ, 0, dwBaseOffs, dwLength+dwDiff);
+    pPtr = (LPBYTE)::MapViewOfFile(m_hFileMapping, FILE_MAP_READ, 0, dwBaseOffs, dwLength+dwDiff);
     if(it!=m_aViewStartPtrs.end())
     {
         it->second = pPtr;
@@ -166,7 +166,7 @@ CFilePreviewCtrl::~CFilePreviewCtrl()
 {
     m_fm.Destroy();
 
-    DeleteObject(m_hFont);
+    ::DeleteObject(m_hFont);
 }
 
 LPCTSTR CFilePreviewCtrl::GetFile()
@@ -183,11 +183,11 @@ BOOL CFilePreviewCtrl::SetFile(LPCTSTR szFileName, PreviewMode mode, TextEncodin
     if(m_hWorkerThread!=NULL)
     {
         m_bCancelled = TRUE;
-        WaitForSingleObject(m_hWorkerThread, INFINITE);
+        ::WaitForSingleObject(m_hWorkerThread, INFINITE);
         m_hWorkerThread = NULL;
     }
 
-    CAutoLock lock(&m_csLock);
+    std::lock_guard<std::recursive_mutex> lock(m_lock);
 
     m_sFileName = szFileName;
 
@@ -213,7 +213,7 @@ BOOL CFilePreviewCtrl::SetFile(LPCTSTR szFileName, PreviewMode mode, TextEncodin
     GetClientRect(&rcClient);
 
     HDC hDC = GetDC();
-    HFONT hOldFont = (HFONT)SelectObject(hDC, m_hFont);
+    HFONT hOldFont = (HFONT)::SelectObject(hDC, m_hFont);
 
     LOGFONT lf;
     ZeroMemory(&lf, sizeof(LOGFONT));
@@ -430,7 +430,7 @@ void CFilePreviewCtrl::ParseText()
 
     if(dwFileSize!=0)
     {
-        CAutoLock lock(&m_csLock);
+        std::lock_guard<std::recursive_mutex> lock(m_lock);
         if(m_PreviewMode==PREVIEW_TEXT)
         {
             dwOffset+=m_nEncSignatureLen;
@@ -447,7 +447,7 @@ void CFilePreviewCtrl::ParseText()
     for(;;)
     {
         {
-            CAutoLock lock(&m_csLock);
+            std::lock_guard<std::recursive_mutex> lock(m_lock);
             if(m_bCancelled)
                 break;
         }
@@ -465,7 +465,7 @@ void CFilePreviewCtrl::ParseText()
         for(i=0; i<dwLength; )
         {
             {
-                CAutoLock lock(&m_csLock);
+                std::lock_guard<std::recursive_mutex> lock(m_lock);
                 if(m_bCancelled)
                     break;
             }
@@ -482,7 +482,7 @@ void CFilePreviewCtrl::ParseText()
                 }
                 else if(c=='\n')
                 {
-                    CAutoLock lock(&m_csLock);
+                    std::lock_guard<std::recursive_mutex> lock(m_lock);
                     m_aTextLines.push_back(dwOffset+i+2);
                     int cchLineLength = dwOffset+i+2-dwPrevOffset;
                     if(nTabs!=0)
@@ -506,7 +506,7 @@ void CFilePreviewCtrl::ParseText()
                 }
                 else if(c=='\n')
                 {
-                    CAutoLock lock(&m_csLock);
+                    std::lock_guard<std::recursive_mutex> lock(m_lock);
                     m_aTextLines.push_back(dwOffset+i+1);
                     int cchLineLength = dwOffset+i+1-dwPrevOffset;
                     if(nTabs!=0)
@@ -544,7 +544,7 @@ BOOL CFilePreviewCtrl::SetBytesPerLine(int nBytesPerLine)
 
 void CFilePreviewCtrl::SetupScrollbars()
 {
-    CAutoLock lock(&m_csLock);
+    std::lock_guard<std::recursive_mutex> lock(m_lock);
     CRect rcClient;
     GetClientRect(&rcClient);
 
@@ -658,7 +658,7 @@ void CFilePreviewCtrl::DrawTextLine(HDC hdc, DWORD nLineNo)
     DWORD dwOffset = 0;
     DWORD dwLength = 0;
     {
-        CAutoLock lock(&m_csLock);
+        std::lock_guard<std::recursive_mutex> lock(m_lock);
         dwOffset = m_aTextLines[nLineNo];
         if(nLineNo==m_uNumLines-1)
             dwLength = (DWORD)m_fm.GetSize() - dwOffset;

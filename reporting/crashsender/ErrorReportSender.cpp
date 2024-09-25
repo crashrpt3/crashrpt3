@@ -68,7 +68,7 @@ BOOL CErrorReportSender::Init(LPCTSTR szFileMappingName)
     if (sRTL.CompareNoCase(_T("1")) == 0)
     {
         // Set Right-to-Left reading order
-        SetProcessDefaultLayout(LAYOUT_RTL);
+        ::SetProcessDefaultLayout(LAYOUT_RTL);
     }
 
     if (!m_CrashInfo.m_bSendRecentReports)
@@ -100,7 +100,6 @@ BOOL CErrorReportSender::Init(LPCTSTR szFileMappingName)
         }
     }
 
-    // Done.
     m_sErrorMsg = _T("Success.");
     return TRUE;
 }
@@ -1711,41 +1710,6 @@ int CErrorReportSender::Base64EncodeAttachment(CString sFileName,
 
     // OK.
     return 0;
-}
-
-// This method formats the E-mail message text
-CString CErrorReportSender::FormatEmailText()
-{
-    // Kaneva - Added
-    auto pReport = GetReport();
-    if (!pReport) return "";
-
-    CString sFileTitle = m_sZipName;
-    sFileTitle.Replace('/', '\\');
-    int pos = sFileTitle.ReverseFind('\\');
-    if (pos >= 0)
-        sFileTitle = sFileTitle.Mid(pos + 1);
-
-    CString sText;
-
-    sText += _T("This is the error report from ") + m_CrashInfo.m_sAppName +
-        _T(" ") + pReport->GetAppVersion() + _T(".\n\n");
-
-    if (!pReport->GetProblemDescription().IsEmpty())
-    {
-        sText += _T("The user has provided the following problem description:\n<<< ") +
-            pReport->GetProblemDescription() + _T(" >>>\n\n");
-    }
-
-    sText += _T("You may find detailed information about the error in files attached to this message:\n\n");
-    sText += sFileTitle + _T(" is a ZIP archive which contains crash description XML (crashrpt.xml), crash minidump (crashdump.dmp) ");
-    sText += _T("and possibly other files that your application added to the crash report.\n\n");
-
-    sText += sFileTitle + _T(".md5 file contains MD5 hash for the ZIP archive. You might want to use this file to check integrity of the error report.\n\n");
-
-    sText += _T("For additional information, see FAQ http://code.google.com/p/crashrpt/wiki/FAQ\n");
-
-    return sText;
 }
 
 CString CErrorReportSender::GetLangStr(LPCTSTR szSection, LPCTSTR szName)

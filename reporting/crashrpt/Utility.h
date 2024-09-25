@@ -20,7 +20,7 @@ be found in the Authors.txt file in the root of the source tree.
 namespace Utility
 {
     // Returns base name of the EXE file that launched current process.
-    CString getAppName();
+    CString getModuleBaseName();
 
     // Returns the unique tmp file name.
     CString getTempFileName();
@@ -29,10 +29,10 @@ namespace Utility
     int getTempDirectory(CString& strTemp);
 
     // Returns path to directory where EXE or DLL module is located.
-    CString GetModulePath(HMODULE hModule);
+    CString getModuleDirectory(HMODULE hModule);
 
     // Returns the absolute path and name of the module
-    CString GetModuleName(HMODULE hModule);
+    CString GetModuleFullPath(HMODULE hModule);
 
     // Generates unique identifier (GUID)
     int GenerateGUID(CString& sGUID);
@@ -106,6 +106,8 @@ namespace Utility
 
 	// Returns file size
 	long GetFileSize(const TCHAR *fileName);
+
+    CString pathToParentDir(LPCTSTR szPath);
 };
 
 #endif	// _UTILITY_H_

@@ -172,9 +172,6 @@ private:
     // Encodes attachment file with Base-64 encoding.
     int Base64EncodeAttachment(CString sFileName, std::string& sEncodedFileData);
 
-    // Formats Email text.
-    CString FormatEmailText();
-
     // Sends all recently queued error reports in turn.
     BOOL SendRecentReports();
 

@@ -15,6 +15,8 @@ be found in the Authors.txt file in the root of the source tree.
 
 #pragma once
 
+#include <mutex>
+
 // Change these values to use different versions
 #define WINVER		0x0501
 #define _WIN32_WINNT	0x0501
@@ -93,5 +95,4 @@ extern CAppModule _Module;
 #define STRCPY_S(strDestination, numberOfElements, strSource) strcpy_s(strDestination, numberOfElements, strSource)
 #endif
 
-
-
+extern HANDLE g_hModule;

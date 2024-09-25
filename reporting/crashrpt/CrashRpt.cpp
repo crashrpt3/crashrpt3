@@ -23,7 +23,7 @@ CRASHRPT_API(int) crInstall(const CrInstallInfo* pInfo)
         }
 
         pCrashHandler = CCrashHandler::instance();
-        if (pCrashHandler && pCrashHandler->isInitialized())
+        if (pCrashHandler && pCrashHandler->isInstalled())
         {
             crLastErrorAdd(L"Can't install crash handler to the same process twice.");
             break;
@@ -39,21 +39,12 @@ CRASHRPT_API(int) crInstall(const CrInstallInfo* pInfo)
             }
         }
 
-        nRet = pCrashHandler->initialize(
-            pInfo->szAppName,
-            pInfo->szAppVersion,
-            pInfo->szCrashSenderDirectory,
-            pInfo->szServerURL,
-            pInfo->uCrashHandler,
-            pInfo->szPrivacyPolicyURL,
-            pInfo->szDBGHelpDirectory,
-            pInfo->uMinidumpType,
-            pInfo->szOutputDirectory);
+        nRet = pCrashHandler->install(pInfo);
     } while (false);
 
     if (nRet != 0)
     {
-        if (pCrashHandler && !pCrashHandler->isInitialized())
+        if (pCrashHandler && !pCrashHandler->isInstalled())
         {
             delete pCrashHandler;
         }
@@ -72,13 +63,13 @@ CRASHRPT_API(int) crUninstall()
         return 1;
     }
 
-    if (!pCrashHandler->isInitialized())
+    if (!pCrashHandler->isInstalled())
     {
         crLastErrorAdd(L"Crash handler wasn't preiviously installed for this process.");
         return 1;
     }
 
-    if (0 != pCrashHandler->uninitialize())
+    if (0 != pCrashHandler->uninstall())
     {
         return 1;
     }
@@ -97,7 +88,7 @@ CRASHRPT_API(int) crSetCrashCallback(PFN_CRASH_CALLBACK pfnCallbackFunc, LPVOID 
         crLastErrorAdd(_T("Crash handler wasn't previously installed for current process."));
         return 1;
     }
-    return pCrashHandler->SetCrashCallback(pfnCallbackFunc, lpParam);
+    return pCrashHandler->setCrashCallback(pfnCallbackFunc, lpParam);
 }
 
 CRASHRPT_API(int) crAddFile(PCWSTR szFileName, PCWSTR szDestFileName, PCWSTR szDesc, DWORD dwFlags)
@@ -110,7 +101,7 @@ CRASHRPT_API(int) crAddFile(PCWSTR szFileName, PCWSTR szDestFileName, PCWSTR szD
         crLastErrorAdd(_T("Crash handler wasn't previously installed for current process."));
         return 1;
     }
-    return pCrashHandler->AddFile(szFileName, szDestFileName, szDesc, dwFlags);
+    return pCrashHandler->addFile(szFileName, szDestFileName, szDesc, dwFlags);
 }
 
 CRASHRPT_API(int) crAddProperty(LPCWSTR szName, LPCWSTR szValue)
@@ -123,7 +114,7 @@ CRASHRPT_API(int) crAddProperty(LPCWSTR szName, LPCWSTR szValue)
         crLastErrorAdd(_T("Crash handler wasn't previously installed for current process."));
         return 1;
     }
-    return pCrashHandler->AddProperty(szName, szValue);
+    return pCrashHandler->addProperty(szName, szValue);
 }
 
 CRASHRPT_API(int) crGenerateErrorReport(CR_EXCEPTION_INFO* pExceptionInfo)
@@ -143,7 +134,7 @@ CRASHRPT_API(int) crGenerateErrorReport(CR_EXCEPTION_INFO* pExceptionInfo)
         return 1;
     }
 
-    return pCrashHandler->GenerateErrorReport(pExceptionInfo);
+    return pCrashHandler->generateErrorReport(pExceptionInfo);
 }
 
 CRASHRPT_API(int) crGetLastError(LPWSTR szBuffer, INT32 nLen)

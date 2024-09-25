@@ -18,7 +18,7 @@ be found in the Authors.txt file in the root of the source tree.
 #include "resource.h"
 #include "strconv.h"
 
-CString Utility::getAppName()
+CString Utility::getModuleBaseName()
 {
     TCHAR szFileName[MAX_PATH + 1] = { 0 };
     ::GetModuleFileName(NULL, szFileName, MAX_PATH);
@@ -27,25 +27,19 @@ CString Utility::getAppName()
     return szAppName;
 }
 
-CString Utility::GetModuleName(HMODULE hModule)
+CString Utility::GetModuleFullPath(HMODULE hModule)
 {
-    CString string;
-    LPTSTR buf = string.GetBuffer(MAX_PATH + 1);
-    ::GetModuleFileName(hModule, buf, MAX_PATH);
-    string.ReleaseBuffer();
-    return string;
+    CString szFullPath;
+    LPTSTR szBuffer = szFullPath.GetBufferSetLength(MAX_PATH + 1);
+    ::GetModuleFileName(hModule, szBuffer, MAX_PATH);
+    szFullPath.ReleaseBuffer();
+    return szFullPath;
 }
 
-CString Utility::GetModulePath(HMODULE hModule)
+CString Utility::getModuleDirectory(HMODULE hModule)
 {
-    CString string;
-    LPTSTR buf = string.GetBuffer(MAX_PATH + 1);
-    ::GetModuleFileName(hModule, buf, MAX_PATH);
-    TCHAR* ptr = _tcsrchr(buf, '\\');
-    if (ptr != NULL)
-        *(ptr) = 0; // remove executable name
-    string.ReleaseBuffer();
-    return string;
+    CString szFullPath = GetModuleFullPath(hModule);
+    return pathToParentDir(szFullPath);
 }
 
 int Utility::getTempDirectory(CString& strTemp)
@@ -76,7 +70,7 @@ CString Utility::getTempFileName()
     TCHAR szTempFile[MAX_PATH] = _T("");
 
     if (::GetTempPath(MAX_PATH - 14, szTempDir))
-        ::GetTempFileName(szTempDir, getAppName(), 0, szTempFile);
+        ::GetTempFileName(szTempDir, getModuleBaseName(), 0, szTempFile);
 
     return szTempFile;
 }
@@ -416,31 +410,24 @@ CString Utility::GetFileExtension(CString sFileName)
     return sExt;
 }
 
-CString Utility::GetProductVersion(CString sModuleName)
+CString Utility::GetProductVersion(CString szExePath)
 {
-    CString sProductVer;
-
-    DWORD dwBuffSize = GetFileVersionInfoSize(sModuleName, 0);
-    LPBYTE pBuff = (LPBYTE)GlobalAlloc(GPTR, dwBuffSize);
-
-    if (NULL != pBuff && 0 != GetFileVersionInfo(sModuleName, 0, dwBuffSize, pBuff))
+    CString szVersion;
+    DWORD dwBuffSize = ::GetFileVersionInfoSize(szExePath, 0);
+    LPBYTE pBuff = (LPBYTE)::GlobalAlloc(GPTR, dwBuffSize);
+    if (NULL != pBuff && 0 != ::GetFileVersionInfo(szExePath, 0, dwBuffSize, pBuff))
     {
         VS_FIXEDFILEINFO* fi = NULL;
         UINT uLen = 0;
-        VerQueryValue(pBuff, _T("\\"), (LPVOID*)&fi, &uLen);
-
+        ::VerQueryValue(pBuff, _T("\\"), (LPVOID*)&fi, &uLen);
         WORD dwVerMajor = HIWORD(fi->dwProductVersionMS);
         WORD dwVerMinor = LOWORD(fi->dwProductVersionMS);
         WORD dwPatchLevel = HIWORD(fi->dwProductVersionLS);
         WORD dwVerBuild = LOWORD(fi->dwProductVersionLS);
-
-        sProductVer.Format(_T("%u.%u.%u.%u"),
-            dwVerMajor, dwVerMinor, dwPatchLevel, dwVerBuild);
+        szVersion.Format(_T("%u.%u.%u.%u"), dwVerMajor, dwVerMinor, dwPatchLevel, dwVerBuild);
     }
-
-    GlobalFree((HGLOBAL)pBuff);
-
-    return sProductVer;
+    ::GlobalFree((HGLOBAL)pBuff);
+    return szVersion;
 }
 
 // Creates a folder. If some intermediate folders in the path do not exist,
@@ -576,6 +563,26 @@ long Utility::GetFileSize(const TCHAR* fileName)
         return -1;
     //assert(0 == fileInfo.nFileSizeHigh);
     return (long)fileInfo.nFileSizeLow;
+}
+
+CString Utility::pathToParentDir(LPCTSTR szPath)
+{
+    int len = lstrlen(szPath);
+    int i = len - 2;
+    for (; i >= 0; --i)
+    {
+        if (_T('\\') == szPath[i] || _T('/') == szPath[i])
+        {
+            break;
+        }
+    }
+
+    CString parent;
+    if (i > 0)
+    {
+        parent.Append(szPath, i + 1);
+    }
+    return parent;
 }
 
 BOOL Utility::IsFileSearchPattern(CString sFileName)
