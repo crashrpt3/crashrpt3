@@ -15,8 +15,6 @@ be found in the Authors.txt file in the root of the source tree.
 
 #include "stdafx.h"
 #include "Utility.h"
-#include "resource.h"
-#include "strconv.h"
 
 CString Utility::getModuleBaseName()
 {
@@ -326,34 +324,6 @@ CString Utility::GetINIString(LPCTSTR pszFile, LPCTSTR pszSection, LPCTSTR pszNa
 void Utility::SetINIString(LPCTSTR pszFile, LPCTSTR pszSection, LPCTSTR pszName, LPCTSTR pszValue)
 {
     WritePrivateProfileString(pszSection, pszName, pszValue, pszFile);
-}
-
-
-void Utility::SetLayoutRTL(HWND hWnd)
-{
-    DWORD dwExStyle = GetWindowLong(hWnd, GWL_EXSTYLE);
-    dwExStyle |= WS_EX_LAYOUTRTL;
-    SetWindowLong(hWnd, GWL_EXSTYLE, dwExStyle);
-
-    SetLayout(GetDC(hWnd), LAYOUT_RTL);
-
-    CRect rcWnd;
-    ::GetClientRect(hWnd, &rcWnd);
-
-    HWND hWndChild = GetWindow(hWnd, GW_CHILD);
-    while (hWndChild != NULL)
-    {
-        SetLayoutRTL(hWndChild);
-
-        CRect rc;
-        ::GetWindowRect(hWndChild, &rc);
-        ::MapWindowPoints(0, hWnd, (LPPOINT)&rc, 2);
-        ::MoveWindow(hWndChild, rcWnd.Width() - rc.right, rc.top, rc.Width(), rc.Height(), TRUE);
-
-        SetLayout(GetDC(hWndChild), LAYOUT_RTL);
-
-        hWndChild = GetWindow(hWndChild, GW_HWNDNEXT);
-    }
 }
 
 CString Utility::FormatErrorMsg(DWORD dwErrorCode)

@@ -1,6 +1,6 @@
 # Preserve backwards compatibility
 cmake_minimum_required (VERSION 3.16)
-project (CrashRpt)
+project (crashrpt)
 
 # CrashRpt version number and path
 set (CRASHRPT_VER 3100)

@@ -1,4 +1,4 @@
-project(CrashRptProbe)
+project(crashrptprobe)
 
 # source files
 aux_source_directory( . SOURCE_FILE_LIST )
@@ -31,31 +31,23 @@ include_directories(
 
 # Add library build target
 if(CRASHRPT_BUILD_SHARED_LIBS)
-  add_library(CrashRptProbe SHARED ${SOURCE_FILE_LIST} ${HEADER_FILE_LIST})
-else(CRASHRPT_BUILD_SHARED_LIBS)
-  add_library(CrashRptProbe STATIC ${SOURCE_FILE_LIST} ${HEADER_FILE_LIST})
-endif(CRASHRPT_BUILD_SHARED_LIBS)
+  add_library(crashrptprobe SHARED ${SOURCE_FILE_LIST} ${HEADER_FILE_LIST})
+endif()
 
 if(CMAKE_CL_64)
   link_directories( ${REPOSITORY_DIR}/thirdparty/dbghelp/lib/amd64 )
-  target_link_libraries(CrashRptProbe ${REPOSITORY_DIR}/thirdparty/dbghelp/lib/amd64/dbghelp.lib)
+  target_link_libraries(crashrptprobe ${REPOSITORY_DIR}/thirdparty/dbghelp/lib/amd64/dbghelp.lib)
 else(CMAKE_CL_64)
   link_directories( ${REPOSITORY_DIR}/thirdparty/dbghelp/lib )
-  target_link_libraries(CrashRptProbe ${REPOSITORY_DIR}/thirdparty/dbghelp/lib/dbghelp.lib)
+  target_link_libraries(crashrptprobe ${REPOSITORY_DIR}/thirdparty/dbghelp/lib/dbghelp.lib)
 endif(CMAKE_CL_64)
 
-target_link_libraries(CrashRptProbe zlib minizip tinyxml Rpcrt4.lib shell32.lib gdi32.lib version.lib psapi.lib)
+target_link_libraries(crashrptprobe zlib minizip tinyxml Rpcrt4.lib shell32.lib gdi32.lib version.lib psapi.lib)
 
 if(CRASHRPT_BUILD_SHARED_LIBS)
-  set_target_properties(CrashRptProbe PROPERTIES
+  set_target_properties(crashrptprobe PROPERTIES
                   DEBUG_POSTFIX ${CRASHRPT_VER}d
                   RELEASE_POSTFIX ${CRASHRPT_VER}
                   RELWITHDEBINFO_POSTFIX ${CRASHRPT_VER}
                   MINSIZEREL_POSTFIX ${CRASHRPT_VER})
-else(CRASHRPT_BUILD_SHARED_LIBS)
-  set_target_properties(CrashRptProbe PROPERTIES
-                  DEBUG_POSTFIX LIBd
-                  RELEASE_POSTFIX LIB
-                  RELWITHDEBINFO_POSTFIX LIB
-                  MINSIZEREL_POSTFIX LIB)
-endif(CRASHRPT_BUILD_SHARED_LIBS)
+endif()

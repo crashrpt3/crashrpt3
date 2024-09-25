@@ -67,9 +67,6 @@ namespace Utility
     // Adds a string to INI file.
     void SetINIString(LPCTSTR pszFileName, LPCTSTR pszSection, LPCTSTR pszName, LPCTSTR pszValue);
 
-    // Mirrors the content of a window.
-    void SetLayoutRTL(HWND hWnd);
-
     // Formats the error message.
     CString FormatErrorMsg(DWORD dwErrorCode);
 

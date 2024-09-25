@@ -1,4 +1,4 @@
-project(CrashSender)
+project(crashsender)
 
 # Create the list of source files
 aux_source_directory( . SOURCE_FILE_LIST )
@@ -34,10 +34,10 @@ else(NOT CMAKE_CL_64)
 endif(NOT CMAKE_CL_64)
 
 # Add executable build target
-add_executable(CrashSender WIN32 ${SOURCE_FILE_LIST} ${HEADER_FILE_LIST})
+add_executable(crashsender WIN32 ${SOURCE_FILE_LIST} ${HEADER_FILE_LIST})
 
 # Add input link libraries
-target_link_libraries(CrashSender
+target_link_libraries(crashsender
   zlib
   minizip
   tinyxml
@@ -52,19 +52,9 @@ target_link_libraries(CrashSender
   psapi.lib
 )
 
-set_target_properties(CrashSender PROPERTIES
+set_target_properties(crashsender PROPERTIES
   DEBUG_POSTFIX ${CRASHRPT_VER}d
   RELEASE_POSTFIX ${CRASHRPT_VER}
   RELWITHDEBINFO_POSTFIX ${CRASHRPT_VER}
   MINSIZEREL_POSTFIX ${CRASHRPT_VER}
 )
-
-INSTALL(TARGETS CrashSender
-  LIBRARY DESTINATION ${CRASHRPT_INSTALLDIR_BIN}
-  ARCHIVE DESTINATION ${CRASHRPT_INSTALLDIR_LIB}
-  RUNTIME DESTINATION ${CRASHRPT_INSTALLDIR_BIN}
-)
-
-if (CRASHRPT_INSTALL_PDB)
-  install(FILES $<TARGET_PDB_FILE:CrashSender> DESTINATION ${CRASHRPT_INSTALLDIR_BIN})
-endif()

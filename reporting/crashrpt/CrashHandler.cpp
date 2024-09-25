@@ -16,7 +16,6 @@ be found in the Authors.txt file in the root of the source tree.
 #include "stdafx.h"
 #include "CrashHandler.h"
 #include "Utility.h"
-#include "resource.h"
 #include "LastErrorThreaded.h"
 
 namespace {

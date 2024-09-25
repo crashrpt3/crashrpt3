@@ -15,7 +15,7 @@ include_directories(${REPOSITORY_DIR}/include)
 add_executable(crprober ${SOURCE_FILE_LIST} ${HEADER_FILE_LIST})
 
 # link
-target_link_libraries(crprober CrashRptProbe)
+target_link_libraries(crprober crashrptprobe)
 
 # add "d" postfix to output file name in debug
 set_target_properties(crprober PROPERTIES DEBUG_POSTFIX d )

@@ -23,7 +23,7 @@ add_executable(WTLDemo WIN32 ${SOURCE_FILE_LIST} ${HEADER_FILE_LIST})
 target_precompile_headers(WTLDemo PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/stdafx.h)
 
 # link
-target_link_libraries(WTLDemo CrashRpt)
+target_link_libraries(WTLDemo crashrpt)
 
 # add "d" postfix to output file name in debug
 set_target_properties(WTLDemo PROPERTIES DEBUG_POSTFIX d )

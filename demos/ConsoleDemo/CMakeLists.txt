@@ -15,7 +15,7 @@ include_directories(${REPOSITORY_DIR}/include)
 add_compile_definitions(UNICODE _UNICODE)
 
 # link
-target_link_libraries(ConsoleDemo CrashRpt)
+target_link_libraries(ConsoleDemo crashrpt)
 
 # add "d" postfix to output file name in debug
 set_target_properties(ConsoleDemo PROPERTIES DEBUG_POSTFIX d)
