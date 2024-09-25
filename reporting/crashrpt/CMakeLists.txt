@@ -2,7 +2,7 @@ project(CrashRpt)
 
 # Create the list of source files
 aux_source_directory( . source_files )
-file( GLOB header_files *.h ../include/*.h )
+file( GLOB header_files *.h ../../include/CrashRpt.h )
 
 list(APPEND source_files ./CrashRpt.rc ./CrashRpt.def)
 
@@ -20,12 +20,10 @@ include_directories( ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/thirdparty/
 # Add library build target
 if(CRASHRPT_BUILD_SHARED_LIBS)
   add_library(CrashRpt SHARED ${source_files} ${header_files})
-else(CRASHRPT_BUILD_SHARED_LIBS)
-  add_library(CrashRpt STATIC ${source_files} ${header_files})
-endif(CRASHRPT_BUILD_SHARED_LIBS)
+endif()
 
 # Specify what libraries to link
-target_link_libraries(CrashRpt rpcrt4.dll version.lib)
+target_link_libraries(CrashRpt rpcrt4.dll version.lib yyjson)
 
 if(CRASHRPT_BUILD_SHARED_LIBS)
   set_target_properties(CrashRpt PROPERTIES
@@ -34,14 +32,7 @@ if(CRASHRPT_BUILD_SHARED_LIBS)
     RELWITHDEBINFO_POSTFIX ${CRASHRPT_VER}
     MINSIZEREL_POSTFIX ${CRASHRPT_VER}
   )
-else(CRASHRPT_BUILD_SHARED_LIBS)
-  set_target_properties(CrashRpt PROPERTIES
-    DEBUG_POSTFIX LIBd
-    RELEASE_POSTFIX LIB
-    RELWITHDEBINFO_POSTFIX LIB
-    MINSIZEREL_POSTFIX LIB
-  )
-endif(CRASHRPT_BUILD_SHARED_LIBS)
+endif()
 
 INSTALL(TARGETS CrashRpt
   LIBRARY DESTINATION ${CRASHRPT_INSTALLDIR_BIN}

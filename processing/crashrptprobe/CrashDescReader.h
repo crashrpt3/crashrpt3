@@ -60,6 +60,5 @@ public:
     std::map<CString, CString> m_aCustomProps;
 
 private:
-
     int LoadXmlv10(TiXmlHandle hDoc);
 };

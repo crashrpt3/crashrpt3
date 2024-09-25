@@ -115,6 +115,7 @@ add_subdirectory("processing/crprober")
 add_subdirectory("thirdparty/tinyxml")
 add_subdirectory("thirdparty/minizip")
 add_subdirectory("thirdparty/zlib")
+add_subdirectory("thirdparty/yyjson-0.10.0")
 
 # Copy data in binary directory
 

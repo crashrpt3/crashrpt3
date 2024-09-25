@@ -19,7 +19,7 @@ be found in the Authors.txt file in the root of the source tree.
 #include "strconv.h"
 #include "tinyxml.h"
 #include "Utility.h"
-#include "SharedMem.h"
+#include "SharedMemory.h"
 
 BOOL ERIFileItem::GetFileInfo(HICON& hIcon, CString& sTypeName, LONGLONG& lSize)
 {
@@ -340,12 +340,10 @@ CCrashInfoReader::CCrashInfoReader()
     m_bSendErrorReport = TRUE;
     m_bShowAdditionalInfoFields = FALSE;
     m_bStoreZIPArchives = FALSE;
-    m_bSendRecentReports = FALSE;
     m_bAppRestart = FALSE;
     m_MinidumpType = MiniDumpNormal;
     m_ptCursorPos = CPoint(0, 0);
     m_rcAppWnd = CRect(0, 0, 0, 0);
-    m_bClientAppCrashed = FALSE;
     m_bQueueEnabled = FALSE;
     m_dwProcessId = 0;
     m_dwThreadId = 0;
@@ -359,18 +357,11 @@ CCrashInfoReader::CCrashInfoReader()
 
 int CCrashInfoReader::Init(LPCTSTR szFileMappingName)
 {
-    // This method unpacks crash information from a shared memory (file-mapping)
-    // and inits the internal variables.
-
-    strconv_t strconv;
     CErrorReportInfo eri;
 
-    // Init shared memory
-    if (!m_SharedMem.IsInitialized())
+    if (!m_SharedMem.isOpened())
     {
-        // Init shared memory
-        BOOL bInitMem = m_SharedMem.Init(szFileMappingName, TRUE, 0);
-        if (!bInitMem)
+        if (!m_SharedMem.open(szFileMappingName))
         {
             m_sErrorMsg = _T("Error initializing shared memory.");
             return 1;
@@ -378,7 +369,7 @@ int CCrashInfoReader::Init(LPCTSTR szFileMappingName)
     }
 
     // Unpack crash description from shared memory
-    m_pCrashDesc = (CRASH_DESCRIPTION*)m_SharedMem.CreateView(0, sizeof(CRASH_DESCRIPTION));
+    m_pCrashDesc = (CRASH_DESCRIPTION*)m_SharedMem.mapView(0, sizeof(CRASH_DESCRIPTION));
 
     int nUnpack = UnpackCrashDescription(eri);
     if (0 != nUnpack)
@@ -395,52 +386,11 @@ int CCrashInfoReader::Init(LPCTSTR szFileMappingName)
     // Save path to INI file storing settings
     m_sINIFile = m_sUnsentCrashReportsFolder + _T("\\~CrashRpt.ini");
 
-    if (!m_bSendRecentReports) // We should send report immediately
-    {
-        CollectMiscCrashInfo(eri);
+    CollectMiscCrashInfo(eri);
+    eri.m_sErrorReportDirName = m_sUnsentCrashReportsFolder + _T("\\") + eri.m_sCrashGUID;
+    Utility::CreateFolder(eri.m_sErrorReportDirName);
+    m_Reports.push_back(eri);
 
-        eri.m_sErrorReportDirName = m_sUnsentCrashReportsFolder + _T("\\") + eri.m_sCrashGUID;
-        Utility::CreateFolder(eri.m_sErrorReportDirName);
-
-        m_Reports.push_back(eri);
-    }
-    else // We should look for pending error reports
-    {
-        // Unblock the parent process
-        CString sEventName;
-        sEventName.Format(_T("Local\\CrashRptEvent_%s"), (LPCTSTR)eri.m_sCrashGUID);
-        HANDLE hEvent = CreateEvent(NULL, FALSE, FALSE, sEventName);
-        if (hEvent != NULL)
-            SetEvent(hEvent);
-
-        // Look for pending error reports and add them to the list
-        CString sSearchPattern = m_sUnsentCrashReportsFolder + _T("\\*");
-        CFindFile find;
-        BOOL bFound = find.FindFile(sSearchPattern);
-        while (bFound)
-        {
-            if (find.IsDirectory() && !find.IsDots()) // Process directories only
-            {
-                CString sErrorReportDirName = m_sUnsentCrashReportsFolder + _T("\\") +
-                    find.GetFileName();
-                CString sFileName = sErrorReportDirName + _T("\\crashrpt.xml");
-                CErrorReportInfo eri2;
-                eri2.m_sErrorReportDirName = sErrorReportDirName;
-                // Read crash description XML from the directory
-                if (0 == ParseCrashDescription(sFileName, TRUE, eri2))
-                {
-                    // Calculate crash report size
-                    eri2.m_uTotalSize = GetUncompressedReportSize(eri2);
-                    // Add report to the list
-                    m_Reports.push_back(eri2);
-                }
-            }
-
-            bFound = find.FindNextFile();
-        }
-    }
-
-    // Done
     return 0;
 }
 
@@ -448,17 +398,16 @@ int CCrashInfoReader::UnpackCrashDescription(CErrorReportInfo& eri)
 {
     // This method unpacks crash description data from shared memory.
 
-    if (memcmp(m_pCrashDesc->m_uchMagic, "CRD", 3) != 0)
+    if (memcmp(m_pCrashDesc->chMagic, "CRD", 3) != 0)
         return 1; // Invalid magic word
 
-    if (m_pCrashDesc->m_dwCrashRptVer != CRASHRPT_VER)
+    if (m_pCrashDesc->dwCrashRptVersion != CRASHRPT_VER)
         return 2; // Invalid CrashRpt version
 
     // Unpack process ID, thread ID and exception pointers address.
-    m_dwProcessId = m_pCrashDesc->m_dwProcessId;
+    m_dwProcessId = m_pCrashDesc->dwProcessId;
     m_dwThreadId = m_pCrashDesc->m_dwThreadId;
     m_pExInfo = m_pCrashDesc->m_pExceptionPtrs;
-    m_bSendRecentReports = m_pCrashDesc->m_bSendRecentReports;
     m_nExceptionType = m_pCrashDesc->m_nExceptionType;
     m_dwExceptionCode = m_pCrashDesc->m_dwExceptionCode;
 
@@ -487,25 +436,24 @@ int CCrashInfoReader::UnpackCrashDescription(CErrorReportInfo& eri)
     m_bStoreZIPArchives = TRUE;
     m_bAppRestart = TRUE;
     m_bQueueEnabled = FALSE;
-    m_MinidumpType = m_pCrashDesc->m_MinidumpType;
+    m_MinidumpType = m_pCrashDesc->uMinidumpType;
     UnpackString(m_pCrashDesc->m_dwUrlOffs, m_sUrl);
     UnpackString(m_pCrashDesc->m_dwPrivacyPolicyURLOffs, m_sPrivacyPolicyURL);
     UnpackString(m_pCrashDesc->m_dwPathToDebugHelpDllOffs, m_sDbgHelpPath);
     UnpackString(m_pCrashDesc->m_dwUnsentCrashReportsFolderOffs, m_sUnsentCrashReportsFolder);
-    m_bClientAppCrashed = m_pCrashDesc->m_bClientAppCrashed;
     m_sLangFileName = Utility::getModuleDirectory(nullptr) + L"crashrpt_lang.ini";
 
 
-    DWORD dwOffs = m_pCrashDesc->m_wSize;
-    while (dwOffs < m_pCrashDesc->m_dwTotalSize)
+    DWORD dwOffs = m_pCrashDesc->cb;
+    while (dwOffs < m_pCrashDesc->dwTotalSize)
     {
-        LPBYTE pView = m_SharedMem.CreateView(dwOffs, sizeof(GENERIC_HEADER));
+        LPBYTE pView = m_SharedMem.mapView(dwOffs, sizeof(GENERIC_HEADER));
         GENERIC_HEADER* pHeader = (GENERIC_HEADER*)pView;
 
         if (memcmp(pHeader->m_uchMagic, "FIL", 3) == 0)
         {
             // File item entry
-            FILE_ITEM* pFileItem = (FILE_ITEM*)m_SharedMem.CreateView(dwOffs, pHeader->m_wSize);
+            FILE_ITEM* pFileItem = (FILE_ITEM*)m_SharedMem.mapView(dwOffs, pHeader->m_wSize);
 
             ERIFileItem fi;
             UnpackString(pFileItem->m_dwSrcFilePathOffs, fi.m_sSrcFile);
@@ -517,12 +465,12 @@ int CCrashInfoReader::UnpackCrashDescription(CErrorReportInfo& eri)
             // Kaneva - Bug Fix - Use Source File Full Path
             eri.m_FileItems[fi.m_sSrcFile] = fi;
 
-            m_SharedMem.DestroyView((LPBYTE)pFileItem);
+            m_SharedMem.unmapView((LPBYTE)pFileItem);
         }
         else if (memcmp(pHeader->m_uchMagic, "CPR", 3) == 0)
         {
             // Custom prop entry
-            CUSTOM_PROP* pProp = (CUSTOM_PROP*)m_SharedMem.CreateView(dwOffs, pHeader->m_wSize);
+            CUSTOM_PROP* pProp = (CUSTOM_PROP*)m_SharedMem.mapView(dwOffs, pHeader->m_wSize);
 
             CString sName;
             CString sValue;
@@ -531,7 +479,7 @@ int CCrashInfoReader::UnpackCrashDescription(CErrorReportInfo& eri)
 
             eri.m_Props[sName] = sValue;
 
-            m_SharedMem.DestroyView((LPBYTE)pProp);
+            m_SharedMem.unmapView((LPBYTE)pProp);
         }
         else if (memcmp(pHeader->m_uchMagic, "STR", 3) == 0)
         {
@@ -545,7 +493,7 @@ int CCrashInfoReader::UnpackCrashDescription(CErrorReportInfo& eri)
 
         dwOffs += pHeader->m_wSize;
 
-        m_SharedMem.DestroyView(pView);
+        m_SharedMem.unmapView(pView);
     }
 
     // Success
@@ -554,7 +502,7 @@ int CCrashInfoReader::UnpackCrashDescription(CErrorReportInfo& eri)
 
 int CCrashInfoReader::UnpackString(DWORD dwOffset, CString& str)
 {
-    STRING_DESC* pStrDesc = (STRING_DESC*)m_SharedMem.CreateView(dwOffset, sizeof(STRING_DESC));
+    STRING_DESC* pStrDesc = (STRING_DESC*)m_SharedMem.mapView(dwOffset, sizeof(STRING_DESC));
     if (memcmp(pStrDesc, "STR", 3) != 0)
         return 1;
 
@@ -564,10 +512,10 @@ int CCrashInfoReader::UnpackString(DWORD dwOffset, CString& str)
 
     WORD wStrLen = wLength - sizeof(STRING_DESC);
 
-    m_SharedMem.DestroyView((LPBYTE)pStrDesc);
-    LPBYTE pStrData = m_SharedMem.CreateView(dwOffset + sizeof(STRING_DESC), wStrLen);
+    m_SharedMem.unmapView((LPBYTE)pStrDesc);
+    LPBYTE pStrData = m_SharedMem.mapView(dwOffset + sizeof(STRING_DESC), wStrLen);
     str = CString((LPCTSTR)pStrData, wStrLen / sizeof(TCHAR));
-    m_SharedMem.DestroyView(pStrData);
+    m_SharedMem.unmapView(pStrData);
 
     return 0;
 }

@@ -10,8 +10,6 @@ cmake_path(SET REPOSITORY_DIR NORMALIZE "${CMAKE_CURRENT_SOURCE_DIR}/../..")
 list(APPEND SOURCE_FILE_LIST
   ./CrashRptProbe.rc
   ./CrashRptProbe.def
-  ${REPOSITORY_DIR}/reporting/crashrpt/Utility.cpp
-  ${REPOSITORY_DIR}/reporting/crashsender/md5.cpp
 )
 
 # Enable usage of precompiled header
@@ -23,14 +21,13 @@ add_msvc_precompiled_header(stdafx.h ./stdafx.cpp srcs_using_precomp)
 add_compile_definitions( _UNICODE UNICODE )
 
 # Add include dir
-include_directories( ${REPOSITORY_DIR}/include
-      ${REPOSITORY_DIR}/reporting/crashrpt
-      ${REPOSITORY_DIR}/reporting/crashsender
-      ${REPOSITORY_DIR}/thirdparty/wtl
-      ${REPOSITORY_DIR}/thirdparty/zlib
-      ${REPOSITORY_DIR}/thirdparty/minizip
-      ${REPOSITORY_DIR}/thirdparty/tinyxml
-      ${DBGHELP_INCLUDE_DIR})
+include_directories(
+  ${REPOSITORY_DIR}/include
+  ${REPOSITORY_DIR}/thirdparty/wtl
+  ${REPOSITORY_DIR}/thirdparty/zlib
+  ${REPOSITORY_DIR}/thirdparty/minizip
+  ${REPOSITORY_DIR}/thirdparty/tinyxml
+  ${DBGHELP_INCLUDE_DIR})
 
 # Add library build target
 if(CRASHRPT_BUILD_SHARED_LIBS)

@@ -47,4 +47,6 @@ be found in the Authors.txt file in the root of the source tree.
 #include <psapi.h>
 #include <rtcapi.h>
 
+#include "yyjson.h"
+
 extern HANDLE g_hModule;

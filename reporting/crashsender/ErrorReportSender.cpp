@@ -70,35 +70,7 @@ BOOL CErrorReportSender::Init(LPCTSTR szFileMappingName)
         ::SetProcessDefaultLayout(LAYOUT_RTL);
     }
 
-    if (!m_CrashInfo.m_bSendRecentReports)
-    {
-        // Start crash info collection work assynchronously
-        DoWorkAssync(COLLECT_CRASH_INFO);
-    }
-    else
-    {
-        // Check if another instance of CrashSender.exe is running.
-        ::CreateMutex(NULL, FALSE, _T("Local\\43773530-129a-4298-88f2-20eea3e4a59b"));
-        if (::GetLastError() == ERROR_ALREADY_EXISTS)
-        {
-            m_sErrorMsg = _T("Another CrashSender.exe already tries to resend recent reports.");
-            return FALSE;
-        }
-
-        if (m_CrashInfo.GetReportCount() == 0)
-        {
-            m_sErrorMsg = _T("There are no reports for us to send.");
-            return FALSE;
-        }
-
-        // Check if it is ok to remind user now.
-        if (!m_CrashInfo.IsRemindNowOK())
-        {
-            m_sErrorMsg = _T("Not enough time elapsed to remind user about recent crash reports.");
-            return FALSE;
-        }
-    }
-
+    DoWorkAssync(COLLECT_CRASH_INFO);
     m_sErrorMsg = _T("Success.");
     return TRUE;
 }
@@ -156,16 +128,18 @@ BOOL CErrorReportSender::InitLog()
 
     // Kaneva - Added
     auto pReport = GetReport();
-    if (!pReport) return FALSE;
+    if (!pReport)
+    {
+        return FALSE;
+    }
 
     CString sLogFile;
     sLogFile.Format(_T("%s\\CrashRpt-Log-%s-{%s}.txt"),
-        (LPCTSTR)sLogDir, (LPCTSTR)szDateTime,
-        m_CrashInfo.m_bSendRecentReports ? _T("batch") : (LPCTSTR)pReport->GetCrashGUID());
+        (LPCTSTR)sLogDir,
+        (LPCTSTR)szDateTime,
+        (LPCTSTR)pReport->GetCrashGUID());
     m_Assync.InitLogFile(sLogFile);
-
     m_sCrashLogFile = sLogFile;
-
     return TRUE;
 }
 
@@ -187,31 +161,22 @@ void CErrorReportSender::SetNotificationWindow(HWND hWnd)
 
 BOOL CErrorReportSender::Run()
 {
-    if (m_CrashInfo.m_bSendRecentReports)
+    // Wait for completion of crash info collector.
+    WaitForCompletion();
+
+    // Determine whether to send crash report now
+    // or to exit without sending report.
+    if (m_CrashInfo.m_bSendErrorReport) // If we should send error report now
     {
-        // We should send recently queued error reports.
-        DoWorkAssync(SEND_RECENT_REPORTS);
+        // Compress report files and send the report
+        SetExportFlag(FALSE, _T(""));
+        DoWorkAssync(COMPRESS_REPORT | RESTART_APP | SEND_REPORT);
     }
-    else
+    else // If we shouldn't send error report now
     {
-        // Wait for completion of crash info collector.
-        WaitForCompletion();
+        // Exit
 
-        // Determine whether to send crash report now
-        // or to exit without sending report.
-        if (m_CrashInfo.m_bSendErrorReport) // If we should send error report now
-        {
-            // Compress report files and send the report
-            SetExportFlag(FALSE, _T(""));
-            DoWorkAssync(COMPRESS_REPORT | RESTART_APP | SEND_REPORT);
-        }
-        else // If we shouldn't send error report now
-        {
-            // Exit
-
-        }
     }
-
     return TRUE;
 }
 
@@ -421,29 +386,14 @@ BOOL CErrorReportSender::Finalize()
     // Wait until worker thread exits.
     WaitForCompletion();
 
-    if ((m_CrashInfo.m_bSendErrorReport && !m_CrashInfo.m_bQueueEnabled) ||
-        (!m_CrashInfo.m_bClientAppCrashed))
-    {
-        // Kaneva - Added
-        auto pReport = GetReport();
-        if (!pReport) return FALSE;
-
-        // Remove report files if queue disabled (or if client app not crashed).
-        Utility::RecycleFile(pReport->GetErrorReportDirName(), true);
-    }
-
-    if (!m_CrashInfo.m_bSendErrorReport &&
-        m_CrashInfo.m_bStoreZIPArchives) // If we should generate a ZIP archive
+    if (!m_CrashInfo.m_bSendErrorReport && m_CrashInfo.m_bStoreZIPArchives) // If we should generate a ZIP archive
     {
         // Compress error report files
         DoWork(COMPRESS_REPORT);
     }
 
     // If needed, restart the application
-    if (!m_CrashInfo.m_bSendRecentReports)
-    {
-        DoWork(RESTART_APP);
-    }
+    DoWork(RESTART_APP);
 
     // Done OK
     return TRUE;

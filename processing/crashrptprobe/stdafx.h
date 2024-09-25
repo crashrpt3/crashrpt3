@@ -16,6 +16,7 @@ be found in the Authors.txt file in the root of the source tree.
 #pragma once
 
 #include <vector>
+#include <time.h>
 
 // Modify the following defines if you have to target a platform prior to the ones specified below.
 // Refer to MSDN for the latest info on corresponding values for different platforms.
@@ -39,6 +40,7 @@ be found in the Authors.txt file in the root of the source tree.
 #define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
 // Windows Header Files:
 #include <windows.h>
+#include <shlobj_core.h>
 
 #include <atldef.h>
 #if ( _ATL_VER < 0x0710 )

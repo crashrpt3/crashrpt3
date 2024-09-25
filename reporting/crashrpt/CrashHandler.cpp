@@ -62,7 +62,7 @@ CCrashHandler::CCrashHandler()
     m_nCallbackRetCode = CR_CB_NOTIFY_NEXT_STAGE;
     m_bContinueExecution = TRUE;
 
-    clearOldExceptionHandlers();
+    clearExceptionHandlers();
 
     m_pInstance = this;
 }
@@ -165,7 +165,7 @@ int CCrashHandler::install(const CrInstallInfo* pInfo)
         return 1;
     }
 
-    clearOldExceptionHandlers();
+    clearExceptionHandlers();
 
     nRet = setupExceptionHandlers(m_uCrashHandler);
     if (nRet != 0)
@@ -211,53 +211,35 @@ int CCrashHandler::setCrashCallback(PFN_CRASH_CALLBACK pfnCallback, LPVOID pUser
 {
     m_pfnCallback = pfnCallback;
     m_pCallbackParam = pUserParam;
-
     return 0;
 }
 
-// Packs config info to shared mem.
-CRASH_DESCRIPTION* CCrashHandler::packCrashInfoIntoSharedMem(CSharedMem* pSharedMem, BOOL bTempMem)
+CRASH_DESCRIPTION* CCrashHandler::serializeCrashInfo()
 {
-    m_pTmpSharedMem = pSharedMem;
-
-    CString sSharedMemName;
-    if (bTempMem)
-        sSharedMemName.Format(_T("%s-tmp"), (LPCTSTR)m_szCrashGUID);
-    else
-        sSharedMemName = m_szCrashGUID;
-
-    if (!pSharedMem->IsInitialized())
+    if (!m_SharedMem.isOpened())
     {
-        // Initialize shared memory.
-        BOOL bSharedMem = pSharedMem->Init(sSharedMemName, FALSE, SHARED_MEM_MAX_SIZE);
-        if (!bSharedMem)
+        if (!m_SharedMem.create(m_szCrashGUID))
         {
-            ATLASSERT(0);
             crLastErrorAdd(_T("Couldn't initialize shared memory."));
             return nullptr;
         }
     }
 
-    // Create memory view.
-    m_pTmpCrashDesc =
-        (CRASH_DESCRIPTION*)pSharedMem->CreateView(0, sizeof(CRASH_DESCRIPTION));
+    m_pTmpCrashDesc = (CRASH_DESCRIPTION*)m_SharedMem.mapView(0, sizeof(CRASH_DESCRIPTION));
     if (m_pTmpCrashDesc == nullptr)
     {
-        ATLASSERT(0);
         crLastErrorAdd(_T("Couldn't create shared memory view."));
         return nullptr;
     }
 
     // Pack config information to shared memory
     memset(m_pTmpCrashDesc, 0, sizeof(CRASH_DESCRIPTION));
-    memcpy(m_pTmpCrashDesc->m_uchMagic, "CRD", 3);
-    m_pTmpCrashDesc->m_wSize = sizeof(CRASH_DESCRIPTION);
-    m_pTmpCrashDesc->m_dwTotalSize = sizeof(CRASH_DESCRIPTION);
-    m_pTmpCrashDesc->m_dwCrashRptVer = CRASHRPT_VER;
-    m_pTmpCrashDesc->m_MinidumpType = m_uMinidumpType;
-    m_pTmpCrashDesc->m_dwProcessId = GetCurrentProcessId();
-    m_pTmpCrashDesc->m_bClientAppCrashed = FALSE;
-
+    memcpy(m_pTmpCrashDesc->chMagic, "CRD", 3);
+    m_pTmpCrashDesc->cb = sizeof(CRASH_DESCRIPTION);
+    m_pTmpCrashDesc->dwTotalSize = sizeof(CRASH_DESCRIPTION);
+    m_pTmpCrashDesc->dwCrashRptVersion = CRASHRPT_VER;
+    m_pTmpCrashDesc->uMinidumpType = m_uMinidumpType;
+    m_pTmpCrashDesc->dwProcessId = GetCurrentProcessId();
     m_pTmpCrashDesc->m_dwAppNameOffs = packString(m_szAppName);
     m_pTmpCrashDesc->m_dwAppVersionOffs = packString(m_szAppVersion);
     m_pTmpCrashDesc->m_dwCrashGUIDOffs = packString(m_szCrashGUID);
@@ -291,31 +273,31 @@ CRASH_DESCRIPTION* CCrashHandler::packCrashInfoIntoSharedMem(CSharedMem* pShared
 // Packs a string to shared memory
 DWORD CCrashHandler::packString(const CString& str)
 {
-    DWORD dwTotalSize = m_pTmpCrashDesc->m_dwTotalSize;
+    DWORD dwTotalSize = m_pTmpCrashDesc->dwTotalSize;
     int nStrLen = str.GetLength() * sizeof(TCHAR);
     WORD wLength = (WORD)(sizeof(STRING_DESC) + nStrLen);
 
-    LPBYTE pView = m_pTmpSharedMem->CreateView(dwTotalSize, wLength);
+    LPBYTE pView = m_SharedMem.mapView(dwTotalSize, wLength);
     STRING_DESC* pStrDesc = (STRING_DESC*)pView;
     memcpy(pStrDesc->m_uchMagic, "STR", 3);
     pStrDesc->m_wSize = wLength;
     memcpy(pView + sizeof(STRING_DESC), str.GetString(), nStrLen);
 
-    m_pTmpCrashDesc->m_dwTotalSize += wLength;
+    m_pTmpCrashDesc->dwTotalSize += wLength;
 
-    m_pTmpSharedMem->DestroyView(pView);
+    m_SharedMem.unmapView(pView);
     return dwTotalSize;
 }
 
 // Packs file item to shared memory
 DWORD CCrashHandler::packFileItem(FileItem& fi)
 {
-    DWORD dwTotalSize = m_pTmpCrashDesc->m_dwTotalSize;
+    DWORD dwTotalSize = m_pTmpCrashDesc->dwTotalSize;
     WORD wLength = sizeof(FILE_ITEM);
-    m_pTmpCrashDesc->m_dwTotalSize += wLength;
-    m_pTmpCrashDesc->m_uFileItems++;
+    m_pTmpCrashDesc->dwTotalSize += wLength;
+    m_pTmpCrashDesc->uFileCount++;
 
-    LPBYTE pView = m_pTmpSharedMem->CreateView(dwTotalSize, wLength);
+    LPBYTE pView = m_SharedMem.mapView(dwTotalSize, wLength);
     FILE_ITEM* pFileItem = (FILE_ITEM*)pView;
 
     memcpy(pFileItem->m_uchMagic, "FIL", 3);
@@ -324,29 +306,29 @@ DWORD CCrashHandler::packFileItem(FileItem& fi)
     pFileItem->m_dwDescriptionOffs = packString(fi.description);
     pFileItem->m_bMakeCopy = fi.isMakeCopy;
     pFileItem->m_bAllowDelete = fi.isAllowDelete;
-    pFileItem->m_wSize = (WORD)(m_pTmpCrashDesc->m_dwTotalSize - dwTotalSize);
+    pFileItem->m_wSize = (WORD)(m_pTmpCrashDesc->dwTotalSize - dwTotalSize);
 
-    m_pTmpSharedMem->DestroyView(pView);
+    m_SharedMem.unmapView(pView);
     return dwTotalSize;
 }
 
 // Packs custom property to shared memory
 DWORD CCrashHandler::packProperty(const CString& sName, const CString& sValue)
 {
-    DWORD dwTotalSize = m_pTmpCrashDesc->m_dwTotalSize;
+    DWORD dwTotalSize = m_pTmpCrashDesc->dwTotalSize;
     WORD wLength = sizeof(CUSTOM_PROP);
-    m_pTmpCrashDesc->m_dwTotalSize += wLength;
-    m_pTmpCrashDesc->m_uCustomProps++;
+    m_pTmpCrashDesc->dwTotalSize += wLength;
+    m_pTmpCrashDesc->uPropertyCount++;
 
-    LPBYTE pView = m_pTmpSharedMem->CreateView(dwTotalSize, wLength);
+    LPBYTE pView = m_SharedMem.mapView(dwTotalSize, wLength);
     CUSTOM_PROP* pProp = (CUSTOM_PROP*)pView;
 
     memcpy(pProp->m_uchMagic, "CPR", 3);
     pProp->m_dwNameOffs = packString(sName);
     pProp->m_dwValueOffs = packString(sValue);
-    pProp->m_wSize = (WORD)(m_pTmpCrashDesc->m_dwTotalSize - dwTotalSize);
+    pProp->m_wSize = (WORD)(m_pTmpCrashDesc->dwTotalSize - dwTotalSize);
 
-    m_pTmpSharedMem->DestroyView(pView);
+    m_SharedMem.unmapView(pView);
     return dwTotalSize;
 }
 
@@ -359,8 +341,6 @@ BOOL CCrashHandler::isInstalled()
 // Destroys the object
 int CCrashHandler::uninstall()
 {
-    crLastErrorAdd(_T("Unspecified error."));
-
     if (!m_bInstalled)
     {
         crLastErrorAdd(_T("Can't destroy not initialized crash handler."));
@@ -386,12 +366,10 @@ int CCrashHandler::uninstall()
     }
 
     m_bInstalled = FALSE;
-    crLastErrorAdd(_T("Success."));
     return 0;
 }
 
-// Sets internal pointers to previously used exception handlers to nullptr
-void CCrashHandler::clearOldExceptionHandlers()
+void CCrashHandler::clearExceptionHandlers()
 {
     m_hExcSEH = nullptr;
     m_hExcPureCall = nullptr;
@@ -648,14 +626,10 @@ int CCrashHandler::generateErrorReport(CR_EXCEPTION_INFO* pExceptionInfo)
         pExceptionInfo->pExceptionPointers = &pExceptionPointers;
     }
 
-    // Set "client app crashed" flag.
-    m_pCrashDesc->m_bClientAppCrashed = TRUE;
-
     // Save current process ID, thread ID and exception pointers address to shared mem.
-    m_pCrashDesc->m_dwProcessId = ::GetCurrentProcessId();
+    m_pCrashDesc->dwProcessId = ::GetCurrentProcessId();
     m_pCrashDesc->m_dwThreadId = ::GetCurrentThreadId();
     m_pCrashDesc->m_pExceptionPtrs = pExceptionInfo->pExceptionPointers;
-    m_pCrashDesc->m_bSendRecentReports = FALSE;
     m_pCrashDesc->m_nExceptionType = pExceptionInfo->nExceptionType;
 
     if (pExceptionInfo->dwSEHCode == 0)
@@ -829,21 +803,14 @@ int CCrashHandler::beforeGenerateErrorReport()
     szEvtName.Format(_T("Local\\CrashRptEvent_%s"), (LPCTSTR)m_szCrashGUID);
     m_hEvent = ::CreateEvent(nullptr, FALSE, FALSE, szEvtName);
 
-    if (m_sharedMem.IsInitialized())
+    if (m_SharedMem.isOpened())
     {
-        m_sharedMem.Destroy();
+        m_SharedMem.close();
         m_pCrashDesc = nullptr;
     }
 
-    repack();
+    m_pCrashDesc = serializeCrashInfo();
     return 0;
-}
-
-void CCrashHandler::repack()
-{
-    // Pack configuration info into shared memory.
-    // It will be passed to CrashSender.exe later.
-    m_pCrashDesc = packCrashInfoIntoSharedMem(&m_sharedMem, FALSE);
 }
 
 int CCrashHandler::notifyCallback(int nStage, CR_EXCEPTION_INFO* pExInfo)

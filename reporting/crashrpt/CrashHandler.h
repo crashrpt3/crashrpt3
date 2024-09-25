@@ -1,6 +1,6 @@
 #pragma once
 #include "CrashRpt.h"
-#include "SharedMem.h"
+#include "SharedMemory.h"
 
 struct FileItem
 {
@@ -62,13 +62,12 @@ private:
     int launchCrashSender(LPCTSTR szCmdLineParams, BOOL bWait, HANDLE* phProcess);
     void getExceptionPointers(DWORD dwExceptionCode, EXCEPTION_POINTERS* pExceptionPointers);
 
-    CRASH_DESCRIPTION* packCrashInfoIntoSharedMem(__in CSharedMem* pSharedMem, BOOL bTempMem);
+    CRASH_DESCRIPTION* serializeCrashInfo();
     DWORD packString(const CString& str);
     DWORD packFileItem(FileItem& fi);
     DWORD packProperty(const CString& sName, const CString& sValue);
-    void repack();
 
-    void clearOldExceptionHandlers();
+    void clearExceptionHandlers();
     int notifyCallback(int nStage, CR_EXCEPTION_INFO* pExInfo);
 
 private:
@@ -112,9 +111,8 @@ private:
     std::map<CString, CString> m_props;  // User-defined properties to include.
     std::recursive_mutex m_lock;
     HANDLE m_hEvent;               // Event used to synchronize CrashRpt.dll with CrashSender.exe.
-    CSharedMem m_sharedMem;        // Shared memory.
+    SharedMemory m_SharedMem;        // Shared memory.
     CRASH_DESCRIPTION* m_pCrashDesc; // Pointer to crash description shared mem view.
-    CSharedMem* m_pTmpSharedMem;   // Used temporarily
     CRASH_DESCRIPTION* m_pTmpCrashDesc; // Used temporarily
     HANDLE m_hSenderProcess;       // Handle to CrashSender.exe process.
     PFN_CRASH_CALLBACK m_pfnCallback; // Client crash callback.

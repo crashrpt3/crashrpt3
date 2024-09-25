@@ -12,11 +12,7 @@ set(srcs_using_precomp ${SOURCE_FILE_LIST})
 list(REMOVE_ITEM srcs_using_precomp ./stdafx.cpp ./md5.cpp ./base64.cpp)
 add_msvc_precompiled_header(stdafx.h ./stdafx.cpp srcs_using_precomp)
 
-list(APPEND SOURCE_FILE_LIST
-  ./CrashSender.rc
-  ${REPOSITORY_DIR}/reporting/CrashRpt/Utility.cpp
-  ${REPOSITORY_DIR}/reporting/CrashRpt/SharedMem.cpp
-)
+list(APPEND SOURCE_FILE_LIST ./CrashSender.rc)
 
 # Define _UNICODE and UNICODE (use wide-char encoding)
 add_compile_definitions( _UNICODE UNICODE )
@@ -24,7 +20,6 @@ add_compile_definitions( _UNICODE UNICODE )
 # Add include dir
 include_directories(
   ${REPOSITORY_DIR}/include
-  ${REPOSITORY_DIR}/reporting/CrashRpt
   ${REPOSITORY_DIR}/thirdparty/wtl
   ${REPOSITORY_DIR}/thirdparty/zlib
   ${REPOSITORY_DIR}/thirdparty/minizip
