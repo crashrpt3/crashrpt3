@@ -46,8 +46,6 @@ typedef struct
     HANDLE hSenderProcess;                   //!< Handle to the CrashSender.exe process.
 } CR_EXCEPTION_INFO;
 
-typedef CR_EXCEPTION_INFO* PCR_EXCEPTION_INFO;
-
 // Stages of crash report generation (used by the crash callback function).
 #define CR_CB_STAGE_PREPARE      10  //!< Stage after exception pointers've been retrieved.
 #define CR_CB_STAGE_FINISH       20  //!< Stage after the launch of CrashSender.exe process.
@@ -112,8 +110,29 @@ CRASHRPT_API(int) crAddFile(LPCWSTR pszFile, LPCWSTR pszDestFile, LPCWSTR pszDes
 CRASHRPT_API(int) crAddProperty(LPCWSTR pszPropName, LPCWSTR pszPropValue);
 
 CRASHRPT_API(int) crSetCrashCallback(PFN_CRASH_CALLBACK pfnCallback, LPVOID lpParam);
-CRASHRPT_API(int) crGetLastError(LPWSTR pszBuffer, UINT uBuffSize);
-CRASHRPT_API(int) crGenerateErrorReport(PCR_EXCEPTION_INFO pExceptionInfo);
+CRASHRPT_API(int) crGetLastError(LPWSTR szBuffer, INT32 nLen);
+CRASHRPT_API(int) crGenerateErrorReport(CR_EXCEPTION_INFO* pExceptionInfo);
+
+// Test crashes
+#define CR_TEST_CRASH_SEH                      0    //!< SEH exception.
+#define CR_TEST_CRASH_TERMINATE_CALL           1    //!< C++ terminate() call.
+#define CR_TEST_CRASH_UNEXPECTED_CALL          2    //!< C++ unexpected() call.
+#define CR_TEST_CRASH_CPP_PURE                 3    //!< C++ pure virtual function call (VS .NET and later).
+#define CR_TEST_CRASH_CPP_NEW_OPERATOR         4    //!< C++ new operator fault (VS .NET and later).
+#define CR_TEST_CRASH_SECURITY                 5    //!< Buffer overrun error (VS .NET only).
+#define CR_TEST_CRASH_INVALID_PARAMETER        6    //!< Invalid parameter exception (VS 2005 and later).
+#define CR_TEST_CRASH_SIGABRT                  7    //!< C++ SIGABRT signal (abort).
+#define CR_TEST_CRASH_SIGFPE                   8    //!< C++ SIGFPE signal (flotating point exception).
+#define CR_TEST_CRASH_SIGILL                   9    //!< C++ SIGILL signal (illegal instruction).
+#define CR_TEST_CRASH_SIGINT                   10   //!< C++ SIGINT signal (CTRL+C).
+#define CR_TEST_CRASH_SIGSEGV                  11   //!< C++ SIGSEGV signal (invalid storage access).
+#define CR_TEST_CRASH_SIGTERM                  12   //!< C++ SIGTERM signal (termination request).
+#define CR_TEST_CRASH_NONCONTINUABLE           13   //!< Non continuable sofware exception.
+#define CR_TEST_CRASH_CPP_THROW                14   //!< Throw C++ typed exception.
+#define CR_TEST_CRASH_STACK_OVERFLOW           15   //!< Stack overflow.
+
+// Test all supported crashes.
+CRASHRPT_API(int) crTestCrash(UINT32 uTestCrash) noexcept(false);
 
 #ifdef __cplusplus
 
@@ -142,27 +161,5 @@ private:
 } // namespace crashpt
 
 #endif // __cplusplus
-
-
-// Test crashes
-#define CR_TEST_CRASH_SEH                      0    //!< SEH exception.
-#define CR_TEST_CRASH_TERMINATE_CALL           1    //!< C++ terminate() call.
-#define CR_TEST_CRASH_UNEXPECTED_CALL          2    //!< C++ unexpected() call.
-#define CR_TEST_CRASH_CPP_PURE                 3    //!< C++ pure virtual function call (VS .NET and later).
-#define CR_TEST_CRASH_CPP_NEW_OPERATOR         4    //!< C++ new operator fault (VS .NET and later).
-#define CR_TEST_CRASH_SECURITY                 5    //!< Buffer overrun error (VS .NET only).
-#define CR_TEST_CRASH_INVALID_PARAMETER        6    //!< Invalid parameter exception (VS 2005 and later).
-#define CR_TEST_CRASH_SIGABRT                  7    //!< C++ SIGABRT signal (abort).
-#define CR_TEST_CRASH_SIGFPE                   8    //!< C++ SIGFPE signal (flotating point exception).
-#define CR_TEST_CRASH_SIGILL                   9    //!< C++ SIGILL signal (illegal instruction).
-#define CR_TEST_CRASH_SIGINT                   10   //!< C++ SIGINT signal (CTRL+C).
-#define CR_TEST_CRASH_SIGSEGV                  11   //!< C++ SIGSEGV signal (invalid storage access).
-#define CR_TEST_CRASH_SIGTERM                  12   //!< C++ SIGTERM signal (termination request).
-#define CR_TEST_CRASH_NONCONTINUABLE           13   //!< Non continuable sofware exception.
-#define CR_TEST_CRASH_CPP_THROW                14   //!< Throw C++ typed exception.
-#define CR_TEST_CRASH_STACK_OVERFLOW           15   //!< Stack overflow.
-
-// Test all supported crashes.
-CRASHRPT_API(int) crTestCrash(UINT32 uTestCrash) noexcept(false);
 
 #endif // CRASHRPT_986D12C8_D0C5_4FB0_B298_DB720C91A8DF

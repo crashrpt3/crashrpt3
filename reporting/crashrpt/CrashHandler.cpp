@@ -18,6 +18,9 @@ be found in the Authors.txt file in the root of the source tree.
 #include "Utility.h"
 #include "resource.h"
 #include "strconv.h"
+#include "LastErrorThreaded.h"
+
+extern HANDLE g_hModule;
 
 #ifndef _AddressOfReturnAddress
 
@@ -34,14 +37,13 @@ EXTERNC void* _ReturnAddress(void);
 
 #endif
 
-extern HANDLE g_hModuleCrashRpt;
 CCrashHandler* CCrashHandler::m_pInstance = nullptr;
 
 CCrashHandler::CCrashHandler()
 {
     // Init member variables to their defaults
     m_bInitialized = FALSE;
-    m_MinidumpType = MiniDumpNormal;
+    m_uMinidumpType = MiniDumpNormal;
     m_hEvent = nullptr;
     m_hEvent2 = nullptr;
     m_pCrashDesc = nullptr;
@@ -73,9 +75,9 @@ int CCrashHandler::initialize(
     MINIDUMP_TYPE uMinidumpType,
     LPCWSTR szOutputDirectory)
 {
-    crSetLastError(L"");
+    crLastErrorAdd(L"");
 
-    m_MinidumpType = uMinidumpType;
+    m_uMinidumpType = uMinidumpType;
     m_szAppName = szAppName;
     m_szAppVersion = szAppVersion;
     m_szServerURL = szServerURL;
@@ -96,14 +98,14 @@ int CCrashHandler::initialize(
         m_szAppVersion = Utility::GetProductVersion(m_szImageName);
         if (m_szAppVersion.IsEmpty())
         {
-            crSetLastError(_T("Application version is not specified."));
+            crLastErrorAdd(_T("Application version is not specified."));
             return 1;
         }
     }
 
     if (m_szCrashSenderDirectory.IsEmpty())
     {
-        m_szCrashSenderDirectory = Utility::GetModulePath((HMODULE)g_hModuleCrashRpt);
+        m_szCrashSenderDirectory = Utility::GetModulePath((HMODULE)g_hModule);
     }
 
     CString szCrashSenderName;
@@ -121,7 +123,7 @@ int CCrashHandler::initialize(
     HANDLE hFile = ::CreateFile(m_szCrashSenderDirectory + szCrashSenderName, FILE_GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, 0, nullptr);
     if (hFile == INVALID_HANDLE_VALUE)
     {
-        crSetLastError(_T("CrashSender.exe is not found in the specified path."));
+        crLastErrorAdd(_T("CrashSender.exe is not found in the specified path."));
         return 1;
     }
     else
@@ -136,13 +138,13 @@ int CCrashHandler::initialize(
     int lang_file_ver = _ttoi(sLangFileVer);
     if (lang_file_ver != CRASHRPT_VER)
     {
-        crSetLastError(_T("Missing language file or wrong language file version."));
+        crLastErrorAdd(_T("Missing language file or wrong language file version."));
         return 1; // Language INI file has wrong version!
     }
 
     if (m_szDBGHelpDirectory.IsEmpty())
     {
-        m_szDBGHelpDirectory = Utility::GetModulePath((HMODULE)g_hModuleCrashRpt);
+        m_szDBGHelpDirectory = Utility::GetModulePath((HMODULE)g_hModule);
     }
 
     CString szDBGHelpName = "dbghelp.dll";
@@ -159,7 +161,7 @@ int CCrashHandler::initialize(
         hDBGHelp = ::LoadLibrary(szDBGHelpName);
         if (!hDBGHelp)
         {
-            crSetLastError(_T("Couldn't load dbghelp.dll."));
+            crLastErrorAdd(_T("Couldn't load dbghelp.dll."));
             return 1;
         }
     }
@@ -187,7 +189,7 @@ int CCrashHandler::initialize(
     if (!bCreateDir)
     {
         ATLASSERT(0);
-        crSetLastError(_T("Couldn't create crash report directory."));
+        crLastErrorAdd(_T("Couldn't create crash report directory."));
         return 1;
     }
 
@@ -197,7 +199,7 @@ int CCrashHandler::initialize(
     if (!bCreateDir)
     {
         ATLASSERT(0);
-        crSetLastError(_T("Couldn't create logs directory."));
+        crLastErrorAdd(_T("Couldn't create logs directory."));
         return 1;
     }
 
@@ -215,7 +217,7 @@ int CCrashHandler::initialize(
     if (nSetProcessHandlers != 0)
     {
         ATLASSERT(nSetProcessHandlers == 0);
-        crSetLastError(_T("Couldn't set C++ exception handlers for current process."));
+        crLastErrorAdd(_T("Couldn't set C++ exception handlers for current process."));
         return 1;
     }
 
@@ -224,7 +226,7 @@ int CCrashHandler::initialize(
     if (nSetThreadHandlers != 0)
     {
         ATLASSERT(nSetThreadHandlers == 0);
-        crSetLastError(_T("Couldn't set C++ exception handlers for main execution thread."));
+        crLastErrorAdd(_T("Couldn't set C++ exception handlers for main execution thread."));
         return 1;
     }
 
@@ -258,7 +260,7 @@ int CCrashHandler::initialize(
     }
 
     m_bInitialized = TRUE;
-    crSetLastError(_T("Success."));
+    crLastErrorAdd(_T("Success."));
     return 0;
 }
 
@@ -288,7 +290,7 @@ CRASH_DESCRIPTION* CCrashHandler::PackCrashInfoIntoSharedMem(CSharedMem* pShared
         if (!bSharedMem)
         {
             ATLASSERT(0);
-            crSetLastError(_T("Couldn't initialize shared memory."));
+            crLastErrorAdd(_T("Couldn't initialize shared memory."));
             return nullptr;
         }
     }
@@ -299,7 +301,7 @@ CRASH_DESCRIPTION* CCrashHandler::PackCrashInfoIntoSharedMem(CSharedMem* pShared
     if (m_pTmpCrashDesc == nullptr)
     {
         ATLASSERT(0);
-        crSetLastError(_T("Couldn't create shared memory view."));
+        crLastErrorAdd(_T("Couldn't create shared memory view."));
         return nullptr;
     }
 
@@ -309,7 +311,7 @@ CRASH_DESCRIPTION* CCrashHandler::PackCrashInfoIntoSharedMem(CSharedMem* pShared
     m_pTmpCrashDesc->m_wSize = sizeof(CRASH_DESCRIPTION);
     m_pTmpCrashDesc->m_dwTotalSize = sizeof(CRASH_DESCRIPTION);
     m_pTmpCrashDesc->m_dwCrashRptVer = CRASHRPT_VER;
-    m_pTmpCrashDesc->m_MinidumpType = m_MinidumpType;
+    m_pTmpCrashDesc->m_MinidumpType = m_uMinidumpType;
     m_pTmpCrashDesc->m_dwProcessId = GetCurrentProcessId();
     m_pTmpCrashDesc->m_bClientAppCrashed = FALSE;
 
@@ -345,7 +347,7 @@ CRASH_DESCRIPTION* CCrashHandler::PackCrashInfoIntoSharedMem(CSharedMem* pShared
 }
 
 // Packs a string to shared memory
-DWORD CCrashHandler::PackString(CString str)
+DWORD CCrashHandler::PackString(const CString& str)
 {
     DWORD dwTotalSize = m_pTmpCrashDesc->m_dwTotalSize;
     int nStrLen = str.GetLength() * sizeof(TCHAR);
@@ -355,7 +357,7 @@ DWORD CCrashHandler::PackString(CString str)
     STRING_DESC* pStrDesc = (STRING_DESC*)pView;
     memcpy(pStrDesc->m_uchMagic, "STR", 3);
     pStrDesc->m_wSize = wLength;
-    memcpy(pView + sizeof(STRING_DESC), str.GetBuffer(0), nStrLen);
+    memcpy(pView + sizeof(STRING_DESC), str.GetString(), nStrLen);
 
     m_pTmpCrashDesc->m_dwTotalSize += wLength;
 
@@ -387,7 +389,7 @@ DWORD CCrashHandler::PackFileItem(FileItem& fi)
 }
 
 // Packs custom property to shared memory
-DWORD CCrashHandler::PackProperty(CString sName, CString sValue)
+DWORD CCrashHandler::PackProperty(const CString& sName, const CString& sValue)
 {
     DWORD dwTotalSize = m_pTmpCrashDesc->m_dwTotalSize;
     WORD wLength = sizeof(CUSTOM_PROP);
@@ -415,11 +417,11 @@ BOOL CCrashHandler::isInitialized()
 // Destroys the object
 int CCrashHandler::uninitialize()
 {
-    crSetLastError(_T("Unspecified error."));
+    crLastErrorAdd(_T("Unspecified error."));
 
     if (!m_bInitialized)
     {
-        crSetLastError(_T("Can't destroy not initialized crash handler."));
+        crLastErrorAdd(_T("Can't destroy not initialized crash handler."));
         return 1;
     }
 
@@ -456,7 +458,7 @@ int CCrashHandler::uninitialize()
     }
 
     m_bInitialized = FALSE;
-    crSetLastError(_T("Success."));
+    crLastErrorAdd(_T("Success."));
     return 0;
 }
 
@@ -492,7 +494,7 @@ CCrashHandler* CCrashHandler::instance()
 // Sets exception handlers that work on per-process basis
 int CCrashHandler::setupProcessExceptionHandlers(UINT32 uCrashHandlers)
 {
-    crSetLastError(L"");
+    crLastErrorAdd(L"");
 
     // If 0 is specified as dwFlags, assume all handlers should be
     // installed
@@ -566,14 +568,14 @@ int CCrashHandler::setupProcessExceptionHandlers(UINT32 uCrashHandlers)
         m_hOldSIGTERM = signal(SIGTERM, SigtermHandler);
     }
 
-    crSetLastError(_T("Success."));
+    crLastErrorAdd(_T("Success."));
     return 0;
 }
 
 // Unsets exception pointers that work on per-process basis
 int CCrashHandler::tearDownProcessExceptionHandlers()
 {
-    crSetLastError(L"");
+    crLastErrorAdd(L"");
 
 #if _MSC_VER>=1300
     if (m_hOldPure != nullptr)
@@ -629,12 +631,12 @@ int CCrashHandler::tearDownProcessExceptionHandlers()
 // Adds a file item to the error report
 int CCrashHandler::AddFile(LPCTSTR pszFile, LPCTSTR pszDestFile, LPCTSTR pszDesc, DWORD dwFlags)
 {
-    crSetLastError(_T("Unspecified error."));
+    crLastErrorAdd(_T("Unspecified error."));
 
     // Check if source file name or search pattern is specified
     if (pszFile == nullptr)
     {
-        crSetLastError(_T("Invalid file name specified."));
+        crLastErrorAdd(_T("Invalid file name specified."));
         return 1;
     }
 
@@ -646,7 +648,7 @@ int CCrashHandler::AddFile(LPCTSTR pszFile, LPCTSTR pszDestFile, LPCTSTR pszDesc
         sDestFile.TrimRight();
         if (sDestFile.GetLength() == 0)
         {
-            crSetLastError(_T("Invalid destination file name specified."));
+            crLastErrorAdd(_T("Invalid destination file name specified."));
             return 1;
         }
     }
@@ -663,7 +665,7 @@ int CCrashHandler::AddFile(LPCTSTR pszFile, LPCTSTR pszDestFile, LPCTSTR pszDesc
 
         if (!bIsFile && (dwFlags & CR_AF_MISSING_FILE_OK) == 0)
         {
-            crSetLastError(_T("The file does not exists or not a regular file."));
+            crLastErrorAdd(_T("The file does not exists or not a regular file."));
             return 1;
         }
 
@@ -693,7 +695,7 @@ int CCrashHandler::AddFile(LPCTSTR pszFile, LPCTSTR pszDestFile, LPCTSTR pszDesc
         std::map<CString, FileItem>::iterator it = m_files.find(fi.dstFileName);
         if (it != m_files.end())
         {
-            crSetLastError(_T("A file with such a destination name already exists."));
+            crLastErrorAdd(_T("A file with such a destination name already exists."));
             return 1;
         }
 
@@ -718,18 +720,18 @@ int CCrashHandler::AddFile(LPCTSTR pszFile, LPCTSTR pszDestFile, LPCTSTR pszDesc
     }
 
     // OK.
-    crSetLastError(_T("Success."));
+    crLastErrorAdd(_T("Success."));
     return 0;
 }
 
 // Adds a custom property to the error report
-int CCrashHandler::AddProperty(CString sPropName, CString sPropValue)
+int CCrashHandler::AddProperty(const CString& sPropName, const CString& sPropValue)
 {
-    crSetLastError(_T("Unspecified error."));
+    crLastErrorAdd(_T("Unspecified error."));
 
     if (sPropName.IsEmpty())
     {
-        crSetLastError(_T("Invalid property name specified."));
+        crLastErrorAdd(_T("Invalid property name specified."));
         return 1;
     }
 
@@ -738,16 +740,16 @@ int CCrashHandler::AddProperty(CString sPropName, CString sPropValue)
     PackProperty(sPropName, sPropValue);
 
     // OK.
-    crSetLastError(_T("Success."));
+    crLastErrorAdd(_T("Success."));
     return 0;
 }
 
 // Generates error report
-int CCrashHandler::GenerateErrorReport(PCR_EXCEPTION_INFO pExceptionInfo)
+int CCrashHandler::GenerateErrorReport(CR_EXCEPTION_INFO* pExceptionInfo)
 {
     ReInitializer re_initializer(*this);
 
-    crSetLastError(_T("Unspecified error."));
+    crLastErrorAdd(_T("Unspecified error."));
 
     // Allocate memory in stack for storing exception pointers.
     EXCEPTION_RECORD ExceptionRecord;
@@ -759,7 +761,7 @@ int CCrashHandler::GenerateErrorReport(PCR_EXCEPTION_INFO pExceptionInfo)
     // Validate input parameters
     if (pExceptionInfo == nullptr)
     {
-        crSetLastError(_T("Exception info is nullptr."));
+        crLastErrorAdd(_T("Exception info is nullptr."));
         return 1;
     }
 
@@ -805,7 +807,7 @@ int CCrashHandler::GenerateErrorReport(PCR_EXCEPTION_INFO pExceptionInfo)
     if (CR_CB_CANCEL == CallBack(CR_CB_STAGE_PREPARE, pExceptionInfo))
     {
         // User has canceled error report generation!
-        crSetLastError(_T("The operation was cancelled by client."));
+        crLastErrorAdd(_T("The operation was cancelled by client."));
         return 2;
     }
 
@@ -819,7 +821,7 @@ int CCrashHandler::GenerateErrorReport(PCR_EXCEPTION_INFO pExceptionInfo)
     if (result != 0)
     {
         ATLASSERT(result == 0);
-        crSetLastError(_T("Error launching CrashSender.exe"));
+        crLastErrorAdd(_T("Error launching CrashSender.exe"));
 
         // Failed to launch crash sender process.
         // Try notifying user about crash using message box.
@@ -832,7 +834,7 @@ int CCrashHandler::GenerateErrorReport(PCR_EXCEPTION_INFO pExceptionInfo)
     }
 
     // OK
-    crSetLastError(_T("Success."));
+    crLastErrorAdd(_T("Success."));
     return 0;
 }
 
@@ -907,7 +909,7 @@ void CCrashHandler::GetExceptionPointers(DWORD dwExceptionCode,
 // Launches CrashSender.exe process
 int CCrashHandler::LaunchCrashSender(LPCTSTR szCmdLineParams, BOOL bWait, HANDLE* phProcess)
 {
-    crSetLastError(_T("Unspecified error."));
+    crLastErrorAdd(_T("Unspecified error."));
 
     /* Create CrashSender.exe process */
 
@@ -936,7 +938,7 @@ int CCrashHandler::LaunchCrashSender(LPCTSTR szCmdLineParams, BOOL bWait, HANDLE
     if (!bCreateProcess)
     {
         ATLASSERT(bCreateProcess);
-        crSetLastError(_T("Error creating CrashSender process."));
+        crLastErrorAdd(_T("Error creating CrashSender process."));
         return 1;
     }
 
@@ -961,7 +963,7 @@ int CCrashHandler::LaunchCrashSender(LPCTSTR szCmdLineParams, BOOL bWait, HANDLE
     }
 
     // Done
-    crSetLastError(_T("Success."));
+    crLastErrorAdd(_T("Success."));
     return 0;
 }
 
@@ -999,17 +1001,7 @@ int CCrashHandler::PerCrashInit()
     sEventName.Format(_T("Local\\CrashRptEvent_%s"), (LPCTSTR)m_sCrashGUID);
     m_hEvent = CreateEvent(nullptr, FALSE, FALSE, sEventName);
 
-    // Format error report dir name for the next crash report.
-    CString sErrorReportDirName;
-    sErrorReportDirName.Format(_T("%s\\%s"),
-        m_szOutputDirectory.GetBuffer(0),
-        m_sCrashGUID.GetBuffer(0)
-    );
-
-    // Convert it to wide-char and multi-byte charsets.
-    strconv_t strconv;
-    m_sErrorReportDirW = strconv.t2w(sErrorReportDirName);
-    m_sErrorReportDirA = strconv.t2a(sErrorReportDirName);
+    m_sErrorReportDir.Format(_T("%s\\%s"), m_szOutputDirectory.GetString(), m_sCrashGUID.GetString());
 
     // Reset shared memory
     if (m_SharedMem.IsInitialized())
@@ -1053,7 +1045,7 @@ int CCrashHandler::CallBack(int nStage, CR_EXCEPTION_INFO* pExInfo)
         cci.nStage = nStage;
         cci.pExceptionInfo = pExInfo;
         cci.pUserParam = m_pCallbackParam;
-        cci.pszErrorReportFolder = m_sErrorReportDirW.c_str();
+        cci.pszErrorReportFolder = m_sErrorReportDir;
         cci.bContinueExecution = m_bContinueExecution;
 
         // Call the function and get the ret code

@@ -38,9 +38,6 @@ struct ThreadExceptionHandlers
     }
 };
 
-// Sets the last error message (for the caller thread).
-void crSetLastError(LPCWSTR szMessage);
-
 // This structure describes a file item (a file included into crash report).
 struct FileItem
 {
@@ -94,8 +91,8 @@ public:
 
     int SetCrashCallback(PFN_CRASH_CALLBACK pfnCallback, LPVOID pUserParam);
     int AddFile(LPCTSTR lpFile, LPCTSTR lpDestFile, LPCTSTR lpDesc, DWORD dwFlags);
-    int AddProperty(CString sPropName, CString sPropValue);
-    int GenerateErrorReport(PCR_EXCEPTION_INFO pExceptionInfo = NULL);
+    int AddProperty(const CString& sPropName, const CString& sPropValue);
+    int GenerateErrorReport(CR_EXCEPTION_INFO* pExceptionInfo = NULL);
 
     int setupProcessExceptionHandlers(UINT32 uCrashHandlers);
     int tearDownProcessExceptionHandlers();
@@ -131,9 +128,9 @@ public:
     static void SigtermHandler(int);
     void GetExceptionPointers(DWORD dwExceptionCode, EXCEPTION_POINTERS* pExceptionPointers);
     CRASH_DESCRIPTION* PackCrashInfoIntoSharedMem(__in CSharedMem* pSharedMem, BOOL bTempMem);
-    DWORD PackString(CString str);
+    DWORD PackString(const CString& str);
     DWORD PackFileItem(FileItem& fi);
-    DWORD PackProperty(CString sName, CString sValue);
+    DWORD PackProperty(const CString& sName, const CString& sValue);
     int LaunchCrashSender(LPCTSTR szCmdLineParams, BOOL bWait, HANDLE* phProcess);
     BOOL IsSenderProcessAlive();
     void InitPrevExceptionHandlerPointers();
@@ -169,7 +166,7 @@ public:
     CString m_szAppVersion;         // Application version.
     CString m_sCrashGUID;          // Crash GUID.
     CString m_szImageName;          // Process image name.
-    MINIDUMP_TYPE m_MinidumpType;  // Minidump type.
+    MINIDUMP_TYPE m_uMinidumpType;  // Minidump type.
     CString m_szServerURL;                // Url to use when sending error report over HTTP.
     CString m_sPrivacyPolicyURL;   // Privacy policy URL.
     CString m_szCrashSenderDirectory;  // Path to CrashSender.exe
@@ -188,8 +185,7 @@ public:
     HANDLE m_hSenderProcess;       // Handle to CrashSender.exe process.
     PFN_CRASH_CALLBACK m_pfnCallback2W; // Client crash callback.
     LPVOID m_pCallbackParam;       // User-specified argument for callback function.
-    std::string m_sErrorReportDirA;  // Error report directory name (multi-byte).
-    std::wstring m_sErrorReportDirW; // Error report directory name (wide-char).
+    CString m_sErrorReportDir; // Error report directory name (wide-char).
     int m_nCallbackRetCode;         // Return code of the callback function.
     BOOL m_bContinueExecution;      // Whether to terminate process (the default) or to continue execution after crash.
     BOOL m_bContinueExecutionNow;   // After GenerateErrorReport() m_bContinueExecution is reset to FALSE. This is the current value
