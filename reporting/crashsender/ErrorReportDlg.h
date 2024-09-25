@@ -15,7 +15,6 @@ be found in the Authors.txt file in the root of the source tree.
 
 #pragma once
 #include "stdafx.h"
-#include "MailMsg.h"
 #include "DetailDlg.h"
 #include "ProgressDlg.h"
 #include "SequenceLayout.h"

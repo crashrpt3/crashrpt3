@@ -148,7 +148,7 @@ LRESULT CResendDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lPar
     lf.lfHeight = 11;
     lf.lfWeight = FW_NORMAL;
     lf.lfQuality = ANTIALIASED_QUALITY;
-    _TCSCPY_S(lf.lfFaceName, 32, _T("Tahoma"));
+    _tcscpy_s(lf.lfFaceName, 32, _T("Tahoma"));
     CFontHandle hConsentFont;
     hConsentFont.CreateFontIndirect(&lf);
     m_statConsent.SetFont(hConsentFont);
@@ -669,11 +669,11 @@ void CResendDlg::AddTrayIcon(BOOL bAdd)
 #if (NTDDI_VERSION >= NTDDI_WIN2K)
         // Truncate the string if it is too long.
         sTip = Utility::AddEllipsis(sTip, 127);
-        _TCSCPY_S(nf.szTip, 127, sTip);
+        _tcscpy_s(nf.szTip, 127, sTip);
 #else
         // Truncate the string if it is too long.
         sTip = Utility::AddEllipsis(sTip, 63);
-        _TCSCPY_S(nf.szTip, 63, sTip);
+        _tcscpy_s(nf.szTip, 63, sTip);
 #endif
         // Set balloon icon
         nf.hIcon = ::LoadIcon(_Module.GetResourceInstance(), MAKEINTRESOURCE(IDR_MAINFRAME));
@@ -683,14 +683,14 @@ void CResendDlg::AddTrayIcon(BOOL bAdd)
             (LPCTSTR) pSender->GetCrashInfo()->m_sAppName, (LPCTSTR) pSender->GetCrashInfo()->m_sAppName);
         // Truncate the string if it is too long.
         sInfo = Utility::AddEllipsis(sInfo, 255);
-        _TCSCPY_S(nf.szInfo, 255, sInfo.GetBuffer(0));
+        _tcscpy_s(nf.szInfo, 255, sInfo.GetBuffer(0));
 
         CString sInfoTitle;
         sInfoTitle.Format(pSender->GetLangStr(_T("ResendDlg"), _T("BalloonCaption")),
             (LPCTSTR) pSender->GetCrashInfo()->m_sAppName);
         // Truncate the string if it is too long.
         sInfoTitle = Utility::AddEllipsis(sInfoTitle, 63);
-        _TCSCPY_S(nf.szInfoTitle, 63, sInfoTitle.GetBuffer(0));
+        _tcscpy_s(nf.szInfoTitle, 63, sInfoTitle.GetBuffer(0));
 
         Shell_NotifyIcon(NIM_ADD,&nf);
     }
@@ -803,57 +803,6 @@ void CResendDlg::DoProgressTimer()
         {
             m_listReports.SetItemText(nCurItem, 2,
                 pSender->GetLangStr(_T("ResendDlg"), _T("StatusFailed")));
-        }
-        else if(messages[i].CompareNoCase(_T("[confirm_launch_email_client]"))==0)
-        {
-            // We need to display message box to get user
-            // confirmation on launching mail program.
-
-            // Stop the timer that hides the window in 3 sec.
-            KillTimer(2);
-
-            // Save visibility state (to restore it later).
-            BOOL bVisible = IsWindowVisible();
-
-            // Display the dialog.
-            ShowWindow(SW_SHOW);
-            // Position it on top of other windows.
-            SetWindowPos(HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE);
-            // Set focus to it.
-            SetFocus();
-            // Update it.
-            RedrawWindow(0, 0, RDW_ERASE|RDW_FRAME|RDW_INVALIDATE);
-            m_listReports.RedrawWindow(0, 0, RDW_ERASE|RDW_FRAME|RDW_INVALIDATE);
-
-            // Determine window mirroring flags (language specific).
-            DWORD dwFlags = 0;
-            CString sRTL = Utility::GetINIString(pSender->GetCrashInfo()->m_sLangFileName, _T("Settings"), _T("RTLReading"));
-            if(sRTL.CompareNoCase(_T("1"))==0)
-                dwFlags = MB_RTLREADING;
-
-            // Get mail program name.
-            CString sMailClientName;
-            CMailMsg::DetectMailClient(sMailClientName);
-            CString msg;
-            msg.Format(pSender->GetLangStr(_T("ProgressDlg"), _T("ConfirmLaunchEmailClient")), (LPCTSTR) sMailClientName);
-
-            // Display message box.
-            CString sCaption = pSender->GetLangStr(_T("ProgressDlg"), _T("DlgCaption"));
-            CString sTitle;
-            sTitle.Format(sCaption, (LPCTSTR) pSender->GetCrashInfo()->m_sAppName);
-            INT_PTR result = MessageBox(msg,
-                sTitle,
-                MB_OKCANCEL|MB_ICONQUESTION|dwFlags);
-
-            // Update window
-            RedrawWindow(0, 0, RDW_ERASE|RDW_FRAME|RDW_INVALIDATE);
-            m_listReports.RedrawWindow(0, 0, RDW_ERASE|RDW_FRAME|RDW_INVALIDATE);
-
-            // Unblock worker thread.
-            pSender->FeedbackReady(result==IDOK?0:1);
-
-            // Restore window visibility
-            ShowWindow(bVisible?SW_SHOW:SW_HIDE);
         }
     }
 }

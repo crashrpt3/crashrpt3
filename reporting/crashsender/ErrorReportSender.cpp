@@ -10,7 +10,6 @@ be found in the Authors.txt file in the root of the source tree.
 
 #include "stdafx.h"
 #include "ErrorReportSender.h"
-#include "MailMsg.h"
 #include "HttpRequestSender.h"
 #include "CrashRpt.h"
 #include "md5.h"

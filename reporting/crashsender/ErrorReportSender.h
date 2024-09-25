@@ -10,7 +10,6 @@ be found in the Authors.txt file in the root of the source tree.
 
 #pragma once
 #include "AssyncNotification.h"
-#include "MailMsg.h"
 #include "HttpRequestSender.h"
 #include "tinyxml.h"
 #include "CrashInfoReader.h"
@@ -188,7 +187,6 @@ private:
     HANDLE m_hThread;                   // Handle to the worker thread.
     AssyncNotification m_Assync;        // Used for communication with the main thread.
     CHttpRequestSender m_HttpSender;    // Used to send report over HTTP.
-    CMailMsg m_MapiSender;              // Used to send report over SMAPI.
     CString m_sZipName;                 // Name of the ZIP archive to send.
     int m_Action;                       // Current assynchronous action.
     BOOL m_bExport;                     // If TRUE than export should be performed.

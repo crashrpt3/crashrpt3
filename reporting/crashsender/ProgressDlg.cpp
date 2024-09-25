@@ -326,39 +326,6 @@ LRESULT CProgressDlg::OnTimer(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, B
                 str.Format(pSender->GetLangStr(_T("ProgressDlg"), _T("StatusText")), attempt);
                 m_statText.SetWindowText(str);
             }
-            else if(messages[i].CompareNoCase(_T("[confirm_launch_email_client]"))==0)
-            {
-                // User should confirm he allows to launch email client
-                KillTimer(1);
-
-                // Show the dialog
-                ShowWindow(SW_SHOW);
-
-                // Determine window mirroring settings.
-                DWORD dwFlags = 0;
-                CString sRTL = pSender->GetLangStr(_T("Settings"), _T("RTLReading"));
-                if(sRTL.CompareNoCase(_T("1"))==0)
-                    dwFlags = MB_RTLREADING;
-
-                // Display the message box, so user to be able to confirm.
-                CString sMailClientName;
-                CMailMsg::DetectMailClient(sMailClientName);
-                CString msg;
-                msg.Format(pSender->GetLangStr(_T("ProgressDlg"), _T("ConfirmLaunchEmailClient")), (LPCTSTR) sMailClientName);
-
-                CString sCaption = pSender->GetLangStr(_T("ProgressDlg"), _T("DlgCaption"));
-                CString sTitle;
-                sTitle.Format(sCaption, (LPCTSTR) pSender->GetCrashInfo()->m_sAppName);
-                INT_PTR result = MessageBox(msg,
-                    sTitle,
-                    MB_OKCANCEL|MB_ICONQUESTION|dwFlags);
-
-                // Unblock worker thread.
-                pSender->FeedbackReady(result==IDOK?0:1);
-
-                // Hide the dialog
-                ShowWindow(SW_HIDE);
-            }
 
             // Ensure the last item of the log is visible
             int count = m_listView.GetItemCount();

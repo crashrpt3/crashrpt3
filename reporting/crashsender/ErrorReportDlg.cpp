@@ -102,7 +102,7 @@ LRESULT CErrorReportDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /
     lf.lfHeight = 11;
     lf.lfWeight = FW_NORMAL;
     lf.lfQuality = ANTIALIASED_QUALITY;
-    _TCSCPY_S(lf.lfFaceName, 32, _T("Tahoma"));
+    _tcscpy_s(lf.lfFaceName, 32, _T("Tahoma"));
     CFontHandle hConsentFont;
     hConsentFont.CreateFontIndirect(&lf);
     m_statConsent.SetFont(hConsentFont);
@@ -141,7 +141,7 @@ LRESULT CErrorReportDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /
     lf.lfHeight = 25;
     lf.lfWeight = FW_NORMAL;
     lf.lfQuality = ANTIALIASED_QUALITY;
-    _TCSCPY_S(lf.lfFaceName, 32, _T("Tahoma"));
+    _tcscpy_s(lf.lfFaceName, 32, _T("Tahoma"));
     m_HeadingFont.CreateFontIndirect(&lf);
 
     // Init control positions
@@ -516,7 +516,7 @@ int CErrorReportDlg::CreateTrayIcon(bool bCreate, HWND hWndParent)
 
         // Try to load custom icon
         nf.hIcon = ::LoadIcon(_Module.GetResourceInstance(), MAKEINTRESOURCE(IDR_MAINFRAME));
-        _TCSCPY_S(nf.szTip, 128, _T("Sending Error Report"));
+        _tcscpy_s(nf.szTip, 128, _T("Sending Error Report"));
 
         Shell_NotifyIcon(NIM_ADD, &nf);
     }

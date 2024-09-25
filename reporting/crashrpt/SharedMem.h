@@ -117,12 +117,9 @@ public:
     void DestroyView(LPBYTE pViewPtr);
 
 private:
-
     CString m_sName;            // Name of the file mapping.
     HANDLE m_hFileMapping;		// Memory mapped object
     DWORD m_dwAllocGranularity; // System allocation granularity
     ULONG64 m_uSize;	      	// Size of the file mapping.
     std::map<LPBYTE, LPBYTE> m_aViewStartPtrs; // Base of the view of the file mapping.
 };
-
-

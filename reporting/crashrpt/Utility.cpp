@@ -290,7 +290,7 @@ int Utility::RecycleFile(CString sFilePath, bool bPermanentDelete)
 
     TCHAR szFrom[MAX_PATH];
     memset(szFrom, 0, sizeof(TCHAR) * (MAX_PATH));
-    _TCSCPY_S(szFrom, MAX_PATH, sFilePath.GetBuffer(0));
+    _tcscpy_s(szFrom, MAX_PATH, sFilePath.GetBuffer(0));
     szFrom[sFilePath.GetLength() + 1] = 0;
 
     fop.fFlags |= FOF_SILENT;                // don't report progress
@@ -598,4 +598,3 @@ BOOL Utility::IsFileSearchPattern(CString sFileName)
         bSearchPattern = true;
     return bSearchPattern;
 }
-

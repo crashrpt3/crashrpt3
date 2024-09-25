@@ -11,7 +11,6 @@ be found in the Authors.txt file in the root of the source tree.
 #pragma once
 #include "stdafx.h"
 #include "resource.h"
-#include "MailMsg.h"
 #include "FilePreviewCtrl.h"
 
 #include "CrashInfoReader.h"
