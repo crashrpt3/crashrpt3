@@ -76,7 +76,7 @@ CRASHRPT_API(int) crUninstall()
     return 0;
 }
 
-CRASHRPT_API(int) crAddFile(PCWSTR szFileName, PCWSTR szDestFileName, PCWSTR szDesc, DWORD dwFlags)
+CRASHRPT_API(int) crAddFile(const wchar_t* pszFile, const wchar_t* pszDestFile, const wchar_t* pszDesc)
 {
     crLastErrorClear();
 
@@ -86,10 +86,10 @@ CRASHRPT_API(int) crAddFile(PCWSTR szFileName, PCWSTR szDestFileName, PCWSTR szD
         crLastErrorAdd(_T("Crash handler wasn't previously installed for current process."));
         return 1;
     }
-    return pCrashHandler->addFile(szFileName, szDestFileName, szDesc, dwFlags);
+    return pCrashHandler->addFile(pszFile, pszDestFile, pszDesc);
 }
 
-CRASHRPT_API(int) crAddProperty(LPCWSTR szName, LPCWSTR szValue)
+CRASHRPT_API(int) crAddProperty(const wchar_t* name, const wchar_t* value)
 {
     crLastErrorClear();
 
@@ -99,7 +99,7 @@ CRASHRPT_API(int) crAddProperty(LPCWSTR szName, LPCWSTR szValue)
         crLastErrorAdd(_T("Crash handler wasn't previously installed for current process."));
         return 1;
     }
-    return pCrashHandler->addProperty(szName, szValue);
+    return pCrashHandler->addProperty(name, value);
 }
 
 CRASHRPT_API(int) crGenerateErrorReport(CR_EXCEPTION_INFO* pExceptionInfo)
@@ -122,14 +122,14 @@ CRASHRPT_API(int) crGenerateErrorReport(CR_EXCEPTION_INFO* pExceptionInfo)
     return pCrashHandler->generateErrorReport(pExceptionInfo);
 }
 
-CRASHRPT_API(int) crGetLastError(LPWSTR szBuffer, INT32 nLen)
+CRASHRPT_API(int) crGetLastError(wchar_t* buffer, int len)
 {
-    if (szBuffer && nLen > 0)
+    if (buffer && len > 0)
     {
         CString msg = LastErrorThreaded::thisThread().toString();
-        nLen = std::min(msg.GetLength(), nLen);
-        wcsncpy_s(szBuffer, nLen, msg.GetString(), nLen);
-        return nLen;
+        len = std::min(msg.GetLength(), len);
+        wcsncpy_s(buffer, len, msg.GetString(), len);
+        return len;
     }
     return 0;
 }

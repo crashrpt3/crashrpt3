@@ -36,7 +36,7 @@ public:
 
     int generateErrorReport(CR_EXCEPTION_INFO* pExceptionInfo = NULL);
 
-    int addFile(LPCTSTR lpFile, LPCTSTR lpDestFile, LPCTSTR lpDesc, DWORD dwFlags);
+    int addFile(LPCTSTR lpFile, LPCTSTR lpDestFile, LPCTSTR lpDesc);
     int addProperty(const CString& sPropName, const CString& sPropValue);
 
 private:

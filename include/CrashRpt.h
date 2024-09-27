@@ -46,32 +46,25 @@ typedef struct
 #define CR_CRASH_HANDLER_ALL                            0xFFFF //!< Install all possible exception handlers.
 
 typedef struct _CrInstallInfo {
-    WORD cb;                        //!< Size of this structure in bytes; must be initialized before using!
-    LPCWSTR szAppName;              //!< Application name.
-    LPCWSTR szAppVersion;           //!< Application version.
-    LPCWSTR szServerURL;            //!< URL of server-side script (used in HTTP connection).
-    LPCWSTR szPrivacyPolicyURL;     //!< URL of privacy policy agreement.
-    LPCWSTR szCrashSenderPath;      //!< File path of CrashSender.exe.
-    LPCWSTR szDBGHelpPath;          //!< File path of dbghelp.dll.
-    LPCWSTR szOutputDirectory;      //!< Directory where to save dump error reports.
-    UINT32 uCrashHandler;           //!< See micro CR_CRASH_HANDLER_ALL
-    MINIDUMP_TYPE uMinidumpType;    //!< Minidump type.
+    unsigned short cb;                   //!< Size of this structure in bytes; must be initialized before using!
+    const wchar_t* applicationName;      //!< Application name.
+    const wchar_t* applicationVersion;   //!< Application version.
+    const wchar_t* serverURL;            //!< URL of server-side script (used in HTTP connection).
+    const wchar_t* privacyPolicyURL;     //!< URL of privacy policy agreement.
+    const wchar_t* crashsenderPath;      //!< File path of CrashSender.exe.
+    const wchar_t* dbghelpPath;          //!< File path of dbghelp.dll.
+    const wchar_t* outputDirectory;      //!< Directory where to save dump error reports.
+    unsigned int   crashHandlers;        //!< See micro CR_CRASH_HANDLER_ALL
+    MINIDUMP_TYPE  minidumpType;         //!< Minidump type.
 } CrInstallInfo;
 
-// Flags for crAddFile() function.
-#define CR_AF_TAKE_ORIGINAL_FILE  0 //!< Take the original file (do not copy it to the error report folder).
-#define CR_AF_MAKE_FILE_COPY      1 //!< Copy the file to the error report folder.
-#define CR_AF_FILE_MUST_EXIST     0 //!< Function will fail if file doesn't exist at the moment of function call.
-#define CR_AF_MISSING_FILE_OK     2 //!< Do not fail if file is missing (assume it will be created later).
-#define CR_AF_ALLOW_DELETE        4 //!< If this flag is specified, the file will be deletable from context menu of Error Report Details dialog.
-
-CRASHRPT_API(int) crInstall(const CrInstallInfo* pInfo);
+CRASHRPT_API(int) crInstall(const CrInstallInfo* info);
 CRASHRPT_API(int) crUninstall();
 
-CRASHRPT_API(int) crAddFile(LPCWSTR pszFile, LPCWSTR pszDestFile, LPCWSTR pszDesc, DWORD dwFlags);
-CRASHRPT_API(int) crAddProperty(LPCWSTR pszPropName, LPCWSTR pszPropValue);
+CRASHRPT_API(int) crAddProperty(const wchar_t* name, const wchar_t* value);
+CRASHRPT_API(int) crAddFile(const wchar_t* srcPath, const wchar_t* dstPath, const wchar_t* desc);
 
-CRASHRPT_API(int) crGetLastError(LPWSTR szBuffer, INT32 nLen);
+CRASHRPT_API(int) crGetLastError(wchar_t* buffer, int len);
 CRASHRPT_API(int) crGenerateErrorReport(CR_EXCEPTION_INFO* pExceptionInfo);
 
 // Test crashes

@@ -71,15 +71,15 @@ CCrashHandler::~CCrashHandler()
 
 int CCrashHandler::install(const CrInstallInfo* pInfo)
 {
-    m_szAppName = pInfo->szAppName;
-    m_szAppVersion = pInfo->szAppVersion;
-    m_szCrashSenderPath = pInfo->szCrashSenderPath;
-    m_szServerURL = pInfo->szServerURL;
-    m_szPrivacyPolicyURL = pInfo->szPrivacyPolicyURL;
-    m_szDBGHelpPath = pInfo->szDBGHelpPath;
-    m_szOutputDirectory = pInfo->szOutputDirectory;
-    m_uCrashHandler = pInfo->uCrashHandler;
-    m_uMinidumpType = pInfo->uMinidumpType;
+    m_szAppName = pInfo->applicationName;
+    m_szAppVersion = pInfo->applicationVersion;
+    m_szCrashSenderPath = pInfo->crashsenderPath;
+    m_szServerURL = pInfo->serverURL;
+    m_szPrivacyPolicyURL = pInfo->privacyPolicyURL;
+    m_szDBGHelpPath = pInfo->dbghelpPath;
+    m_szOutputDirectory = pInfo->outputDirectory;
+    m_uCrashHandler = pInfo->crashHandlers;
+    m_uMinidumpType = pInfo->minidumpType;
     m_szExeFullPath = Utility::getModuleFullPath(nullptr);
 
     if (m_szCrashSenderPath.IsEmpty())
@@ -499,17 +499,15 @@ int CCrashHandler::tearDownExceptionHandlers()
 }
 
 // Adds a file item to the error report
-int CCrashHandler::addFile(LPCTSTR pszFile, LPCTSTR pszDestFile, LPCTSTR pszDesc, DWORD dwFlags)
+int CCrashHandler::addFile(LPCTSTR pszFile, LPCTSTR pszDestFile, LPCTSTR pszDesc)
 {
-    // Check if source file name or search pattern is specified
-    if (pszFile == nullptr)
+    if (!pszFile)
     {
         crLastErrorAdd(_T("Invalid file name specified."));
         return 1;
     }
 
-    // Check that the destination file name is valid
-    if (pszDestFile != nullptr)
+    if (pszDestFile)
     {
         CString sDestFile = pszDestFile;
         sDestFile.TrimLeft();
@@ -526,23 +524,12 @@ int CCrashHandler::addFile(LPCTSTR pszFile, LPCTSTR pszDestFile, LPCTSTR pszDesc
 
     if (!bPattern) // Usual file name
     {
-        // Make sure the file exists
-        DWORD dwAttrs = GetFileAttributes(pszFile);
-
-        BOOL bIsFile = dwAttrs != INVALID_FILE_ATTRIBUTES && (dwAttrs & FILE_ATTRIBUTE_DIRECTORY) == 0;
-
-        if (!bIsFile && (dwFlags & CR_AF_MISSING_FILE_OK) == 0)
-        {
-            crLastErrorAdd(_T("The file does not exists or not a regular file."));
-            return 1;
-        }
-
         // Add file to file list.
         FileItem fi;
         fi.description = pszDesc;
         fi.srcFilePath = pszFile;
-        fi.isMakeCopy = (dwFlags & CR_AF_MAKE_FILE_COPY) != 0;
-        fi.isAllowDelete = (dwFlags & CR_AF_ALLOW_DELETE) != 0;
+        fi.isMakeCopy = TRUE;
+        fi.isAllowDelete = TRUE;
         if (pszDestFile != nullptr)
         {
             fi.dstFileName = pszDestFile;
@@ -579,15 +566,14 @@ int CCrashHandler::addFile(LPCTSTR pszFile, LPCTSTR pszDestFile, LPCTSTR pszDesc
         fi.description = pszDesc;
         fi.srcFilePath = pszFile;
         fi.dstFileName = Utility::getFileName(pszFile);
-        fi.isMakeCopy = (dwFlags & CR_AF_MAKE_FILE_COPY) != 0;
-        fi.isAllowDelete = (dwFlags & CR_AF_ALLOW_DELETE) != 0;
+        fi.isMakeCopy = TRUE;
+        fi.isAllowDelete = TRUE;
         m_files[fi.dstFileName] = fi;
 
         // Pack this file item into shared mem.
         packFileItem(fi);
     }
 
-    // OK.
     return 0;
 }
 

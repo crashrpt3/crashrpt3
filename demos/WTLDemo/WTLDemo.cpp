@@ -92,8 +92,8 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
     CrInstallInfo info;
     ZeroMemory(&info, sizeof(CrInstallInfo));
     info.cb = sizeof(CrInstallInfo);  
-    info.szAppName = _T("WTLDemo");
-    info.szAppVersion = _T("1.3.1");
+    info.applicationName = _T("WTLDemo");
+    info.applicationVersion = _T("1.3.1");
     //info.lpServerURL = _T("http://localhost:80/crashrpt.php");
     //info.uCrashHandlers = CR_CRASH_HANDLER_ALL; // Install all available exception handlers.    
     //info.dwInstallFlags |= CR_INST_APP_RESTART;            // Restart the application on crash.  
@@ -115,10 +115,10 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
     CString sLogFile = GetAppDir() + _T("\\*.log");
     CString sIniFile = _T("\\\\?\\") + GetAppDir() + _T("\\dummy.ini");
 
-    int nResult = crAddFile(sLogFile, NULL, _T("Dummy Log File"), CR_AF_MAKE_FILE_COPY|CR_AF_ALLOW_DELETE);
+    int nResult = crAddFile(sLogFile, NULL, _T("Dummy Log File"));
     ATLASSERT(nResult==0);
     
-    nResult = crAddFile(sIniFile, NULL, _T("Dummy INI File"), 0);
+    nResult = crAddFile(sIniFile, NULL, _T("Dummy INI File"));
     ATLASSERT(nResult==0);
 
 	nResult = crAddProperty(_T("AnExampleProperty"),_T("Property value"));
