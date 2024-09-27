@@ -4,7 +4,7 @@
 #include <windows.h>
 #include <dbghelp.h>
 
-#define CRASHRPT_VER 3100 // CrashRpt Version
+#define CRASHRPT_VER 3100 // crashrpt version
 
 #ifdef __cplusplus
 #define CRASHRPT_EXTERN_C extern "C"
@@ -28,26 +28,6 @@ typedef struct
     BOOL bManual;                            //!< Flag telling if the error report is generated manually or not.
     HANDLE hSenderProcess;                   //!< Handle to the CrashSender.exe process.
 } CR_EXCEPTION_INFO;
-
-// Stages of crash report generation (used by the crash callback function).
-#define CR_CB_STAGE_PREPARE      10  //!< Stage after exception pointers've been retrieved.
-#define CR_CB_STAGE_FINISH       20  //!< Stage after the launch of CrashSender.exe process.
-
-typedef struct
-{
-    WORD cb;                              //!< Size of this structure in bytes; should be initialized before using.
-    INT32 nStage;                         //!< Stage.
-    CR_EXCEPTION_INFO* pExceptionInfo;    //!< Pointer to information about the crash.
-    LPVOID pUserParam;                    //!< Pointer to user-defined data.
-    BOOL bContinueExecution;              //!< Whether to terminate the process (the default) or to continue program execution.
-} CR_CRASH_CALLBACK_INFO;
-
-typedef int (CALLBACK* PFN_CRASH_CALLBACK) (CR_CRASH_CALLBACK_INFO* pInfo);
-
-// Constants that may be returned by the crash callback function.
-#define CR_CB_CANCEL             0 //!< Cancel crash report generation on the current stage.
-#define CR_CB_DODEFAULT          1 //!< Proceed to the next stages of crash report generation without calling crash callback function.
-#define CR_CB_NOTIFY_NEXT_STAGE  2 //!< Proceed and call the crash callback for the next stage.
 
 // Crash handlers
 #define CR_CRASH_HANDLER_SEH                            0x1    //!< Install SEH handler.
@@ -91,7 +71,6 @@ CRASHRPT_API(int) crUninstall();
 CRASHRPT_API(int) crAddFile(LPCWSTR pszFile, LPCWSTR pszDestFile, LPCWSTR pszDesc, DWORD dwFlags);
 CRASHRPT_API(int) crAddProperty(LPCWSTR pszPropName, LPCWSTR pszPropValue);
 
-CRASHRPT_API(int) crSetCrashCallback(PFN_CRASH_CALLBACK pfnCallback, LPVOID lpParam);
 CRASHRPT_API(int) crGetLastError(LPWSTR szBuffer, INT32 nLen);
 CRASHRPT_API(int) crGenerateErrorReport(CR_EXCEPTION_INFO* pExceptionInfo);
 

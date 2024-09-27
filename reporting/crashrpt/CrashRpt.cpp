@@ -1,11 +1,9 @@
 #include "stdafx.h"
-#include "CrashRpt.h"
+#include "crashrpt.h"
 #include "CrashHandler.h"
-#include "Utility.h"
 #include "LastErrorThreaded.h"
 #include "TestCrash.h"
 
-HANDLE g_hModule = nullptr;
 
 CRASHRPT_API(int) crInstall(const CrInstallInfo* pInfo)
 {
@@ -78,19 +76,6 @@ CRASHRPT_API(int) crUninstall()
     return 0;
 }
 
-CRASHRPT_API(int) crSetCrashCallback(PFN_CRASH_CALLBACK pfnCallbackFunc, LPVOID lpParam)
-{
-    crLastErrorClear();
-
-    CCrashHandler* pCrashHandler = CCrashHandler::instance();
-    if (!pCrashHandler)
-    {
-        crLastErrorAdd(_T("Crash handler wasn't previously installed for current process."));
-        return 1;
-    }
-    return pCrashHandler->setCrashCallback(pfnCallbackFunc, lpParam);
-}
-
 CRASHRPT_API(int) crAddFile(PCWSTR szFileName, PCWSTR szDestFileName, PCWSTR szDesc, DWORD dwFlags)
 {
     crLastErrorClear();
@@ -155,14 +140,4 @@ CRASHRPT_API(int) crTestCrash(UINT32 uTestCrash) noexcept(false)
 
     TestCrash::test(uTestCrash);
     return 0;
-}
-
-BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID /*lpReserved*/)
-{
-    if (dwReason == DLL_PROCESS_ATTACH)
-    {
-        g_hModule = hModule;
-    }
-
-    return TRUE;
 }

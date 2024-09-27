@@ -6,5 +6,4 @@ crAddFile
 crAddProperty
 crGenerateErrorReport
 crGetLastError
-crSetCrashCallback
 crTestCrash

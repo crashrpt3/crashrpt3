@@ -56,9 +56,6 @@ CCrashHandler::CCrashHandler()
     m_hEvent = nullptr;
     m_pCrashDesc = nullptr;
     m_hSenderProcess = nullptr;
-    m_pfnCallback = nullptr;
-    m_pCallbackParam = nullptr;
-    m_nCallbackRetCode = CR_CB_NOTIFY_NEXT_STAGE;
     m_bContinueExecution = TRUE;
 
     clearExceptionHandlers();
@@ -83,17 +80,7 @@ int CCrashHandler::install(const CrInstallInfo* pInfo)
     m_szOutputDirectory = pInfo->szOutputDirectory;
     m_uCrashHandler = pInfo->uCrashHandler;
     m_uMinidumpType = pInfo->uMinidumpType;
-    m_szExeFullPath = Utility::GetModuleFullPath(nullptr);
-
-    if (m_szAppName.IsEmpty())
-    {
-        m_szAppName = Utility::getModuleBaseName();
-    }
-
-    if (m_szAppVersion.IsEmpty())
-    {
-        m_szAppVersion = Utility::GetProductVersion(m_szExeFullPath);
-    }
+    m_szExeFullPath = Utility::getModuleFullPath(nullptr);
 
     if (m_szCrashSenderPath.IsEmpty())
     {
@@ -105,7 +92,7 @@ int CCrashHandler::install(const CrInstallInfo* pInfo)
         szCrashSenderExeName.Format(_T("CrashSender%d.exe"), CRASHRPT_VER);
 #endif
 
-        CString szCrashSenderPath = Utility::getModuleDirectory((HMODULE)g_hModule) + szCrashSenderExeName;
+        CString szCrashSenderPath = Utility::getModuleDirectory((HMODULE)g_module) + szCrashSenderExeName;
         if (!::PathFileExists(szCrashSenderPath))
         {
             crLastErrorAdd(L"CrashSender.exe is not found in the specified path.");
@@ -116,7 +103,7 @@ int CCrashHandler::install(const CrInstallInfo* pInfo)
 
     if (m_szDBGHelpPath.IsEmpty())
     {
-        CString szDBGHelpPath = Utility::getModuleDirectory((HMODULE)g_hModule) + L"dbghelp.dll";
+        CString szDBGHelpPath = Utility::getModuleDirectory((HMODULE)g_module) + L"dbghelp.dll";
         if (::PathFileExists(szDBGHelpPath))
         {
             m_szDBGHelpPath = szDBGHelpPath;
@@ -143,7 +130,7 @@ int CCrashHandler::install(const CrInstallInfo* pInfo)
         m_szOutputDirectory = Utility::getModuleDirectory(nullptr) + L"dump";
     }
 
-    BOOL bCreateDir = Utility::CreateFolder(m_szOutputDirectory);
+    BOOL bCreateDir = Utility::createFolder(m_szOutputDirectory);
     if (!bCreateDir)
     {
         crLastErrorAdd(_T("Couldn't create crash output directory."));
@@ -151,7 +138,7 @@ int CCrashHandler::install(const CrInstallInfo* pInfo)
     }
 
     CString szLogDir = m_szOutputDirectory + _T("\\logs");
-    bCreateDir = Utility::CreateFolder(szLogDir);
+    bCreateDir = Utility::createFolder(szLogDir);
     if (!bCreateDir)
     {
         crLastErrorAdd(_T("Couldn't create crash logs directory."));
@@ -203,13 +190,6 @@ int CCrashHandler::install(const CrInstallInfo* pInfo)
     }
 
     m_bInstalled = TRUE;
-    return 0;
-}
-
-int CCrashHandler::setCrashCallback(PFN_CRASH_CALLBACK pfnCallback, LPVOID pUserParam)
-{
-    m_pfnCallback = pfnCallback;
-    m_pCallbackParam = pUserParam;
     return 0;
 }
 
@@ -542,7 +522,7 @@ int CCrashHandler::addFile(LPCTSTR pszFile, LPCTSTR pszDestFile, LPCTSTR pszDesc
     }
 
     // Check if pszFile is a search pattern or not
-    BOOL bPattern = Utility::IsFileSearchPattern(pszFile);
+    BOOL bPattern = Utility::isFileSearchPattern(pszFile);
 
     if (!bPattern) // Usual file name
     {
@@ -598,7 +578,7 @@ int CCrashHandler::addFile(LPCTSTR pszFile, LPCTSTR pszDestFile, LPCTSTR pszDesc
         FileItem fi;
         fi.description = pszDesc;
         fi.srcFilePath = pszFile;
-        fi.dstFileName = Utility::GetFileName(pszFile);
+        fi.dstFileName = Utility::getFileName(pszFile);
         fi.isMakeCopy = (dwFlags & CR_AF_MAKE_FILE_COPY) != 0;
         fi.isAllowDelete = (dwFlags & CR_AF_ALLOW_DELETE) != 0;
         m_files[fi.dstFileName] = fi;
@@ -676,15 +656,7 @@ int CCrashHandler::generateErrorReport(CR_EXCEPTION_INFO* pExceptionInfo)
         m_pCrashDesc->m_uInvParamLine = pExceptionInfo->uLine;
     }
 
-    if (CR_CB_CANCEL == notifyCallback(CR_CB_STAGE_PREPARE, pExceptionInfo))
-    {
-        crLastErrorAdd(_T("The operation was cancelled by client."));
-        return 1;
-    }
-
     int nRet = launchCrashSender(m_szCrashGUID, TRUE, &pExceptionInfo->hSenderProcess);
-    notifyCallback(CR_CB_STAGE_FINISH, pExceptionInfo);
-
     if (nRet != 0)
     {
         crLastErrorAdd(_T("Error launching CrashSender.exe"));
@@ -812,9 +784,7 @@ int CCrashHandler::beforeGenerateErrorReport()
     m_bContinueExecutionNow = m_bContinueExecution;
     m_bContinueExecution = TRUE;
 
-    m_nCallbackRetCode = CR_CB_NOTIFY_NEXT_STAGE;
-
-    Utility::GenerateGUID(m_szCrashGUID);
+    Utility::generateGUID(m_szCrashGUID);
 
     if (m_hEvent != nullptr)
     {
@@ -834,30 +804,6 @@ int CCrashHandler::beforeGenerateErrorReport()
 
     m_pCrashDesc = serializeCrashInfo();
     return 0;
-}
-
-int CCrashHandler::notifyCallback(int nStage, CR_EXCEPTION_INFO* pExInfo)
-{
-    if (m_nCallbackRetCode != CR_CB_NOTIFY_NEXT_STAGE)
-    {
-        return CR_CB_DODEFAULT;
-    }
-
-    if (m_pfnCallback)
-    {
-        CR_CRASH_CALLBACK_INFO info;
-        memset(&info, 0, sizeof(CR_CRASH_CALLBACK_INFO));
-        info.cb = sizeof(CR_CRASH_CALLBACK_INFO);
-        info.nStage = nStage;
-        info.pExceptionInfo = pExInfo;
-        info.pUserParam = m_pCallbackParam;
-        info.bContinueExecution = m_bContinueExecution;
-
-        m_nCallbackRetCode = m_pfnCallback(&info);
-        m_bContinueExecution = info.bContinueExecution;
-    }
-
-    return m_nCallbackRetCode;
 }
 
 LONG WINAPI CCrashHandler::onHandleSEH(PEXCEPTION_POINTERS pExceptionPtrs)

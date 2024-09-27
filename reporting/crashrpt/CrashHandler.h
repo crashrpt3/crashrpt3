@@ -35,7 +35,6 @@ public:
     BOOL isInstalled();
 
     int generateErrorReport(CR_EXCEPTION_INFO* pExceptionInfo = NULL);
-    int setCrashCallback(PFN_CRASH_CALLBACK pfnCallback, LPVOID pUserParam);
 
     int addFile(LPCTSTR lpFile, LPCTSTR lpDestFile, LPCTSTR lpDesc, DWORD dwFlags);
     int addProperty(const CString& sPropName, const CString& sPropValue);
@@ -70,7 +69,6 @@ private:
     DWORD packProperty(const CString& sName, const CString& sValue);
 
     void clearExceptionHandlers();
-    int notifyCallback(int nStage, CR_EXCEPTION_INFO* pExInfo);
 
 private:
     void lock();
@@ -119,9 +117,6 @@ private:
     CRASH_DESCRIPTION* m_pCrashDesc; // Pointer to crash description shared mem view.
     CRASH_DESCRIPTION* m_pTmpCrashDesc; // Used temporarily
     HANDLE m_hSenderProcess;       // Handle to CrashSender.exe process.
-    PFN_CRASH_CALLBACK m_pfnCallback; // Client crash callback.
-    LPVOID m_pCallbackParam;       // User-specified argument for callback function.
-    int m_nCallbackRetCode;         // Return code of the callback function.
     BOOL m_bContinueExecution;      // Whether to terminate process (the default) or to continue execution after crash.
     BOOL m_bContinueExecutionNow;   // After GenerateErrorReport() m_bContinueExecution is reset to FALSE. This is the current value
 };

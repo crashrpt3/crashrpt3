@@ -8,8 +8,8 @@ list(APPEND source_files ./CrashRpt.def)
 
 # Enable usage of precompiled header
 set(srcs_using_precomp ${source_files})
-list(REMOVE_ITEM srcs_using_precomp ./StdAfx.cpp ./CrashRpt.def)
-add_msvc_precompiled_header(stdafx.h ./StdAfx.cpp srcs_using_precomp)
+list(REMOVE_ITEM srcs_using_precomp ./stdafx.cpp ./CrashRpt.def)
+add_msvc_precompiled_header(stdafx.h ./stdafx.cpp srcs_using_precomp)
 
 # Define _UNICODE and UNICODE (use wide-char encoding)
 add_compile_definitions( _UNICODE UNICODE NOMINMAX)
