@@ -3,7 +3,6 @@ project(yyjson)
 # source files
 aux_source_directory(. SOURCE_FILE_LIST)
 
-
 # unicode
 add_compile_definitions(UNICODE _UNICODE)
 

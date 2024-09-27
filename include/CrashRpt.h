@@ -1,20 +1,3 @@
-/*************************************************************************************
-This file is a part of CrashRpt library.
-Copyright (c) 2003-2013 The CrashRpt project authors. All Rights Reserved.
-
-Use of this source code is governed by a BSD-style license
-that can be found in the License.txt file in the root of the source
-tree. All contributing project authors may
-be found in the Authors.txt file in the root of the source tree.
-***************************************************************************************/
-
-/*! \file   CrashRpt.h
-*  \brief  Defines the interface for the CrashRpt.DLL.
-*  \date   2003
-*  \author Michael Carruth
-*  \author Oleg Krivtsov (zeXspectrum)
-*/
-
 #ifndef CRASHRPT_986D12C8_D0C5_4FB0_B298_DB720C91A8DF
 #define CRASHRPT_986D12C8_D0C5_4FB0_B298_DB720C91A8DF
 
@@ -65,7 +48,6 @@ typedef int (CALLBACK* PFN_CRASH_CALLBACK) (CR_CRASH_CALLBACK_INFO* pInfo);
 #define CR_CB_CANCEL             0 //!< Cancel crash report generation on the current stage.
 #define CR_CB_DODEFAULT          1 //!< Proceed to the next stages of crash report generation without calling crash callback function.
 #define CR_CB_NOTIFY_NEXT_STAGE  2 //!< Proceed and call the crash callback for the next stage.
-
 
 // Crash handlers
 #define CR_CRASH_HANDLER_SEH                            0x1    //!< Install SEH handler.

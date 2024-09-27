@@ -1,7 +1,8 @@
 #include "stdafx.h"
 #include "TestCrash.h"
 #include "CrashRpt.h"
-#include "LastErrorThreaded.h"
+
+#pragma optimize( "", off )
 
 namespace
 {
@@ -163,14 +164,14 @@ void TestCrash::test(UINT32 uTestCrash)
     case CR_TEST_CRASH_CPP_PURE:
         _testCrashCppPure();
         break;
+    case CR_TEST_CRASH_CPP_NEW_OPERATOR:
+        _testCrashCppNewOperator();
+        break;
     case CR_TEST_CRASH_SECURITY:
         _testCrashSecurity();
         break;
     case CR_TEST_CRASH_INVALID_PARAMETER:
         _testCrashInvalidParameter();
-        break;
-    case CR_TEST_CRASH_CPP_NEW_OPERATOR:
-        _testCrashCppNewOperator();
         break;
     case CR_TEST_CRASH_SIGABRT:
         abort();
@@ -194,7 +195,7 @@ void TestCrash::test(UINT32 uTestCrash)
         ::RaiseException(123, EXCEPTION_NONCONTINUABLE, 0, nullptr);
         break;
     case CR_TEST_CRASH_CPP_THROW:
-        throw 13;
+        throw 14;
         break;
     case CR_TEST_CRASH_STACK_OVERFLOW:
         _testCrashStackOverflow();
@@ -203,3 +204,5 @@ void TestCrash::test(UINT32 uTestCrash)
         break;
     }
 }
+
+#pragma optimize( "", on )
