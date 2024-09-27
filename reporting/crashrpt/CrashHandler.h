@@ -49,6 +49,7 @@ private:
     static void onHandleSIGABRT(int);
     static void onHandleSIGILL(int);
     static void onHandleSIGINT(int);
+    static void onHandleSIGEGV(int);
     static void onHandleSIGTERM(int);
     static void __cdecl onHandleInvalidParameter(
         const wchar_t* expression,
@@ -107,6 +108,7 @@ private:
     _sigabrt_handler             m_hExcSIGABRT;
     _sigabrt_handler             m_hExcSIGILL;
     _sigint_handler              m_hExcSIGINT;
+    _sigint_handler              m_hExcSIGEGV;
     _sigterm_handler             m_hExcSIGTERM;
 
     std::map<CString, FileItem> m_files; // File items to include.
