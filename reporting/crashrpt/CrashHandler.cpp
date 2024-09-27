@@ -375,6 +375,7 @@ void CCrashHandler::clearExceptionHandlers()
     m_hExcCppNew = nullptr;
     m_hExcInvalidParameter = nullptr;
     m_hExcSIGABRT = nullptr;
+    m_hExcSIGILL = nullptr;
     m_hExcSIGINT = nullptr;
     m_hExcSIGTERM = nullptr;
 }
@@ -427,6 +428,11 @@ int CCrashHandler::setupExceptionHandlers(UINT32 uCrashHandlers)
         m_hExcSIGABRT = signal(SIGABRT, onHandleSIGABRT);
     }
 
+    if (uCrashHandlers & CR_CRASH_HANDLER_SIGILL)
+    {
+        m_hExcSIGILL = signal(SIGILL, onHandleSIGILL);
+    }
+
     if (uCrashHandlers & CR_CRASH_HANDLER_SIGINT)
     {
         m_hExcSIGINT = signal(SIGINT, onHandleSIGINT);
@@ -477,6 +483,12 @@ int CCrashHandler::tearDownExceptionHandlers()
     {
         signal(SIGABRT, m_hExcSIGABRT);
         m_hExcSIGABRT = nullptr;
+    }
+
+    if (m_hExcSIGILL)
+    {
+        signal(SIGILL, m_hExcSIGILL);
+        m_hExcSIGILL = nullptr;
     }
 
     if (m_hExcSIGINT != nullptr)
@@ -1014,6 +1026,28 @@ void CCrashHandler::onHandleSIGABRT(int)
         memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
         ei.cb = sizeof(CR_EXCEPTION_INFO);
         ei.nExceptionType = CR_TEST_CRASH_SIGABRT;
+
+        pCrashHandler->generateErrorReport(&ei);
+
+        if (!pCrashHandler->m_bContinueExecutionNow)
+        {
+            ::TerminateProcess(::GetCurrentProcess(), 1);
+        }
+    }
+}
+
+void CCrashHandler::onHandleSIGILL(int)
+{
+    CCrashHandler* pCrashHandler = CCrashHandler::instance();
+    if (pCrashHandler)
+    {
+        LockGurad gurad(*pCrashHandler);
+
+        pCrashHandler->m_bContinueExecution = FALSE;
+        CR_EXCEPTION_INFO ei;
+        memset(&ei, 0, sizeof(CR_EXCEPTION_INFO));
+        ei.cb = sizeof(CR_EXCEPTION_INFO);
+        ei.nExceptionType = CR_TEST_CRASH_SIGILL;
 
         pCrashHandler->generateErrorReport(&ei);
 

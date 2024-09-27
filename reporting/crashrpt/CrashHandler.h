@@ -47,6 +47,7 @@ private:
     static void __cdecl onHandlePureCall();
     static int __cdecl onHandleCppNew(size_t);
     static void onHandleSIGABRT(int);
+    static void onHandleSIGILL(int);
     static void onHandleSIGINT(int);
     static void onHandleSIGTERM(int);
     static void __cdecl onHandleInvalidParameter(
@@ -104,6 +105,7 @@ private:
     _PNH                         m_hExcCppNew;
     _invalid_parameter_handler   m_hExcInvalidParameter;
     _sigabrt_handler             m_hExcSIGABRT;
+    _sigabrt_handler             m_hExcSIGILL;
     _sigint_handler              m_hExcSIGINT;
     _sigterm_handler             m_hExcSIGTERM;
 
