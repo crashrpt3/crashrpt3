@@ -1029,7 +1029,7 @@ int CCrashHandler::UnSetThreadExceptionHandlers()
         signal(SIGFPE, handlers->m_prevSigFPE);
 
     if(handlers->m_prevSigILL!=NULL)
-        signal(SIGINT, handlers->m_prevSigILL);
+        signal(SIGILL, handlers->m_prevSigILL);
 
     if(handlers->m_prevSigSEGV!=NULL)
         signal(SIGSEGV, handlers->m_prevSigSEGV);
@@ -1274,6 +1274,7 @@ int CCrashHandler::AddVideo(DWORD dwFlags, int nDuration, int nFrameInterval,
 int CCrashHandler::GenerateErrorReport(
         PCR_EXCEPTION_INFO pExceptionInfo)
 {
+    ::MessageBox(0, 0, 0, 0);
 	ReInitializer re_initializer( * this ) ;
 
 	crSetErrorMsg(_T("Unspecified error."));
