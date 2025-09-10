@@ -68,7 +68,7 @@ int main()
     {
         std::cout << "1. Test crash in main thread" << std::endl;
         std::cout << "2. Test crash in win-api thread" << std::endl;
-        std::cout << "3. Test crash in std::hread" << std::endl;
+        std::cout << "3. Test crash in std::thread" << std::endl;
         std::cout << "Please input your choice:";
 
         UINT32 num = 0;
