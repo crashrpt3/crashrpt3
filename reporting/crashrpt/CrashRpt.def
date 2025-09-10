@@ -1,9 +1,0 @@
-EXPORTS
-
-crInstall
-crUninstall
-crAddFile
-crAddProperty
-crGenerateErrorReport
-crGetLastError
-crTestCrash
