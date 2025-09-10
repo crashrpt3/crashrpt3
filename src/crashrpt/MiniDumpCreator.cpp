@@ -105,7 +105,7 @@ int MiniDumpCreator::createMiniDump(const wchar_t* crashGUID)
         setDumpPrivileges();
         readExceptionAddr();
 
-        CString workDir = (LPCWSTR)CA2W(m_ipcMsg->dumpOutDirectory.c_str(), CP_UTF8);
+        CString workDir = Utility::u2w(m_ipcMsg->dumpOutDirectory.c_str()).c_str();
         workDir += crashGUID;
         workDir += L"\\";
         if (FALSE == Utility::createFolder(workDir))
@@ -219,7 +219,7 @@ BOOL MiniDumpCreator::onMiniDumpCallback(PMINIDUMP_CALLBACK_INPUT input, PMINIDU
         if (m_exceptionAddr >= input->Module.BaseOfImage &&
             m_exceptionAddr <= input->Module.BaseOfImage + input->Module.SizeOfImage)
         {
-            m_crashModulePath = (LPCSTR)CW2A(input->Module.FullPath, CP_UTF8);
+            m_crashModulePath = Utility::w2u(input->Module.FullPath);
             m_crashModuleTimestamp = input->Module.TimeDateStamp;
 
             VS_FIXEDFILEINFO* fi = &input->Module.VersionInfo;
@@ -349,6 +349,6 @@ std::string MiniDumpCreator::formatTime(const CTime& ct)
     auto timeZone = -tz.Bias / 60;
     CString wstr = ct.Format(L"%Y-%m-%dT%H:%M:%S");
     wstr.AppendFormat(L"%+03d:00", timeZone);
-    std::string ret = (LPCSTR)CW2A(wstr, CP_UTF8);
+    std::string ret = Utility::w2u(wstr);
     return ret;
 }

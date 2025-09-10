@@ -3,10 +3,11 @@
 
 class ApplicationUniqueLock;
 class ReInitializer;
-class CrInstallInfo;
 
-struct CR_EXCEPTION_INFO;
-struct CR_OLD_EXCEPTION_HANDLERS;
+struct InstallInfo;
+struct ExceptionInfo;
+struct ProcessExceptionHandlers;
+struct ThreadExceptionHandlers;
 
 class CrashRptApp
 {
@@ -20,25 +21,36 @@ public:
 private:
     int uninstall();
 
-    int setExceptionHandlers(UINT32 crashHandlers);
-    int unsetExceptionHandlers();
+    int setProcessExceptionHandlers(UINT32 crashHandlers);
+    int unSetProcessExceptionHandlers();
 
-    int generateErrorReport(CR_EXCEPTION_INFO* exceptionInfo);
+    int setThreadExceptionHandlers(UINT32 crashHandlers);
+    int unSetThreadExceptionHandlers();
+
+    int generateErrorReport(ExceptionInfo* exceptionInfo);
     int launchCrashRptDump(LPCWSTR szCmdLineParams, BOOL bWait);
 
     int resetForPerCrash();
 
-    // Exception callbacks
-    static LONG WINAPI  onHandleSEH(PEXCEPTION_POINTERS pExceptionPointers);
+    // Process exception callbacks
+    static LONG WINAPI  onHandleSEH(PEXCEPTION_POINTERS pExceptionPtrs);
+#if _MSC_VER>=1300
     static void __cdecl onHandlePureCall();
     static int __cdecl  onHandleCppNew(size_t);
+#endif
     static void         onHandleSIGABRT(int);
-    static void         onHandleSIGILL(int);
     static void         onHandleSIGINT(int);
-    static void         onHandleSIGEGV(int);
     static void         onHandleSIGTERM(int);
-    static void         onHandleSIGFPE(int /*code*/, int subcode);
+#if _MSC_VER>=1400
     static void __cdecl onHandleInvalidParameter(const wchar_t* pszExpression, const wchar_t* pszFunction, const wchar_t* pszFile, unsigned int uLine, uintptr_t pReserved);
+#endif
+
+    // Thread exception callbacks
+    static void __cdecl onHandleTerminate();
+    static void __cdecl onHandleTerminateUnexpected();
+    static void         onHandleSIGFPE(int /*code*/, int subcode);
+    static void         onHandleSIGILL(int);
+    static void         onHandleSIGEGV(int);
 
     // Tools and Helpers
     static int bugfix64And32Env();
@@ -49,8 +61,8 @@ private:
     static CrashRptApp* m_instance;
 
     std::map<std::string, std::string> m_props;
-    std::shared_ptr<CrInstallInfo> m_installInfo;
-    std::shared_ptr<CR_OLD_EXCEPTION_HANDLERS> m_oldHandlers;
+    std::shared_ptr<InstallInfo> m_installInfo;
+    std::shared_ptr<ProcessExceptionHandlers> m_oldProcessHandlers;
     bool m_isInstalled = false;
     CString m_crashGUID;
     HANDLE m_hEvent = nullptr;

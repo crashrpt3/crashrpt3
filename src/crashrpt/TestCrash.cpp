@@ -140,8 +140,9 @@ namespace
     static void _testCrashInvalidParameter()
     {
         char* formatString;
-        formatString = nullptr;
-#pragma warning(disable : 6387)
+        // Call printf_s with invalid parameters.
+        formatString = NULL;
+#pragma warning(disable : 6387)   // warning C6387: 'argument 1' might be '0': this does not adhere to the specification for the function 'printf'
         printf(formatString);
 #pragma warning(default : 6387)
     }
@@ -195,7 +196,7 @@ void TestCrash::test(unsigned long uCrashType) noexcept(false)
         ::RaiseException(123, EXCEPTION_NONCONTINUABLE, 0, nullptr);
         break;
     case CR_CRASH_TYPE_CPP_THROW:
-        throw 14;
+        throw 13;
         break;
     case CR_CRASH_TYPE_STACK_OVERFLOW:
         _testCrashStackOverflow();

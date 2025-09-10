@@ -59,7 +59,7 @@
 #define CR_CRASH_TYPE_SIGSEGV                  11     // C++ SIGSEGV signal (invalid storage access).
 #define CR_CRASH_TYPE_SIGTERM                  12     // C++ SIGTERM signal (termination request).
 #define CR_CRASH_TYPE_NONCONTINUABLE           13     // Non continuable sofware exception.
-#define CR_CRASH_TYPE_CPP_THROW                14     // Throw C++ typed exception.
+#define CR_CRASH_TYPE_CPP_THROW                14     // Throw C++ typed exception (win-api created threads only).
 #define CR_CRASH_TYPE_STACK_OVERFLOW           15     // Stack overflow.
 
 typedef void(*CR_CREATEMINIDUMP_CALLBACK)(void* param, const wchar_t* directory);

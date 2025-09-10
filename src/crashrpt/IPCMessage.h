@@ -1,8 +1,7 @@
 #pragma once
 
-class IPCMessage
+struct IPCMessage
 {
-public:
     DWORD crashrptVersion = 0;
     std::string appExePath;
     std::string dumpOutDirectory;

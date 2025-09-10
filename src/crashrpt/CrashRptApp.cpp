@@ -14,7 +14,7 @@ extern "C" void* _ReturnAddress(void);
 
 typedef void(__cdecl* _sigabrt_handler)(int);
 
-struct CR_EXCEPTION_INFO
+struct ExceptionInfo
 {
     WORD                cb;                         // Size of this structure in bytes; should be initialized before using.
     DWORD               crashType;                  // See macro CR_CRASH_TYPE_SEH.
@@ -25,25 +25,56 @@ struct CR_EXCEPTION_INFO
     LPCWSTR             fileName;                   // File in which assertion happened.
     UINT32              fileLine;                   // Line number.
     PEXCEPTION_POINTERS exceptionPointers;          // Exception pointers.
+
+    ExceptionInfo()
+    {
+        ZeroMemory(this, sizeof(ExceptionInfo));
+    }
 };
 
-struct CR_OLD_EXCEPTION_HANDLERS
+struct ProcessExceptionHandlers
 {
     LPTOP_LEVEL_EXCEPTION_FILTER hSEH; // Structured Exception Handling
-    _purecall_handler            hPureCall;
-    _PNH                         hCppNew;
-    _invalid_parameter_handler   hInvalidParameter;
-    _sigabrt_handler             hSIGABRT;
-    _sigabrt_handler             hSIGILL;
-    _sigabrt_handler             hSIGINT;
-    _sigabrt_handler             hSIGEGV;
-    _sigabrt_handler             hSIGTERM;
-    _sigabrt_handler             hSIGFPE;
+#if _MSC_VER>=1300
+    _purecall_handler hPureCall; // Previous pure virtual call exception filter.
+    _PNH hCppNew; // Previous new operator exception filter.
+#endif
+#if _MSC_VER>=1400
+    _invalid_parameter_handler hInvalidParameter; // Previous invalid parameter exception filter.
+#endif
+    _sigabrt_handler hSIGABRT;
+    _sigabrt_handler hSIGINT;
+    _sigabrt_handler hSIGTERM;
+
+    ProcessExceptionHandlers()
+    {
+        ZeroMemory(this, sizeof(ProcessExceptionHandlers));
+    }
 };
 
-class CrInstallInfo
+struct ThreadExceptionHandlers
 {
-public:
+    BOOL isInstalled;
+    terminate_handler  hTerminate;
+    unexpected_handler hUnexpected;
+    _sigabrt_handler   hSIGFPE;
+    _sigabrt_handler   hSIGILL;
+    _sigabrt_handler   hSIGEGV;
+
+    ThreadExceptionHandlers()
+    {
+        ZeroMemory(this, sizeof(ThreadExceptionHandlers));
+    }
+
+    static ThreadExceptionHandlers& forThisThread()
+    {
+        static thread_local ThreadExceptionHandlers tls;
+        return tls;
+    }
+};
+
+struct InstallInfo
+{
     CString crashrptExePath;
     CString dumpOutDirectory;
     UINT32 crashHandles = 0;
@@ -104,9 +135,8 @@ CrashRptApp* CrashRptApp::m_instance = nullptr;
 
 CrashRptApp::CrashRptApp()
 {
-    m_installInfo = std::make_shared<CrInstallInfo>();
-    m_oldHandlers = std::make_shared<CR_OLD_EXCEPTION_HANDLERS>();
-    ZeroMemory(m_oldHandlers.get(), sizeof(CR_OLD_EXCEPTION_HANDLERS));
+    m_installInfo = std::make_shared<InstallInfo>();
+    m_oldProcessHandlers = std::make_shared<ProcessExceptionHandlers>();
     m_instance = this;
 }
 
@@ -139,7 +169,13 @@ int CrashRptApp::install(const CR_INSTALL_INFO* info)
             break;
         }
 
-        ret = setExceptionHandlers(info->crashHandlers);
+        ret = setProcessExceptionHandlers(info->crashHandlers);
+        if (ret != 0)
+        {
+            break;
+        }
+
+        ret = setThreadExceptionHandlers(info->crashHandlers);
         if (ret != 0)
         {
             break;
@@ -172,7 +208,8 @@ int CrashRptApp::uninstall()
         m_hEvent = nullptr;
     }
 
-    unsetExceptionHandlers();
+    unSetProcessExceptionHandlers();
+    unSetThreadExceptionHandlers();
     m_props.clear();
     m_isInstalled = false;
     return 0;
@@ -180,8 +217,8 @@ int CrashRptApp::uninstall()
 
 int CrashRptApp::addProperty(LPCWSTR name, LPCWSTR value)
 {
-    std::string name8 = (LPCSTR)CW2A(name, CP_UTF8);
-    std::string value8 = (LPCSTR)CW2A(value, CP_UTF8);
+    std::string name8 = Utility::w2u(name);
+    std::string value8 = Utility::w2u(value);
     m_props[name8] = value8;
     return 0;
 }
@@ -192,7 +229,7 @@ CrashRptApp* CrashRptApp::instance()
     return m_instance;
 }
 
-int CrashRptApp::setExceptionHandlers(UINT32 crashHandlers)
+int CrashRptApp::setProcessExceptionHandlers(UINT32 crashHandlers)
 {
     if ((crashHandlers & CR_CRASH_HANDLER_ALL) == 0)
     {
@@ -201,11 +238,12 @@ int CrashRptApp::setExceptionHandlers(UINT32 crashHandlers)
 
     if (crashHandlers & CR_CRASH_HANDLER_SEH)
     {
-        m_oldHandlers->hSEH = ::SetUnhandledExceptionFilter(onHandleSEH);
+        m_oldProcessHandlers->hSEH = ::SetUnhandledExceptionFilter(onHandleSEH);
     }
 
     _set_error_mode(_OUT_TO_STDERR);
 
+#if _MSC_VER>=1300
     if (crashHandlers & CR_CRASH_HANDLER_CPP_PURE)
     {
         // Catch pure virtual function calls.
@@ -213,113 +251,196 @@ int CrashRptApp::setExceptionHandlers(UINT32 crashHandlers)
         // calling this function immediately impacts all threads. The last
         // caller on any thread sets the handler.
         // http://msdn.microsoft.com/en-us/library/t296ys27.aspx
-        m_oldHandlers->hPureCall = _set_purecall_handler(onHandlePureCall);
+        m_oldProcessHandlers->hPureCall = _set_purecall_handler(onHandlePureCall);
     }
 
     if (crashHandlers & CR_CRASH_HANDLER_NEW_OPERATOR)
     {
-        _set_new_mode(1);
-        m_oldHandlers->hCppNew = _set_new_handler(onHandleCppNew);
+        // Catch new operator memory allocation exceptions
+        _set_new_mode(1); // Force malloc() to call new handler too
+        m_oldProcessHandlers->hCppNew = _set_new_handler(onHandleCppNew);
     }
+#endif
 
+#if _MSC_VER>=1400
     if (crashHandlers & CR_CRASH_HANDLER_INVALID_PARAMETER)
     {
-        m_oldHandlers->hInvalidParameter = _set_invalid_parameter_handler(onHandleInvalidParameter);
+        m_oldProcessHandlers->hInvalidParameter = _set_invalid_parameter_handler(onHandleInvalidParameter);
     }
+#endif
 
     if (crashHandlers & CR_CRASH_HANDLER_SIGABRT)
     {
+#if _MSC_VER>=1400
         _set_abort_behavior(_CALL_REPORTFAULT, _CALL_REPORTFAULT);
-        m_oldHandlers->hSIGABRT = signal(SIGABRT, onHandleSIGABRT);
-    }
-
-    if (crashHandlers & CR_CRASH_HANDLER_SIGILL)
-    {
-        m_oldHandlers->hSIGILL = signal(SIGILL, onHandleSIGILL);
+#endif
+        // Catch an abnormal program termination
+        m_oldProcessHandlers->hSIGABRT = signal(SIGABRT, onHandleSIGABRT);
     }
 
     if (crashHandlers & CR_CRASH_HANDLER_SIGINT)
     {
-        m_oldHandlers->hSIGINT = signal(SIGINT, onHandleSIGINT);
+        // Catch illegal instruction handler
+        m_oldProcessHandlers->hSIGINT = signal(SIGINT, onHandleSIGINT);
     }
 
-    if (crashHandlers & CR_CRASH_HANDLER_SIGSEGV)
+    if (crashHandlers & CR_CRASH_HANDLER_SIGTERM)
     {
-        m_oldHandlers->hSIGEGV = signal(SIGSEGV, onHandleSIGEGV);
+        // Catch a termination request
+        m_oldProcessHandlers->hSIGTERM = signal(SIGTERM, onHandleSIGTERM);
+    }
+
+    return 0;
+}
+
+int CrashRptApp::unSetProcessExceptionHandlers()
+{
+#if _MSC_VER>=1300
+    if (m_oldProcessHandlers->hPureCall != nullptr)
+    {
+        _set_purecall_handler(m_oldProcessHandlers->hPureCall);
+        m_oldProcessHandlers->hPureCall = nullptr;
+    }
+
+    if (m_oldProcessHandlers->hCppNew != nullptr)
+    {
+        _set_new_handler(m_oldProcessHandlers->hCppNew);
+        m_oldProcessHandlers->hCppNew = nullptr;
+    }
+#endif
+
+#if _MSC_VER>=1400
+    if (m_oldProcessHandlers->hInvalidParameter != nullptr)
+    {
+        _set_invalid_parameter_handler(m_oldProcessHandlers->hInvalidParameter);
+        m_oldProcessHandlers->hInvalidParameter = nullptr;
+    }
+#endif
+
+    if (m_oldProcessHandlers->hSIGABRT != nullptr)
+    {
+        signal(SIGABRT, m_oldProcessHandlers->hSIGABRT);
+        m_oldProcessHandlers->hSIGABRT = nullptr;
+    }
+
+    if (m_oldProcessHandlers->hSIGINT != nullptr)
+    {
+        signal(SIGINT, m_oldProcessHandlers->hSIGINT);
+        m_oldProcessHandlers->hSIGINT = nullptr;
+    }
+
+    if (m_oldProcessHandlers->hSIGTERM != nullptr)
+    {
+        signal(SIGTERM, m_oldProcessHandlers->hSIGTERM);
+        m_oldProcessHandlers->hSIGTERM = nullptr;
+    }
+
+    if (m_oldProcessHandlers->hSEH)
+    {
+        ::SetUnhandledExceptionFilter(m_oldProcessHandlers->hSEH);
+        m_oldProcessHandlers->hSEH = nullptr;
+    }
+    return 0;
+}
+
+int CrashRptApp::setThreadExceptionHandlers(UINT32 crashHandlers)
+{
+    if ((crashHandlers & CR_CRASH_HANDLER_ALL) == 0)
+    {
+        crashHandlers |= CR_CRASH_HANDLER_ALL;
+    }
+
+    auto& handlers = ThreadExceptionHandlers::forThisThread();
+    if (handlers.isInstalled)
+    {
+        return 0;
     }
 
     if (crashHandlers & CR_CRASH_HANDLER_TERMINATE_CALL)
     {
-        m_oldHandlers->hSIGTERM = signal(SIGTERM, onHandleSIGTERM);
+        // Catch terminate() calls.
+        // In a multithreaded environment, terminate functions are maintained
+        // separately for each thread. Each new thread needs to install its own
+        // terminate function. Thus, each thread is in charge of its own termination handling.
+        // http://msdn.microsoft.com/en-us/library/t6fk7h29.aspx
+        handlers.hTerminate = set_terminate(onHandleTerminate);
+    }
+
+    if (crashHandlers & CR_CRASH_HANDLER_UNEXPECTED_CALL)
+    {
+        // Catch unexpected() calls.
+        // In a multithreaded environment, unexpected functions are maintained
+        // separately for each thread. Each new thread needs to install its own
+        // unexpected function. Thus, each thread is in charge of its own unexpected handling.
+        // http://msdn.microsoft.com/en-us/library/h46t5b69.aspx
+        handlers.hUnexpected = set_unexpected(onHandleTerminateUnexpected);
     }
 
     if (crashHandlers & CR_CRASH_HANDLER_SIGFPE)
     {
-        m_oldHandlers->hSIGFPE = signal(SIGFPE, (_sigabrt_handler)onHandleSIGFPE);
+        // Catch a floating point error
+        handlers.hSIGFPE = signal(SIGFPE, (_sigabrt_handler)onHandleSIGFPE);
     }
 
+    if (crashHandlers & CR_CRASH_HANDLER_SIGILL)
+    {
+        // Catch an illegal instruction
+        handlers.hSIGILL = signal(SIGILL, onHandleSIGILL);
+    }
+
+    if (crashHandlers & CR_CRASH_HANDLER_SIGSEGV)
+    {
+        // Catch illegal storage access errors
+        handlers.hSIGEGV = signal(SIGSEGV, onHandleSIGEGV);
+    }
+
+    handlers.isInstalled = TRUE;
     return 0;
 }
 
-int CrashRptApp::unsetExceptionHandlers()
+int CrashRptApp::unSetThreadExceptionHandlers()
 {
-    if (m_oldHandlers->hPureCall != nullptr)
+    auto& handlers = ThreadExceptionHandlers::forThisThread();
+    if (!handlers.isInstalled)
     {
-        _set_purecall_handler(m_oldHandlers->hPureCall);
-        m_oldHandlers->hPureCall = nullptr;
+        return 0;
     }
 
-    if (m_oldHandlers->hCppNew != nullptr)
+    if (handlers.hTerminate)
     {
-        _set_new_handler(m_oldHandlers->hCppNew);
-        m_oldHandlers->hCppNew = nullptr;
+        set_terminate(handlers.hTerminate);
+        handlers.hTerminate = nullptr;
     }
 
-    if (m_oldHandlers->hInvalidParameter != nullptr)
+    if (handlers.hUnexpected)
     {
-        _set_invalid_parameter_handler(m_oldHandlers->hInvalidParameter);
-        m_oldHandlers->hInvalidParameter = nullptr;
+        set_unexpected(handlers.hUnexpected);
+        handlers.hUnexpected = nullptr;
     }
 
-    if (m_oldHandlers->hSIGABRT != nullptr)
+    if (handlers.hSIGFPE)
     {
-        signal(SIGABRT, m_oldHandlers->hSIGABRT);
-        m_oldHandlers->hSIGABRT = nullptr;
+        signal(SIGFPE, handlers.hSIGFPE);
+        handlers.hSIGFPE = nullptr;
     }
 
-    if (m_oldHandlers->hSIGILL)
+    if (handlers.hSIGILL)
     {
-        signal(SIGILL, m_oldHandlers->hSIGILL);
-        m_oldHandlers->hSIGILL = nullptr;
+        signal(SIGILL, handlers.hSIGILL);
+        handlers.hSIGILL = nullptr;
     }
 
-    if (m_oldHandlers->hSIGINT != nullptr)
+    if (handlers.hSIGEGV)
     {
-        signal(SIGINT, m_oldHandlers->hSIGINT);
-        m_oldHandlers->hSIGINT = nullptr;
+        signal(SIGSEGV, handlers.hSIGEGV);
+        handlers.hSIGEGV = nullptr;
     }
 
-    if (m_oldHandlers->hSIGEGV != nullptr)
-    {
-        signal(SIGSEGV, m_oldHandlers->hSIGEGV);
-        m_oldHandlers->hSIGEGV = nullptr;
-    }
-
-    if (m_oldHandlers->hSIGTERM != nullptr)
-    {
-        signal(SIGTERM, m_oldHandlers->hSIGTERM);
-        m_oldHandlers->hSIGTERM = nullptr;
-    }
-
-    if (m_oldHandlers->hSEH)
-    {
-        ::SetUnhandledExceptionFilter(m_oldHandlers->hSEH);
-        m_oldHandlers->hSEH = nullptr;
-    }
+    handlers.isInstalled = FALSE;
     return 0;
 }
 
-int CrashRptApp::generateErrorReport(CR_EXCEPTION_INFO* pException)
+int CrashRptApp::generateErrorReport(ExceptionInfo* pException)
 {
     if (pException == nullptr)
     {
@@ -360,8 +481,8 @@ int CrashRptApp::generateErrorReport(CR_EXCEPTION_INFO* pException)
     // Save current process ID, thread ID and exception pointers address to shared mem.
     auto ipcmsg = std::make_unique<IPCMessage>();
     ipcmsg->crashrptVersion = CRASHRPT_VER;
-    ipcmsg->appExePath = (LPCSTR)CW2A(Utility::getModuleFullPath(nullptr), CP_UTF8);
-    ipcmsg->dumpOutDirectory = (LPCSTR)CW2A(m_installInfo->dumpOutDirectory, CP_UTF8);
+    ipcmsg->appExePath = Utility::w2u(Utility::getModuleFullPath(nullptr));
+    ipcmsg->dumpOutDirectory = Utility::w2u(m_installInfo->dumpOutDirectory);
     ipcmsg->processId = ::GetCurrentProcessId();
     ipcmsg->threadId = ::GetCurrentThreadId();
     ipcmsg->crashType = pException->crashType;
@@ -378,9 +499,9 @@ int CrashRptApp::generateErrorReport(CR_EXCEPTION_INFO* pException)
     else if (pException->crashType == CR_CRASH_TYPE_INVALID_PARAMETER)
     {
         // Set invalid parameter exception info fields
-        ipcmsg->invalidParamExpr = (LPCSTR)CW2A(pException->assertionExpression, CP_UTF8);
-        ipcmsg->invalidParamFunc = (LPCSTR)CW2A(pException->funcionName, CP_UTF8);
-        ipcmsg->invalidParamFile = (LPCSTR)CW2A(pException->fileName, CP_UTF8);
+        ipcmsg->invalidParamExpr = Utility::w2u(pException->assertionExpression);
+        ipcmsg->invalidParamFunc = Utility::w2u(pException->funcionName);
+        ipcmsg->invalidParamFile = Utility::w2u(pException->fileName);
         ipcmsg->invalidParamLine = pException->fileLine;
     }
 
@@ -546,9 +667,8 @@ LONG WINAPI CrashRptApp::onHandleSEH(PEXCEPTION_POINTERS pExceptionPtrs)
 
     // Treat this type of crash critical by default
     pApp->m_isContinueExecution = false;
-    CR_EXCEPTION_INFO ei;
-    ZeroMemory(&ei, sizeof(CR_EXCEPTION_INFO));
-    ei.cb = sizeof(CR_EXCEPTION_INFO);
+    ExceptionInfo ei;
+    ei.cb = sizeof(ExceptionInfo);
     ei.crashType = CR_CRASH_TYPE_SEH;
     ei.exceptionPointers = pExceptionPtrs;
     if (pExceptionPtrs && pExceptionPtrs->ExceptionRecord)
@@ -577,9 +697,8 @@ unsigned __stdcall CrashRptApp::runThreadSEHStackOverflow(void* pvParam)
         // Treat this type of crash critical by default
         pApp->m_isContinueExecution = false;
 
-        CR_EXCEPTION_INFO ei;
-        ZeroMemory(&ei, sizeof(CR_EXCEPTION_INFO));
-        ei.cb = sizeof(CR_EXCEPTION_INFO);
+        ExceptionInfo ei;
+        ei.cb = sizeof(ExceptionInfo);
         ei.crashType = CR_CRASH_TYPE_SEH;
         ei.exceptionPointers = pExceptionPointers;
         ei.exceptionCode = pExceptionPointers->ExceptionRecord->ExceptionCode;
@@ -620,6 +739,7 @@ int CrashRptApp::bugfix64And32Env()
     return 0;
 }
 
+#if _MSC_VER>=1300
 void __cdecl CrashRptApp::onHandlePureCall()
 {
     CrashRptApp* pApp = CrashRptApp::instance();
@@ -629,9 +749,8 @@ void __cdecl CrashRptApp::onHandlePureCall()
     pApp->m_isContinueExecution = false;
 
     // Fill in the exception info
-    CR_EXCEPTION_INFO ei;
-    ZeroMemory(&ei, sizeof(CR_EXCEPTION_INFO));
-    ei.cb = sizeof(CR_EXCEPTION_INFO);
+    ExceptionInfo ei;
+    ei.cb = sizeof(ExceptionInfo);
     ei.crashType = CR_CRASH_TYPE_CPP_PURE;
     pApp->generateErrorReport(&ei);
     if (!pApp->m_isContinueExecutionNow)
@@ -639,31 +758,9 @@ void __cdecl CrashRptApp::onHandlePureCall()
         ::TerminateProcess(::GetCurrentProcess(), 1);
     }
 }
+#endif
 
-void __cdecl CrashRptApp::onHandleInvalidParameter(const wchar_t* pszExpression, const wchar_t* pszFunction, const wchar_t* pszFile, unsigned int uLine, uintptr_t /*pReserved*/)
-{
-    CrashRptApp* pApp = CrashRptApp::instance();
-    std::unique_lock<std::mutex> lock(pApp->m_mutex);
-
-    // Treat this type of crash critical by default
-    pApp->m_isContinueExecution = false;
-
-    // Fill in the exception info
-    CR_EXCEPTION_INFO ei;
-    ZeroMemory(&ei, sizeof(CR_EXCEPTION_INFO));
-    ei.cb = sizeof(CR_EXCEPTION_INFO);
-    ei.crashType = CR_CRASH_TYPE_INVALID_PARAMETER;
-    ei.assertionExpression = pszExpression;
-    ei.funcionName = pszFunction;
-    ei.fileName = pszFile;
-    ei.fileLine = uLine;
-    pApp->generateErrorReport(&ei);
-    if (!pApp->m_isContinueExecutionNow)
-    {
-        ::TerminateProcess(::GetCurrentProcess(), 1);
-    }
-}
-
+#if _MSC_VER>=1300
 int __cdecl CrashRptApp::onHandleCppNew(size_t)
 {
     CrashRptApp* pApp = CrashRptApp::instance();
@@ -671,9 +768,8 @@ int __cdecl CrashRptApp::onHandleCppNew(size_t)
 
     // Treat this type of crash critical by default
     pApp->m_isContinueExecution = false;
-    CR_EXCEPTION_INFO ei;
-    ZeroMemory(&ei, sizeof(CR_EXCEPTION_INFO));
-    ei.cb = sizeof(CR_EXCEPTION_INFO);
+    ExceptionInfo ei;
+    ei.cb = sizeof(ExceptionInfo);
     ei.crashType = CR_CRASH_TYPE_CPP_NEW_OPERATOR;
     ei.exceptionPointers = nullptr;
     pApp->generateErrorReport(&ei);
@@ -685,6 +781,70 @@ int __cdecl CrashRptApp::onHandleCppNew(size_t)
 
     return 0;
 }
+#endif
+
+#if _MSC_VER>=1400
+void __cdecl CrashRptApp::onHandleInvalidParameter(const wchar_t* pszExpression, const wchar_t* pszFunction, const wchar_t* pszFile, unsigned int uLine, uintptr_t /*pReserved*/)
+{
+    CrashRptApp* pApp = CrashRptApp::instance();
+    std::unique_lock<std::mutex> lock(pApp->m_mutex);
+
+    // Treat this type of crash critical by default
+    pApp->m_isContinueExecution = false;
+
+    // Fill in the exception info
+    ExceptionInfo ei;
+    ei.cb = sizeof(ExceptionInfo);
+    ei.crashType = CR_CRASH_TYPE_INVALID_PARAMETER;
+    ei.assertionExpression = pszExpression;
+    ei.funcionName = pszFunction;
+    ei.fileName = pszFile;
+    ei.fileLine = uLine;
+    pApp->generateErrorReport(&ei);
+    if (!pApp->m_isContinueExecutionNow)
+    {
+        ::TerminateProcess(::GetCurrentProcess(), 1);
+    }
+}
+#endif
+
+void __cdecl CrashRptApp::onHandleTerminate()
+{
+    CrashRptApp* pApp = CrashRptApp::instance();
+    std::unique_lock<std::mutex> lock(pApp->m_mutex);
+
+    // Treat this type of crash critical by default
+    pApp->m_isContinueExecution = false;
+
+    // Fill in the exception info
+    ExceptionInfo ei;
+    ei.cb = sizeof(ExceptionInfo);
+    ei.crashType = CR_CRASH_TYPE_TERMINATE_CALL;
+    pApp->generateErrorReport(&ei);
+    if (!pApp->m_isContinueExecutionNow)
+    {
+        ::TerminateProcess(GetCurrentProcess(), 1);
+    }
+}
+
+void __cdecl CrashRptApp::onHandleTerminateUnexpected()
+{
+    CrashRptApp* pApp = CrashRptApp::instance();
+    std::unique_lock<std::mutex> lock(pApp->m_mutex);
+
+    // Treat this type of crash critical by default
+    pApp->m_isContinueExecution = false;
+
+    // Fill in the exception info
+    ExceptionInfo ei;
+    ei.cb = sizeof(ExceptionInfo);
+    ei.crashType = CR_CRASH_TYPE_UNEXPECTED_CALL;
+    pApp->generateErrorReport(&ei);
+    if (!pApp->m_isContinueExecutionNow)
+    {
+        ::TerminateProcess(GetCurrentProcess(), 1);
+    }
+}
 
 void CrashRptApp::onHandleSIGABRT(int)
 {
@@ -695,9 +855,8 @@ void CrashRptApp::onHandleSIGABRT(int)
     pApp->m_isContinueExecution = false;
 
     // Fill in the exception info
-    CR_EXCEPTION_INFO ei;
-    ZeroMemory(&ei, sizeof(CR_EXCEPTION_INFO));
-    ei.cb = sizeof(CR_EXCEPTION_INFO);
+    ExceptionInfo ei;
+    ei.cb = sizeof(ExceptionInfo);
     ei.crashType = CR_CRASH_TYPE_SIGABRT;
 
     pApp->generateErrorReport(&ei);
@@ -714,9 +873,8 @@ void CrashRptApp::onHandleSIGILL(int)
     std::unique_lock<std::mutex> lock(pApp->m_mutex);
 
     pApp->m_isContinueExecution = false;
-    CR_EXCEPTION_INFO ei;
-    ZeroMemory(&ei, sizeof(CR_EXCEPTION_INFO));
-    ei.cb = sizeof(CR_EXCEPTION_INFO);
+    ExceptionInfo ei;
+    ei.cb = sizeof(ExceptionInfo);
     ei.crashType = CR_CRASH_TYPE_SIGILL;
 
     pApp->generateErrorReport(&ei);
@@ -736,9 +894,8 @@ void CrashRptApp::onHandleSIGINT(int)
     pApp->m_isContinueExecution = false;
 
     // Fill in the exception info
-    CR_EXCEPTION_INFO ei;
-    ZeroMemory(&ei, sizeof(CR_EXCEPTION_INFO));
-    ei.cb = sizeof(CR_EXCEPTION_INFO);
+    ExceptionInfo ei;
+    ei.cb = sizeof(ExceptionInfo);
     ei.crashType = CR_CRASH_TYPE_SIGINT;
     pApp->generateErrorReport(&ei);
     if (!pApp->m_isContinueExecutionNow)
@@ -753,9 +910,8 @@ void CrashRptApp::onHandleSIGEGV(int)
     std::unique_lock<std::mutex> lock(pApp->m_mutex);
 
     pApp->m_isContinueExecution = false;
-    CR_EXCEPTION_INFO ei;
-    ZeroMemory(&ei, sizeof(CR_EXCEPTION_INFO));
-    ei.cb = sizeof(CR_EXCEPTION_INFO);
+    ExceptionInfo ei;
+    ei.cb = sizeof(ExceptionInfo);
     ei.crashType = CR_CRASH_TYPE_SIGSEGV;
     ei.exceptionPointers = (PEXCEPTION_POINTERS)_pxcptinfoptrs;
     pApp->generateErrorReport(&ei);
@@ -774,9 +930,8 @@ void CrashRptApp::onHandleSIGTERM(int)
     // Treat this type of crash critical by default
     pApp->m_isContinueExecution = false;
 
-    CR_EXCEPTION_INFO ei;
-    ZeroMemory(&ei, sizeof(CR_EXCEPTION_INFO));
-    ei.cb = sizeof(CR_EXCEPTION_INFO);
+    ExceptionInfo ei;
+    ei.cb = sizeof(ExceptionInfo);
     ei.crashType = CR_CRASH_TYPE_SIGTERM;
     pApp->generateErrorReport(&ei);
     if (!pApp->m_isContinueExecutionNow)
@@ -793,9 +948,8 @@ void CrashRptApp::onHandleSIGFPE(int /*nCode*/, int nSubcode)
 
     // Treat this type of crash critical by default
     pApp->m_isContinueExecution = FALSE;
-    CR_EXCEPTION_INFO ei;
-    ZeroMemory(&ei, sizeof(CR_EXCEPTION_INFO));
-    ei.cb = sizeof(CR_EXCEPTION_INFO);
+    ExceptionInfo ei;
+    ei.cb = sizeof(ExceptionInfo);
     ei.crashType = CR_CRASH_TYPE_SIGFPE;
     ei.exceptionPointers = (PEXCEPTION_POINTERS)_pxcptinfoptrs;
     ei.fpeSubCode = nSubcode;

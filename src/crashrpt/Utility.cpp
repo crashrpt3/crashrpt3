@@ -109,3 +109,23 @@ CString Utility::pathToParentDir(LPCTSTR szPath)
     }
     return parent;
 }
+
+std::string Utility::w2u(const wchar_t* wstr)
+{
+    std::string ret;
+    if (wstr)
+    {
+        ret = (const char*)CW2A(wstr, CP_UTF8);
+    }
+    return ret;
+}
+
+std::wstring Utility::u2w(const char* str)
+{
+    std::wstring wstr;
+    if (str)
+    {
+        wstr = (const wchar_t*)CA2W(str, CP_UTF8);
+    }
+    return wstr;
+}

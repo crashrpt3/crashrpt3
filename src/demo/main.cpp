@@ -22,7 +22,7 @@ void run()
         {CR_CRASH_TYPE_SIGSEGV, "C++ SIGSEGV signal (invalid storage access)."},
         {CR_CRASH_TYPE_SIGTERM, "C++ SIGTERM signal (termination request)."},
         {CR_CRASH_TYPE_NONCONTINUABLE, "Non continuable sofware exception."},
-        {CR_CRASH_TYPE_CPP_THROW, "Throw C++ typed exception."},
+        {CR_CRASH_TYPE_CPP_THROW, "Throw C++ typed exception (win-api created threads only)."},
         {CR_CRASH_TYPE_STACK_OVERFLOW, "Stack overflow."},
     };
 
@@ -37,6 +37,12 @@ void run()
     UINT32 num = 0;
     std::cin >> num;
     crTestCrash(num);
+}
+
+unsigned __stdcall winThreadEntry(LPVOID pParam)
+{
+    run();
+    return 0;
 }
 
 int main()
@@ -60,19 +66,30 @@ int main()
     for (;;)
     {
         std::cout << "1. Test crash in main thread" << std::endl;
-        std::cout << "2. Test crash in background thread" << std::endl;
+        std::cout << "2. Test crash in win-api thread" << std::endl;
+        std::cout << "3. Test crash in std::hread" << std::endl;
         std::cout << "Please input your choice:";
 
         UINT32 num = 0;
         std::cin >> num;
-        if (num == 2)
-        {
-            std::thread thd(run);
-            thd.join();
-        }
-        else
+        if (num == 1)
         {
             run();
+        }
+        else if (num == 2)
+        {
+            auto hThread = (HANDLE)_beginthreadex(nullptr, 0, &winThreadEntry, nullptr, 0, nullptr);
+            if (hThread)
+            {
+                ::WaitForSingleObject(hThread, INFINITE);
+                ::CloseHandle(hThread);
+                hThread = nullptr;
+            }
+        }
+        else if (num == 3)
+        {
+            std::thread thd(&run);
+            thd.join();
         }
     }
 }
