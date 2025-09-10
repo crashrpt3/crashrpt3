@@ -8,22 +8,22 @@
 void run()
 {
     std::vector<std::pair<UINT32, std::string>> vec{
-        {CR_CRASH_TYPE_SEH, "SEH exception."},
-        {CR_CRASH_TYPE_TERMINATE_CALL, "C++ terminate() call."},
-        {CR_CRASH_TYPE_UNEXPECTED_CALL, "C++ unexpected() call."},
-        {CR_CRASH_TYPE_CPP_PURE, "C++ pure virtual function call (VS .NET and later)."},
-        {CR_CRASH_TYPE_CPP_NEW_OPERATOR, "C++ new operator fault (VS .NET and later)."},
-        {CR_CRASH_TYPE_SECURITY, "Buffer overrun error (VS .NET only)."},
+        {CR_CRASH_TYPE_SEH,               "SEH exception."},
+        {CR_CRASH_TYPE_TERMINATE_CALL,    "C++ terminate() call."},
+        {CR_CRASH_TYPE_UNEXPECTED_CALL,   "C++ unexpected() call."},
+        {CR_CRASH_TYPE_CPP_PURE,          "C++ pure virtual function call (VS .NET and later)."},
+        {CR_CRASH_TYPE_CPP_NEW_OPERATOR,  "C++ new operator fault (VS .NET and later)."},
+        {CR_CRASH_TYPE_SECURITY,          "Buffer overrun error (VS .NET only, No longer crashes since VS2017)."},
         {CR_CRASH_TYPE_INVALID_PARAMETER, "Invalid parameter exception (VS 2005 and later)."},
-        {CR_CRASH_TYPE_SIGABRT, "C++ SIGABRT signal (abort)."},
-        {CR_CRASH_TYPE_SIGFPE, "C++ SIGFPE signal (flotating point exception)."},
-        {CR_CRASH_TYPE_SIGILL, "C++ SIGILL signal (illegal instruction)."},
-        {CR_CRASH_TYPE_SIGINT, "C++ SIGINT signal (CTRL+C)."},
-        {CR_CRASH_TYPE_SIGSEGV, "C++ SIGSEGV signal (invalid storage access)."},
-        {CR_CRASH_TYPE_SIGTERM, "C++ SIGTERM signal (termination request)."},
-        {CR_CRASH_TYPE_NONCONTINUABLE, "Non continuable sofware exception."},
-        {CR_CRASH_TYPE_CPP_THROW, "Throw C++ typed exception (win-api created threads only)."},
-        {CR_CRASH_TYPE_STACK_OVERFLOW, "Stack overflow."},
+        {CR_CRASH_TYPE_SIGABRT,           "C++ SIGABRT signal (abort)."},
+        {CR_CRASH_TYPE_SIGFPE,            "C++ SIGFPE signal (flotating point exception)."},
+        {CR_CRASH_TYPE_SIGILL,            "C++ SIGILL signal (illegal instruction, win-api created threads only)."},
+        {CR_CRASH_TYPE_SIGINT,            "C++ SIGINT signal (CTRL+C)."},
+        {CR_CRASH_TYPE_SIGSEGV,           "C++ SIGSEGV signal (invalid storage access, win-api created threads only)."},
+        {CR_CRASH_TYPE_SIGTERM,           "C++ SIGTERM signal (termination request)."},
+        {CR_CRASH_TYPE_NONCONTINUABLE,    "Non continuable sofware exception."},
+        {CR_CRASH_TYPE_CPP_THROW,         "Throw C++ typed exception (win-api created threads only)."},
+        {CR_CRASH_TYPE_STACK_OVERFLOW,    "Stack overflow."},
     };
 
     std::cout << "=================================\n";
@@ -41,6 +41,7 @@ void run()
 
 unsigned __stdcall winThreadEntry(LPVOID pParam)
 {
+    crashrpt::CrInstallThisThreadGurad crashrpt;
     run();
     return 0;
 }

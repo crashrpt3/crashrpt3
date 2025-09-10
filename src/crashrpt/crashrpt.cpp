@@ -47,6 +47,30 @@ CRASHRPT_API(int) crUninstall()
     return 0;
 }
 
+CRASHRPT_API(int) crInstallThisThread(unsigned long crashHandlers)
+{
+    ErrorStack::clear();
+    CrashRptApp* app = CrashRptApp::instance();
+    if (!app)
+    {
+        ErrorStack::push(L"Not installed yet");
+        return 1;
+    }
+    return app->setThreadExceptionHandlers(crashHandlers);
+}
+
+CRASHRPT_API(int) crUninstallThisThread()
+{
+    ErrorStack::clear();
+    CrashRptApp* app = CrashRptApp::instance();
+    if (!app)
+    {
+        ErrorStack::push(L"Not installed yet");
+        return 1;
+    }
+    return app->unSetThreadExceptionHandlers();
+}
+
 CRASHRPT_API(int) crAddProperty(const wchar_t* name, const wchar_t* value)
 {
     ErrorStack::clear();

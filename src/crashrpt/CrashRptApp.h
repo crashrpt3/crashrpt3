@@ -18,14 +18,14 @@ public:
     int install(const CR_INSTALL_INFO* info);
     int addProperty(LPCWSTR name, LPCWSTR value);
 
+    int setThreadExceptionHandlers(UINT32 crashHandlers);
+    int unSetThreadExceptionHandlers();
+
 private:
     int uninstall();
 
     int setProcessExceptionHandlers(UINT32 crashHandlers);
     int unSetProcessExceptionHandlers();
-
-    int setThreadExceptionHandlers(UINT32 crashHandlers);
-    int unSetThreadExceptionHandlers();
 
     int generateErrorReport(ExceptionInfo* exceptionInfo);
     int launchCrashRptDump(LPCWSTR szCmdLineParams, BOOL bWait);
