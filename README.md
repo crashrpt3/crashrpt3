@@ -1,10 +1,45 @@
-A crash reporting system for Windows applications.
-
-----
+### The most powerful crash reporting system for Windows C++ applications only.
 
 Since the author has not updated and maintained it for too long, this repository is used to collect newer patches and features.
 
-CrashRpt only supports Windows systems, and it is the most powerful crash reporting system for Windows applications.
+For Windows C++ applications, the CrashRpt3 is more powerful than `crashpad`, CrashRpt3 can catch more crashes.
+
+
+
+### APIs
+
+Only 8 APIs, It's very easy to use.
+
+```cpp
+int crInstall(const CR_INSTALL_INFO* info);
+int crUninstall();
+
+int crInstallThisThread(unsigned long crashHandlers = 0);
+int crUninstallThisThread();
+
+int crAddProperty(const wchar_t* name, const wchar_t* value);
+int crTestCrash(unsigned long crashType) noexcept(false);
+int crCreateMiniDump(const wchar_t* crashGUID, CR_CREATEMINIDUMP_CALLBACK callback, void* param);
+
+int crGetLastError(wchar_t* buffer, int sizeInWords);
+```
+
+
+
+### Demo
+
+```cpp
+int main()
+{
+    CR_INSTALL_INFO info = { 0 };
+    info.cb = sizeof(CR_INSTALL_INFO);
+    crInstall(&info); // Install crashrpt3
+    
+    // Add you code here...
+}
+```
+
+For more details, you can see `/crashrpt3/src/demo/main.cpp`.
 
 
 
