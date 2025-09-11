@@ -45,8 +45,8 @@ For more details, you can see `/crashrpt3/src/demo/main.cpp`.
 
 ### Features
 
-- Supports Visual C++ 2005, 2008, 2010, 2012 and Visual C++ Express1. Can be compiled for 32-bit and 64-bit platforms.
-- Works in Windows XP/2003/Vista, Windows 7 and Windows 8.
+- Supports Visual Studio 2022. Can be compiled for 32-bit and 64-bit platforms.
+- Works in Windows XP/2003/Vista/7/8/10/11.
 - Handles exceptions in the main thread and/or in all worker threads of your user-mode program: SEH exceptions, unhandled C++ typed exceptions, signals and CRT errors.
 - Generates error report including crash minidump, extensible crash description XML, application-defined files, desktop screenshots and screen capture videos.
 - Presents UI allowing user to review the crash report. Supports Privacy Policy definition.
