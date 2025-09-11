@@ -363,3 +363,4 @@ FodyWeavers.xsd
 
 # Local ignores
 /out/build/
+/build
