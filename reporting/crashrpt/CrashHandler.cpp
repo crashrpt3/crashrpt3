@@ -1274,7 +1274,6 @@ int CCrashHandler::AddVideo(DWORD dwFlags, int nDuration, int nFrameInterval,
 int CCrashHandler::GenerateErrorReport(
         PCR_EXCEPTION_INFO pExceptionInfo)
 {
-    ::MessageBox(0, 0, 0, 0);
 	ReInitializer re_initializer( * this ) ;
 
 	crSetErrorMsg(_T("Unspecified error."));
