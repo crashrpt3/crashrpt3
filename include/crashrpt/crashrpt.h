@@ -50,7 +50,7 @@
 #define CR_CRASH_TYPE_UNEXPECTED_CALL          2      // C++ unexpected() call.
 #define CR_CRASH_TYPE_CPP_PURE                 3      // C++ pure virtual function call (VS .NET and later).
 #define CR_CRASH_TYPE_CPP_NEW_OPERATOR         4      // C++ new operator fault (VS .NET and later).
-#define CR_CRASH_TYPE_SECURITY                 5      // Buffer overrun error (VS .NET only, No longer crashes since VS2017).
+#define CR_CRASH_TYPE_SECURITY                 5      // Buffer overrun error (VS .NET only, can't catch any crashes since VS2017).
 #define CR_CRASH_TYPE_INVALID_PARAMETER        6      // Invalid parameter exception (VS 2005 and later).
 #define CR_CRASH_TYPE_SIGABRT                  7      // C++ SIGABRT signal (abort).
 #define CR_CRASH_TYPE_SIGFPE                   8      // C++ SIGFPE signal (flotating point exception).

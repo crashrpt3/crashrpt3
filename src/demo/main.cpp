@@ -5,24 +5,30 @@
 
 #include "crashrpt/crashrpt.h"
 
-void run()
+void crashCode(std::int64_t installForThread)
 {
+    std::unique_ptr<crashrpt::CrInstallThisThreadGurad> crashrpt;
+    if (installForThread == 1)
+    {
+        crashrpt = std::make_unique<crashrpt::CrInstallThisThreadGurad>();
+    }
+
     std::vector<std::pair<UINT32, std::string>> vec{
         {CR_CRASH_TYPE_SEH,               "SEH exception."},
         {CR_CRASH_TYPE_TERMINATE_CALL,    "C++ terminate() call."},
         {CR_CRASH_TYPE_UNEXPECTED_CALL,   "C++ unexpected() call."},
         {CR_CRASH_TYPE_CPP_PURE,          "C++ pure virtual function call (VS .NET and later)."},
         {CR_CRASH_TYPE_CPP_NEW_OPERATOR,  "C++ new operator fault (VS .NET and later)."},
-        {CR_CRASH_TYPE_SECURITY,          "Buffer overrun error (VS .NET only, No longer crashes since VS2017)."},
+        {CR_CRASH_TYPE_SECURITY,          "Buffer overrun error (VS .NET only. Can't catch any crashes since VS2017)."},
         {CR_CRASH_TYPE_INVALID_PARAMETER, "Invalid parameter exception (VS 2005 and later)."},
         {CR_CRASH_TYPE_SIGABRT,           "C++ SIGABRT signal (abort)."},
         {CR_CRASH_TYPE_SIGFPE,            "C++ SIGFPE signal (flotating point exception)."},
-        {CR_CRASH_TYPE_SIGILL,            "C++ SIGILL signal (illegal instruction, win-api created threads only)."},
+        {CR_CRASH_TYPE_SIGILL,            "C++ SIGILL signal (illegal instruction. Must call crInstallThisThread() if in threads)."},
         {CR_CRASH_TYPE_SIGINT,            "C++ SIGINT signal (CTRL+C)."},
-        {CR_CRASH_TYPE_SIGSEGV,           "C++ SIGSEGV signal (invalid storage access, win-api created threads only)."},
+        {CR_CRASH_TYPE_SIGSEGV,           "C++ SIGSEGV signal (invalid storage access. Must call crInstallThisThread() if in threads)."},
         {CR_CRASH_TYPE_SIGTERM,           "C++ SIGTERM signal (termination request)."},
         {CR_CRASH_TYPE_NONCONTINUABLE,    "Non continuable sofware exception."},
-        {CR_CRASH_TYPE_CPP_THROW,         "Throw C++ typed exception (win-api created threads only)."},
+        {CR_CRASH_TYPE_CPP_THROW,         "Throw C++ typed exception (Windows API created threads only)."},
         {CR_CRASH_TYPE_STACK_OVERFLOW,    "Stack overflow."},
     };
 
@@ -41,8 +47,7 @@ void run()
 
 unsigned __stdcall winThreadEntry(LPVOID pParam)
 {
-    crashrpt::CrInstallThisThreadGurad crashrpt;
-    run();
+    crashCode(reinterpret_cast<std::int64_t>(pParam));
     return 0;
 }
 
@@ -66,31 +71,42 @@ int main()
     // Begin test
     for (;;)
     {
+        std::cout << "================================" << std::endl;
         std::cout << "1. Test crash in main thread" << std::endl;
         std::cout << "2. Test crash in win-api thread" << std::endl;
         std::cout << "3. Test crash in std::thread" << std::endl;
         std::cout << "Please input your choice:";
 
-        UINT32 num = 0;
+        std::int64_t num = 0;
         std::cin >> num;
         if (num == 1)
         {
-            run();
+            crashCode(2);
         }
-        else if (num == 2)
+        else
         {
-            auto hThread = (HANDLE)_beginthreadex(nullptr, 0, &winThreadEntry, nullptr, 0, nullptr);
-            if (hThread)
+            std::cout << "================================" << std::endl;
+            std::cout << "1. Call crInstallThisThread() for this thread" << std::endl;
+            std::cout << "2. Don't call crInstallThisThread() for this thread" << std::endl;
+            std::cout << "Please input your choice:";
+            std::int64_t installForThread = 0;
+            std::cin >> installForThread;
+
+            if (num == 2)
             {
-                ::WaitForSingleObject(hThread, INFINITE);
-                ::CloseHandle(hThread);
-                hThread = nullptr;
+                auto hThread = (HANDLE)_beginthreadex(nullptr, 0, &winThreadEntry, reinterpret_cast<void*>(installForThread), 0, nullptr);
+                if (hThread)
+                {
+                    ::WaitForSingleObject(hThread, INFINITE);
+                    ::CloseHandle(hThread);
+                    hThread = nullptr;
+                }
             }
-        }
-        else if (num == 3)
-        {
-            std::thread thd(&run);
-            thd.join();
+            else if (num == 3)
+            {
+                std::thread thd(&crashCode, installForThread);
+                thd.join();
+            }
         }
     }
 }
