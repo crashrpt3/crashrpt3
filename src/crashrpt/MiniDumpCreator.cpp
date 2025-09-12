@@ -81,11 +81,11 @@ int MiniDumpCreator::createMiniDump(const wchar_t* crashGUID)
             break;
         }
 
-        m_ipcMsg = std::make_unique<IPCMessage>();
+        m_ipcmsg = std::make_unique<IPCMessage>();
         try
         {
             auto j = nlohmann::json::parse(jsonView);
-            *m_ipcMsg = j.get<IPCMessage>();
+            *m_ipcmsg = j.get<IPCMessage>();
         }
         catch (...)
         {
@@ -105,30 +105,29 @@ int MiniDumpCreator::createMiniDump(const wchar_t* crashGUID)
         setDumpPrivileges();
         readExceptionAddr();
 
-        CString workDir = Utility::u2w(m_ipcMsg->dumpOutDirectory.c_str()).c_str();
-        workDir += crashGUID;
-        workDir += L"\\";
-        if (FALSE == Utility::createFolder(workDir))
+        CString workPath = Utility::u2w(m_ipcmsg->dumpOutDirectory.c_str()).c_str();
+        workPath += crashGUID;
+        if (FALSE == Utility::createFolder(workPath))
         {
-            ErrorStack::push(L"Create directory error, dir=" + workDir);
+            ErrorStack::push(L"Create directory error, dir=" + workPath);
             break;
         }
 
         // Create the minidump file
-        hFile = ::CreateFile(workDir + L"crashdump.dmp", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        hFile = ::CreateFile(workPath + L"\\crashdump.dmp", GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
 
         // Check if file has been created
         if (hFile == INVALID_HANDLE_VALUE)
         {
-            ErrorStack::push(L"CreateFile error, file=" + workDir + L"crashdump.dmp");
+            ErrorStack::push(L"CreateFile error, file=" + workPath + L"\\crashdump.dmp");
             break;
         }
 
         // Set valid dbghelp API version
         typedef LPAPI_VERSION(WINAPI* LPIMAGEHLPAPIVERSIONEX)(LPAPI_VERSION AppVersion);
         LPIMAGEHLPAPIVERSIONEX lpImagehlpApiVersionEx = (LPIMAGEHLPAPIVERSIONEX)GetProcAddress(hDbgHelp, "ImagehlpApiVersionEx");
-        ATLASSERT(lpImagehlpApiVersionEx != NULL);
-        if (lpImagehlpApiVersionEx != NULL)
+        ATLASSERT(lpImagehlpApiVersionEx != nullptr);
+        if (lpImagehlpApiVersionEx != nullptr)
         {
             API_VERSION CompiledApiVer;
             CompiledApiVer.MajorVersion = 10;
@@ -143,8 +142,8 @@ int MiniDumpCreator::createMiniDump(const wchar_t* crashGUID)
         }
 
         MINIDUMP_EXCEPTION_INFORMATION mei;
-        mei.ThreadId = m_ipcMsg->threadId;
-        mei.ExceptionPointers = reinterpret_cast<PEXCEPTION_POINTERS>(m_ipcMsg->exceptionPtrsAddr);
+        mei.ThreadId = m_ipcmsg->threadId;
+        mei.ExceptionPointers = reinterpret_cast<PEXCEPTION_POINTERS>(m_ipcmsg->exceptionPtrsAddr);
         mei.ClientPointers = TRUE;
 
         MINIDUMP_CALLBACK_INFORMATION mci;
@@ -168,8 +167,8 @@ int MiniDumpCreator::createMiniDump(const wchar_t* crashGUID)
             break;
         }
 
-        hProcess = ::OpenProcess(PROCESS_ALL_ACCESS, FALSE, m_ipcMsg->processId);
-        BOOL bWriteDump = pfnMiniDumpWriteDump(hProcess, m_ipcMsg->processId, hFile, m_ipcMsg->minidumpType, &mei, NULL, &mci);
+        hProcess = ::OpenProcess(PROCESS_ALL_ACCESS, FALSE, m_ipcmsg->processId);
+        BOOL bWriteDump = pfnMiniDumpWriteDump(hProcess, m_ipcmsg->processId, hFile, m_ipcmsg->minidumpType, &mei, nullptr, &mci);
         if (!bWriteDump)
         {
             ErrorStack::push(L"Call MiniDumpWriteDump() return FALSE");
@@ -178,19 +177,18 @@ int MiniDumpCreator::createMiniDump(const wchar_t* crashGUID)
 
         CString evtName;
         evtName.Format(_T("Local\\CrashRptEvent_%s"), (LPCTSTR)crashGUID);
-        HANDLE hEvent = ::CreateEvent(NULL, FALSE, FALSE, evtName);
+        HANDLE hEvent = ::CreateEvent(nullptr, FALSE, FALSE, evtName);
         if (hEvent)
         {
             ::SetEvent(hEvent);
         }
 
-        createTextFile(workDir + L"crashdump.json");
-
+        createTextFile(workPath + L"\\crashdump.json");
         if (m_callback)
         {
-            m_callback(m_callbackParam, workDir);
+            m_callback(m_callbackParam, workPath);
         }
-
+        launchCrashRptUI(workPath, FALSE);
         ret = 0;
     } while (false);
 
@@ -242,19 +240,19 @@ BOOL MiniDumpCreator::onMiniDumpCallback(PMINIDUMP_CALLBACK_INPUT input, PMINIDU
 
 void MiniDumpCreator::readExceptionAddr()
 {
-    HANDLE hProcess = ::OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, m_ipcMsg->processId);
+    HANDLE hProcess = ::OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, m_ipcmsg->processId);
     if (hProcess)
     {
         SIZE_T uBytesRead = 0;
         BYTE buff[1024];
         memset(&buff, 0, 1024);
-        PVOID64 addr = reinterpret_cast<PVOID64>(m_ipcMsg->exceptionPtrsAddr);
+        PVOID64 addr = reinterpret_cast<PVOID64>(m_ipcmsg->exceptionPtrsAddr);
 
         if (::ReadProcessMemory(hProcess, addr, &buff, sizeof(EXCEPTION_POINTERS), &uBytesRead) &&
             uBytesRead == sizeof(EXCEPTION_POINTERS))
         {
             EXCEPTION_POINTERS* pExcPtrs = (EXCEPTION_POINTERS*)buff;
-            if (pExcPtrs->ExceptionRecord != NULL)
+            if (pExcPtrs->ExceptionRecord != nullptr)
             {
                 DWORD64 dwExcRecordAddr = (DWORD64)pExcPtrs->ExceptionRecord;
                 if (ReadProcessMemory(hProcess, (LPCVOID)dwExcRecordAddr, &buff, sizeof(EXCEPTION_RECORD), &uBytesRead) &&
@@ -275,12 +273,12 @@ void MiniDumpCreator::createTextFile(LPCWSTR filePath)
     if (SUCCEEDED(hr))
     {
         JsonFileContent content;
-        content.crashrptVersion = m_ipcMsg->crashrptVersion;
+        content.crashrptVersion = m_ipcmsg->crashrptVersion;
         content.creationTime = formatTime(CTime::GetCurrentTime());
-        content.applicationPath = m_ipcMsg->appExePath;
+        content.applicationPath = m_ipcmsg->appExePath;
         content.crashModulePath = m_crashModulePath;
         content.crashModuleVersion = m_crashModuleVer;
-        content.properties = m_ipcMsg->properties;
+        content.properties = m_ipcmsg->properties;
         if (m_crashModuleTimestamp > 0)
         {
             try
@@ -296,6 +294,45 @@ void MiniDumpCreator::createTextFile(LPCWSTR filePath)
     }
 }
 
+void MiniDumpCreator::launchCrashRptUI(LPCWSTR param, BOOL bWait)
+{
+    std::wstring exePath = Utility::u2w(m_ipcmsg->crashrptuiPath.c_str());
+    if (!::PathFileExists(exePath.c_str()))
+    {
+        return;
+    }
+
+    STARTUPINFO si;
+    ZeroMemory(&si, sizeof(STARTUPINFO));
+    si.cb = sizeof(STARTUPINFO);
+
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&pi, sizeof(PROCESS_INFORMATION));
+
+    CString cmdline;
+    cmdline.Format(L"\"%s\" \"%s\"", exePath.c_str(), param);
+
+    BOOL bCreateProcess = ::CreateProcess(nullptr, (LPWSTR)cmdline.GetString(), nullptr, nullptr, FALSE, 0, nullptr, nullptr, &si, &pi);
+    if (!bCreateProcess)
+    {
+        return;
+    }
+
+    if (pi.hThread)
+    {
+        ::CloseHandle(pi.hThread);
+        pi.hThread = nullptr;
+    }
+
+    if (bWait)
+    {
+        ::WaitForSingleObject(pi.hProcess, INFINITE);
+    }
+
+    ::CloseHandle(pi.hProcess);
+    pi.hProcess = nullptr;
+}
+
 BOOL CALLBACK MiniDumpCreator::miniDumpCallback(PVOID param, PMINIDUMP_CALLBACK_INPUT input, PMINIDUMP_CALLBACK_OUTPUT output)
 {
     MiniDumpCreator* pthis = (MiniDumpCreator*)param;
@@ -309,7 +346,7 @@ BOOL MiniDumpCreator::setDumpPrivileges()
     // http://social.msdn.microsoft.com/Forums/en-US/vcgeneral/thread/f54658a4-65d2-4196-8543-7e71f3ece4b6/
 
     BOOL bSuccess = FALSE;
-    HANDLE hTokenHandle = NULL;
+    HANDLE hTokenHandle = nullptr;
     TOKEN_PRIVILEGES hTokenPrivileges;
 
     if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hTokenHandle))
@@ -319,7 +356,7 @@ BOOL MiniDumpCreator::setDumpPrivileges()
 
     hTokenPrivileges.PrivilegeCount = 1;
 
-    if (!LookupPrivilegeValue(NULL, SE_DEBUG_NAME, &hTokenPrivileges.Privileges[0].Luid))
+    if (!LookupPrivilegeValue(nullptr, SE_DEBUG_NAME, &hTokenPrivileges.Privileges[0].Luid))
     {
         goto Cleanup;
     }
@@ -327,7 +364,7 @@ BOOL MiniDumpCreator::setDumpPrivileges()
     hTokenPrivileges.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
 
     //Add privileges here.
-    if (!AdjustTokenPrivileges(hTokenHandle, FALSE, &hTokenPrivileges, sizeof(hTokenPrivileges), NULL, NULL))
+    if (!AdjustTokenPrivileges(hTokenHandle, FALSE, &hTokenPrivileges, sizeof(hTokenPrivileges), nullptr, nullptr))
     {
         goto Cleanup;
     }

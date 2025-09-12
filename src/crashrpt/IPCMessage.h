@@ -4,6 +4,7 @@ struct IPCMessage
 {
     DWORD crashrptVersion = 0;
     std::string appExePath;
+    std::string crashrptuiPath;
     std::string dumpOutDirectory;
     DWORD processId = 0;
     DWORD threadId = 0;
@@ -21,6 +22,7 @@ struct IPCMessage
     NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(IPCMessage,
         crashrptVersion,
         appExePath,
+        crashrptuiPath,
         dumpOutDirectory,
         processId,
         threadId,

@@ -75,44 +75,76 @@ struct ThreadExceptionHandlers
 
 struct InstallInfo
 {
-    CString crashrptExePath;
-    CString dumpOutDirectory;
+    CString crashrptdumpPath;
+    CString crashrptuiPath;
+    CString dumpOutDir;
     UINT32 crashHandles = 0;
     MINIDUMP_TYPE minidumpType = MiniDumpNormal;
 
-    int reset(const CR_INSTALL_INFO* pInstallInfo)
+    int init(const CR_INSTALL_INFO* info)
     {
-        this->crashrptExePath = pInstallInfo->crashrptExePath;
-        this->dumpOutDirectory = pInstallInfo->dumpOutDirectory;
-        this->crashHandles = pInstallInfo->crashHandlers;
-        this->minidumpType = pInstallInfo->minidumpType;
+        this->crashrptdumpPath = info->crashrptdumpPath;
+        this->crashrptuiPath = info->crashrptuiPath;
+        this->dumpOutDir = info->dumpOutDir;
+        this->crashHandles = info->crashHandlers;
+        this->minidumpType = info->minidumpType;
 
-        if (this->crashrptExePath.IsEmpty())
+        if (this->crashrptdumpPath.IsEmpty())
         {
             CString name;
 #ifdef _DEBUG
-            name.Format(_T("crashrptdump%dd.exe"), CRASHRPT_VER);
+            name.Format(L"crashrptdump%dd.exe", CRASHRPT_VER);
 #else
-            name.Format(_T("crashrptdump%d.exe"), CRASHRPT_VER);
+            name.Format(L"crashrptdump%d.exe", CRASHRPT_VER);
 #endif
             CString fullPath = Utility::getModuleDirectory((HMODULE)g_module) + name;
-            this->crashrptExePath = fullPath;
+            this->crashrptdumpPath = fullPath;
         }
 
-        if (!::PathFileExists(this->crashrptExePath))
+        if (FALSE == ::PathFileExists(this->crashrptdumpPath))
         {
-            ErrorStack::push(L"File not exists, path: " + this->crashrptExePath);
+            ErrorStack::push(L"File not exists, path: " + this->crashrptdumpPath);
             return 1;
         }
 
-        if (this->dumpOutDirectory.IsEmpty())
+        if (this->crashrptuiPath.IsEmpty())
         {
-            this->dumpOutDirectory = Utility::getModuleDirectory((HMODULE)g_module) + L"dump\\";
+            CString name;
+#ifdef _DEBUG
+            name = L"crashrptuid.exe";
+#else
+            name = L"crashrptui.exe";
+#endif
+            CString fullPath = Utility::getModuleDirectory((HMODULE)g_module) + name;
+            if (::PathFileExists(fullPath))
+            {
+                this->crashrptuiPath = fullPath;
+            }
+        }
+        else
+        {
+            if (FALSE == ::PathFileExists(this->crashrptuiPath))
+            {
+                ErrorStack::push(L"File not exists, path: " + this->crashrptuiPath);
+                return 1;
+            }
         }
 
-        if (FALSE == Utility::createFolder(this->dumpOutDirectory))
+        if (this->dumpOutDir.IsEmpty())
         {
-            ErrorStack::push(L"Create directory failed, path: " + this->dumpOutDirectory);
+            this->dumpOutDir = Utility::getModuleDirectory((HMODULE)g_module) + L"dump\\";
+        }
+        else
+        {
+            if (this->dumpOutDir[dumpOutDir.GetLength() - 1] != L'\\')
+            {
+                this->dumpOutDir.AppendChar(L'\\');
+            }
+        }
+
+        if (FALSE == Utility::createFolder(this->dumpOutDir))
+        {
+            ErrorStack::push(L"Create directory failed, path: " + this->dumpOutDir);
             return 1;
         }
         return 0;
@@ -157,7 +189,7 @@ int CrashRptApp::install(const CR_INSTALL_INFO* info)
             break;
         }
 
-        ret = m_installInfo->reset(info);
+        ret = m_installInfo->init(info);
         if (0 != ret)
         {
             break;
@@ -479,10 +511,11 @@ int CrashRptApp::generateErrorReport(ExceptionInfo* pException)
     }
 
     // Save current process ID, thread ID and exception pointers address to shared mem.
-    auto ipcmsg = std::make_unique<IPCMessage>();
+    std::unique_ptr<IPCMessage> ipcmsg = std::make_unique<IPCMessage>();
     ipcmsg->crashrptVersion = CRASHRPT_VER;
     ipcmsg->appExePath = Utility::w2u(Utility::getModuleFullPath(nullptr));
-    ipcmsg->dumpOutDirectory = Utility::w2u(m_installInfo->dumpOutDirectory);
+    ipcmsg->crashrptuiPath = Utility::w2u(m_installInfo->crashrptuiPath);
+    ipcmsg->dumpOutDirectory = Utility::w2u(m_installInfo->dumpOutDir);
     ipcmsg->processId = ::GetCurrentProcessId();
     ipcmsg->threadId = ::GetCurrentThreadId();
     ipcmsg->crashType = pException->crashType;
@@ -522,7 +555,7 @@ int CrashRptApp::generateErrorReport(ExceptionInfo* pException)
     if (0 != launchCrashRptDump(m_crashGUID, TRUE))
     {
         CString caption = L"%s has stopped working" + Utility::getModuleBaseName();
-        CString msg = L"Create process failed, path: " + m_installInfo->crashrptExePath;
+        CString msg = L"Create process failed, path: " + m_installInfo->crashrptdumpPath;
         ::MessageBox(nullptr, msg, caption, MB_OK | MB_ICONERROR);
         return 1;
     }
@@ -583,7 +616,7 @@ void CrashRptApp::getExceptionPointers(DWORD dwExceptionCode, EXCEPTION_POINTERS
     pExceptionPointers->ExceptionRecord->ExceptionAddress = _ReturnAddress();
 }
 
-int CrashRptApp::launchCrashRptDump(LPCWSTR cmdlineParams, BOOL bWait)
+int CrashRptApp::launchCrashRptDump(LPCWSTR param, BOOL bWait)
 {
     STARTUPINFO si;
     ZeroMemory(&si, sizeof(STARTUPINFO));
@@ -593,7 +626,7 @@ int CrashRptApp::launchCrashRptDump(LPCWSTR cmdlineParams, BOOL bWait)
     ZeroMemory(&pi, sizeof(PROCESS_INFORMATION));
 
     CString cmdline;
-    cmdline.Format(L"\"%s\" %s", m_installInfo->crashrptExePath.GetString(), cmdlineParams);
+    cmdline.Format(L"\"%s\" %s", m_installInfo->crashrptdumpPath.GetString(), param);
 
     BOOL bCreateProcess = ::CreateProcess(nullptr, (LPWSTR)cmdline.GetString(), nullptr, nullptr, FALSE, 0, nullptr, nullptr, &si, &pi);
     if (!bCreateProcess)

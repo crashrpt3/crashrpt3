@@ -29,47 +29,48 @@
 #endif
 
 // Crash handlers
-#define CR_CRASH_HANDLER_SEH                   0x1    // Install SEH handler.
-#define CR_CRASH_HANDLER_TERMINATE_CALL        0x2    // Install terminate handler.
-#define CR_CRASH_HANDLER_UNEXPECTED_CALL       0x4    // Install unexpected handler.
-#define CR_CRASH_HANDLER_CPP_PURE              0x8    // Install pure call handler (VS .NET and later).
-#define CR_CRASH_HANDLER_NEW_OPERATOR          0x10   // Install new operator error handler (VS .NET and later).
-#define CR_CRASH_HANDLER_SECURITY              0x20   // Install security error handler (VS .NET and later).
-#define CR_CRASH_HANDLER_INVALID_PARAMETER     0x40   // Install invalid parameter handler (VS 2005 and later).
-#define CR_CRASH_HANDLER_SIGABRT               0x80   // Install SIGABRT signal handler.
-#define CR_CRASH_HANDLER_SIGFPE                0x100  // Install SIGFPE signal handler.
-#define CR_CRASH_HANDLER_SIGILL                0x200  // Install SIGILL signal handler.
-#define CR_CRASH_HANDLER_SIGINT                0x400  // Install SIGINT signal handler.
-#define CR_CRASH_HANDLER_SIGSEGV               0x800  // Install SIGSEGV signal handler.
-#define CR_CRASH_HANDLER_SIGTERM               0x1000 // Install SIGTERM signal handler.
-#define CR_CRASH_HANDLER_ALL                   0xFFFF // Install all possible exception handlers.
+#define CR_CRASH_HANDLER_SEH                   0x1    // SEH handler
+#define CR_CRASH_HANDLER_TERMINATE_CALL        0x2    // terminate handler
+#define CR_CRASH_HANDLER_UNEXPECTED_CALL       0x4    // unexpected handler
+#define CR_CRASH_HANDLER_CPP_PURE              0x8    // pure call handler (VS .NET and later)
+#define CR_CRASH_HANDLER_NEW_OPERATOR          0x10   // new operator error handler (VS .NET and later)
+#define CR_CRASH_HANDLER_SECURITY              0x20   // security error handler (VS .NET and later)
+#define CR_CRASH_HANDLER_INVALID_PARAMETER     0x40   // invalid parameter handler (VS 2005 and later)
+#define CR_CRASH_HANDLER_SIGABRT               0x80   // SIGABRT signal handler
+#define CR_CRASH_HANDLER_SIGFPE                0x100  // SIGFPE signal handler
+#define CR_CRASH_HANDLER_SIGILL                0x200  // SIGILL signal handler
+#define CR_CRASH_HANDLER_SIGINT                0x400  // SIGINT signal handler
+#define CR_CRASH_HANDLER_SIGSEGV               0x800  // SIGSEGV signal handler
+#define CR_CRASH_HANDLER_SIGTERM               0x1000 // SIGTERM signal handler
+#define CR_CRASH_HANDLER_ALL                   0xFFFF // all possible exception handlers
 
 // Crash types
-#define CR_CRASH_TYPE_SEH                      0      // SEH exception.
-#define CR_CRASH_TYPE_TERMINATE_CALL           1      // C++ terminate() call.
-#define CR_CRASH_TYPE_UNEXPECTED_CALL          2      // C++ unexpected() call.
-#define CR_CRASH_TYPE_CPP_PURE                 3      // C++ pure virtual function call (VS .NET and later).
-#define CR_CRASH_TYPE_CPP_NEW_OPERATOR         4      // C++ new operator fault (VS .NET and later).
-#define CR_CRASH_TYPE_SECURITY                 5      // Buffer overrun error (VS .NET only, can't catch any crashes since VS2017).
-#define CR_CRASH_TYPE_INVALID_PARAMETER        6      // Invalid parameter exception (VS 2005 and later).
-#define CR_CRASH_TYPE_SIGABRT                  7      // C++ SIGABRT signal (abort).
-#define CR_CRASH_TYPE_SIGFPE                   8      // C++ SIGFPE signal (flotating point exception).
-#define CR_CRASH_TYPE_SIGILL                   9      // C++ SIGILL signal (illegal instruction, win-api created threads only).
-#define CR_CRASH_TYPE_SIGINT                   10     // C++ SIGINT signal (CTRL+C).
-#define CR_CRASH_TYPE_SIGSEGV                  11     // C++ SIGSEGV signal (invalid storage access, win-api created threads only).
-#define CR_CRASH_TYPE_SIGTERM                  12     // C++ SIGTERM signal (termination request).
-#define CR_CRASH_TYPE_NONCONTINUABLE           13     // Non continuable sofware exception.
-#define CR_CRASH_TYPE_CPP_THROW                14     // Throw C++ typed exception (win-api created threads only).
-#define CR_CRASH_TYPE_STACK_OVERFLOW           15     // Stack overflow.
+#define CR_CRASH_TYPE_SEH                      0      // SEH exception
+#define CR_CRASH_TYPE_TERMINATE_CALL           1      // C++ terminate() call
+#define CR_CRASH_TYPE_UNEXPECTED_CALL          2      // C++ unexpected() call
+#define CR_CRASH_TYPE_CPP_PURE                 3      // C++ pure virtual function call (VS .NET and later)
+#define CR_CRASH_TYPE_CPP_NEW_OPERATOR         4      // C++ new operator fault (VS .NET and later)
+#define CR_CRASH_TYPE_SECURITY                 5      // Buffer overrun error (VS .NET only. Can't catch any crashes since VS2017)
+#define CR_CRASH_TYPE_INVALID_PARAMETER        6      // Invalid parameter exception (VS 2005 and later)
+#define CR_CRASH_TYPE_SIGABRT                  7      // C++ SIGABRT signal (abort)
+#define CR_CRASH_TYPE_SIGFPE                   8      // C++ SIGFPE signal (flotating point exception)
+#define CR_CRASH_TYPE_SIGILL                   9      // C++ SIGILL signal (illegal instruction. Must call crInstallThisThread() if in threads)
+#define CR_CRASH_TYPE_SIGINT                   10     // C++ SIGINT signal (CTRL+C)
+#define CR_CRASH_TYPE_SIGSEGV                  11     // C++ SIGSEGV signal (invalid storage access. Must call crInstallThisThread() if in threads)
+#define CR_CRASH_TYPE_SIGTERM                  12     // C++ SIGTERM signal (termination request)
+#define CR_CRASH_TYPE_NONCONTINUABLE           13     // Non continuable sofware exception
+#define CR_CRASH_TYPE_CPP_THROW                14     // Throw C++ typed exception (Windows API created threads only)
+#define CR_CRASH_TYPE_STACK_OVERFLOW           15     // Stack overflow
 
-typedef void(*CR_CREATEMINIDUMP_CALLBACK)(void* param, const wchar_t* directory);
+typedef void(*CR_CREATEMINIDUMP_CALLBACK)(void* param, const wchar_t* dumpOutDirPath);
 
 typedef struct _CR_INSTALL_INFO {
     unsigned long  cb;                                // Size of this structure in bytes; must be initialized before using!
-    const wchar_t* crashrptExePath;                   // File path of your custom crashrptdump.exe.
-    const wchar_t* dumpOutDirectory;                  // Directory where to save dump error reports, must ends with '\\'.
+    const wchar_t* crashrptdumpPath;                  // Path to crashrptdump.exe. When crashed happened, this exe will be launched first
+    const wchar_t* crashrptuiPath;                    // Path to crashrptui.exe. When crashed happened, this exe will be launched second
+    const wchar_t* dumpOutDir;                        // Directory to save dump error reports
     unsigned long  crashHandlers;                     // See micro CR_CRASH_HANDLER_ALL
-    MINIDUMP_TYPE  minidumpType;                      // Minidump type.
+    MINIDUMP_TYPE  minidumpType;                      // Minidump type
 } CR_INSTALL_INFO;
 
 CRASHRPT_API(int) crInstall(const CR_INSTALL_INFO* info);
@@ -165,5 +166,5 @@ public:
 private:
     int m_ret;
 };
-} // namespace crashpt
+} // namespace crashrpt
 #endif // __cplusplus

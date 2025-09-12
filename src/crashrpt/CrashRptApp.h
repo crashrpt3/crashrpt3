@@ -28,7 +28,7 @@ private:
     int unSetProcessExceptionHandlers();
 
     int generateErrorReport(ExceptionInfo* exceptionInfo);
-    int launchCrashRptDump(LPCWSTR szCmdLineParams, BOOL bWait);
+    int launchCrashRptDump(LPCWSTR param, BOOL bWait);
 
     int resetForPerCrash();
 

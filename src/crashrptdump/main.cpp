@@ -1,21 +1,19 @@
-﻿#include "stdafx.h"
+﻿#include <windows.h>
 #include "crashrpt/crashrpt.h"
 
-void onMiniDumpCreated(void* param, const wchar_t* directory)
+void onMiniDumpCreated(void* param, const wchar_t* dumpOutDirPath)
 {
-    CString msg;
-    msg.Format(L"Application crashed, dump created.\n%scrashdump.dmp", directory);
-    ::MessageBox(nullptr, msg, L"Tips", MB_OK);
+    // Add your code here...
 }
 
-int WINAPI WinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE hInstPrev, _In_ LPSTR cmdline, _In_ int cmdshow)
+int WINAPI wWinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE hInstPrev, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow)
 {
-    LPCWSTR szCmdLineW = ::GetCommandLineW();
     int argc = 0;
-    LPWSTR* argv = ::CommandLineToArgvW(szCmdLineW, &argc);
-    if (argc != 2)
+    LPWSTR* argv = ::CommandLineToArgvW(::GetCommandLineW(), &argc);
+    if (argc == 2)
     {
-        return 1;
+        LPCWSTR crashGUID = argv[1];
+        return crCreateMiniDump(crashGUID, &onMiniDumpCreated);
     }
-    return crCreateMiniDump(argv[1], &onMiniDumpCreated);
+    return 1;
 }

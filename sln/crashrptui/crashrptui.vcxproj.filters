@@ -5,23 +5,10 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="resource">
-      <UniqueIdentifier>{b925ea26-9501-4b14-b379-fda896b8ebf9}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\crashrptdump\main.cpp">
+    <ClCompile Include="..\..\src\crashrptui\main.cpp">
       <Filter>src</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="resource.h">
-      <Filter>resource</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="crashrptdump.rc">
-      <Filter>resource</Filter>
-    </ResourceCompile>
   </ItemGroup>
 </Project>
