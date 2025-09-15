@@ -1,8 +1,16 @@
-### The most powerful crash reporting system for Windows C++ applications only.
+## CrashRpt3
 
-Since the author has not updated and maintained it for too long, this repository is used to collect newer patches and features.
+**The most powerful crash reporting system for Windows C++ applications only.**
+
+CrashRpt is very powerful by not maintained for too long, this repository is used to collect newer patches and features.
 
 For Windows C++ applications, the CrashRpt3 is more powerful than `crashpad`, CrashRpt3 can catch more crashes.
+
+
+
+## Compile
+
+Launch `Visual Studio 2022` and open `crashrpt3/sln/crashrpt.sln`.
 
 
 
@@ -11,17 +19,24 @@ For Windows C++ applications, the CrashRpt3 is more powerful than `crashpad`, Cr
 Only 8 APIs, It's very easy to use.
 
 ```cpp
+// Install CrashRpt3 for Application
 int crInstall(const CR_INSTALL_INFO* info);
 int crUninstall();
 
+// Install CrashRpt3 for thread (Catch more crash in threads)
 int crInstallThisThread(unsigned long crashHandlers = 0);
 int crUninstallThisThread();
 
+// Add custom properties
 int crAddProperty(const wchar_t* name, const wchar_t* value);
-int crTestCrash(unsigned long crashType) noexcept(false);
+
+// Create *.dmp file for application, Called by another exe file (crashrptdump.exe)
 int crCreateMiniDump(const wchar_t* crashGUID, CR_CREATEMINIDUMP_CALLBACK callback, void* param);
 
 int crGetLastError(wchar_t* buffer, int sizeInWords);
+
+// For test
+int crTestCrash(unsigned long crashType) noexcept(false);
 ```
 
 
@@ -29,13 +44,15 @@ int crGetLastError(wchar_t* buffer, int sizeInWords);
 ### Demo
 
 ```cpp
+#include "crashrpt3/crashrpt.h"
+
 int main()
 {
     CR_INSTALL_INFO info = { 0 };
     info.cb = sizeof(CR_INSTALL_INFO);
-    crInstall(&info); // Install crashrpt3
+    crInstall(&info);
     
-    // Add you code here...
+    // Add code here...
 }
 ```
 
