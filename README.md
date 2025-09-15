@@ -43,6 +43,8 @@ int crTestCrash(unsigned long crashType) noexcept(false);
 
 ### Demo
 
+> It it very easy to use.
+
 ```cpp
 #include "crashrpt3/crashrpt.h"
 
