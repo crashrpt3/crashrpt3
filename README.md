@@ -2,7 +2,7 @@
 
 **The most powerful crash reporting system for Windows C++ applications only.**
 
-CrashRpt is very powerful by not maintained for too long, this repository is used to collect newer patches and features.
+CrashRpt is very powerful but not maintained for too long, this repository is used to collect newer patches and features.
 
 For Windows C++ applications, the CrashRpt3 is more powerful than `crashpad`, CrashRpt3 can catch more crashes.
 
